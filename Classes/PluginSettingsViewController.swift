@@ -55,6 +55,12 @@ final class PluginSettingsViewController: NSViewController {
     private let fields: [PluginSettingField]
     private var textFields: [NSTextField] = []
 
+    /// Called after Save or Cancel so whoever shows this view can close it.
+    /// (`dismiss(_:)` only works for view controllers shown through
+    /// `present…`; this one is the content of a plain NSPopover, so the
+    /// popover itself has to be closed.)
+    var onFinish: (() -> Void)?
+
     init(pluginName: String, fields: [PluginSettingField]) {
         self.pluginName = pluginName
         self.fields = fields
@@ -135,7 +141,15 @@ final class PluginSettingsViewController: NSViewController {
     }
 
     @objc private func cancel(_ sender: NSButton) {
-        dismiss(sender)
+        finish(sender)
+    }
+
+    private func finish(_ sender: Any?) {
+        if let onFinish = onFinish {
+            onFinish()
+        } else {
+            dismiss(sender)
+        }
     }
 
     @objc private func save(_ sender: NSButton) {
@@ -148,6 +162,6 @@ final class PluginSettingsViewController: NSViewController {
                 ud.set(value, forKey: field.key)
             }
         }
-        dismiss(sender)
+        finish(sender)
     }
 }

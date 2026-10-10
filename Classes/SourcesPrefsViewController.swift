@@ -77,6 +77,9 @@ final class SourcesPrefsViewController: NSViewController, NSTabViewDelegate {
     /// public Subler app.
     private let mediaIntakeManagerController = MediaIntakeManagerViewController()
 
+    /// Owns the Media Locations tab (default destination, delivery rules, staging).
+    private let destinationsController = DestinationsViewController()
+
     init() {
         super.init(nibName: nil, bundle: nil)
         self.title = NSLocalizedString("Sources", comment: "")
@@ -199,6 +202,7 @@ final class SourcesPrefsViewController: NSViewController, NSTabViewDelegate {
     private func buildUI() {
         addChild(customSourcesController)
         addChild(mediaIntakeManagerController)
+        addChild(destinationsController)
 
         // Each tab's own root view defaults to
         // translatesAutoresizingMaskIntoConstraints == true (none of the
@@ -213,6 +217,8 @@ final class SourcesPrefsViewController: NSViewController, NSTabViewDelegate {
         customSourcesView.translatesAutoresizingMaskIntoConstraints = false
         let mediaIntakeManagerView = mediaIntakeManagerController.view
         mediaIntakeManagerView.translatesAutoresizingMaskIntoConstraints = false
+        let destinationsView = destinationsController.view
+        destinationsView.translatesAutoresizingMaskIntoConstraints = false
 
         let providersTabViewItem = NSTabViewItem(identifier: "providers")
         providersTabViewItem.label = NSLocalizedString("Providers", comment: "")
@@ -226,6 +232,10 @@ final class SourcesPrefsViewController: NSViewController, NSTabViewDelegate {
         mediaIntakeTabViewItem.label = NSLocalizedString("Media Intake", comment: "")
         mediaIntakeTabViewItem.view = mediaIntakeManagerView
 
+        let destinationsTabViewItem = NSTabViewItem(identifier: "destinations")
+        destinationsTabViewItem.label = NSLocalizedString("Media Locations", comment: "")
+        destinationsTabViewItem.view = destinationsView
+
         let tabView = NSTabView()
         tabView.controlSize = .small
         tabView.translatesAutoresizingMaskIntoConstraints = false
@@ -233,6 +243,7 @@ final class SourcesPrefsViewController: NSViewController, NSTabViewDelegate {
         tabView.addTabViewItem(providersTabViewItem)
         tabView.addTabViewItem(customSourcesTabViewItem)
         tabView.addTabViewItem(mediaIntakeTabViewItem)
+        tabView.addTabViewItem(destinationsTabViewItem)
 
         view.addSubview(tabView)
 
@@ -253,7 +264,7 @@ final class SourcesPrefsViewController: NSViewController, NSTabViewDelegate {
         headerLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
         headerLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        let descriptionLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Turn Subler's built-in providers on or off, separately for movies and TV shows. A disabled provider is removed from the search provider menu and the batch queue options. Custom sources are always available and are configured on the Custom Sources tab.", comment: ""))
+        let descriptionLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Turn the built-in providers on or off, separately for movies and TV shows. A disabled provider is removed from the search provider menu and the batch queue options. Custom sources are always available and are configured on the Custom Sources tab.", comment: ""))
         descriptionLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         descriptionLabel.textColor = .secondaryLabelColor
         descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -401,7 +412,9 @@ final class SourcesPrefsViewController: NSViewController, NSTabViewDelegate {
               let fields = PluginSettings.fields(for: name) else { return }
 
         let popover = NSPopover()
-        popover.contentViewController = PluginSettingsViewController(pluginName: name, fields: fields)
+        let controller = PluginSettingsViewController(pluginName: name, fields: fields)
+        controller.onFinish = { [weak popover] in popover?.performClose(nil) }
+        popover.contentViewController = controller
         popover.behavior = .transient
         activePopover = popover
         popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .maxY)

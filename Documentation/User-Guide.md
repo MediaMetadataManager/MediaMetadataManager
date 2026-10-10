@@ -2,7 +2,7 @@
 title: "Media Metadata Manager"
 subtitle: "User Guide"
 doctype: "User Guide"
-version: "Documentation set of October 9, 2026"
+version: "Documentation set of October 10, 2026"
 ---
 
 # About this guide
@@ -116,7 +116,7 @@ Closing an editor window does not remove its row.
 | Merging | The parts are being joined. | Wait; progress is shown on the row. |
 | Merge failed | The parts could not be joined. The reason is shown in plain language. | Double-click, adjust the selection, retry. |
 | Ready | A single file is ready to be written. | Click **Start**. |
-| Done | The folder has been moved to Ready for Media Library. | Remove it with **Remove completed items**. |
+| Done | The folder has been moved to its destination (the staging folder, or with automatic delivery on, the final destination). | Remove it with **Remove completed items**. |
 
 **Context menu.** Right-click a row for **Reveal in Finder**, **Edit…**, **Remove from queue** and **Remove completed items**. You can also drag rows to change their order, and drop files or folders from Finder into the window.
 
@@ -140,7 +140,7 @@ The **Settings** button reveals the options applied to items you add by hand and
 
 If **Automatically approve high-confidence naming matches** is on and the online title matches the file name exactly (and the years agree when both are known), the sheet approves itself after about a second. Typing in the field or clicking a button cancels that.
 
-**Metadata Review.** Appears for a single-file release whose automatic match was not confident. It shows the match found and an artwork preview, with a **Portrait / Landscape** control that applies only to this release.
+**Metadata Review.** Appears for a single-file release whose automatic match was not confident, or when the online search found nothing at all. It shows the match found and an artwork preview, with a **Portrait / Landscape** control that applies only to this release. If the match is wrong or missing, change the words in **Search for** and press **Search** (or Return), then pick the right entry from the list of results. **Use This Match** applies the entry you picked. If nothing can be found, **Continue Without Metadata** delivers the file as it is.
 
 **Merge Review.** Lists the parts. Drag them into play order. The sheet starts in the order implied by the files' own numbers (`01`, `02`, `Part 1`, `e1`…). Confirming starts the merge.
 
@@ -187,11 +187,12 @@ Audio conversion choices (AC-3, DTS, downmix, dynamic range control, bitrate), *
 
 ## Sources
 
-Three sub-tabs:
+Four sub-tabs:
 
 - **Providers** — tick the built-in providers you want for Movies and for TV Shows. Installed plugins appear in the same list, each with a **Configure…** button where the plugin needs settings. **Complete Content Search** asks TheMovieDB to include its complete result set.
 - **Custom Sources** — define your own providers (see section 7).
 - **Media Intake** — the Intake workflow settings (see section 5).
+- **Media Locations** — where finished files are delivered: the iTunes/TV Automatically Add folders as the default, rules by metadata, and the staging folder (see 5.5).
 
 ## Support
 
@@ -214,16 +215,17 @@ All of these are in **Preferences → Sources → Media Intake**. Hover over any
 | **Rename the source folder after merging, when a correct name is found** | off | After a manual Queue merge, renames the download folder to a correct release name found nearby (a cover image, the folder name, or a well-named video). Never overwrites an existing folder. |
 | **Automatically merge multi-file releases with a clear sequence** | off | When every part carries a sequence number and the parts are compatible, merges after about a second instead of stopping at Merge Review. Opening the row in that second cancels it. |
 | **Remove empty folders automatically** | off | After each Queue run and each editor save, moves empty folders inside the Incoming and Ready folders to the Trash and logs them. Folders touched in the last two minutes are left alone. The same cleanup can be run by hand with **Window → Clean Up Empty Folders…**. |
-| **Clean up processed files** | off | After a release is moved into Ready for Media Library, moves the original files it was made from (the parts that were merged, or the unconverted source of a single file) to the Trash and logs them. The finished file is never touched. |
-| **Ready for Media Library** | none | The staging folder. Releases are moved here as the last step. |
-| **Automatically Add to iTunes/TV Folders** (+ / −) | the Music/TV app's folder | Files saved straight into one of these are left alone instead of being wrapped in a folder, because the Music or TV app organizes them itself. |
+| **Clean up processed files** | off | After a release is moved into Ready for Media Library, moves the original files it was made from (the parts that were merged, or the unconverted source when the Queue converted a file) to the Trash and logs them. The finished file is never touched. This applies to Queue runs only; it does not apply to a file you tag with Edit and Save (see 5.4). |
+| **Remove finished items from the Queue automatically** | off | When a Queue run finishes, the rows with a checkmark are taken off the list. Only the rows are removed, never files. Failed rows and rows still waiting for you stay. |
+| **Ready for Media Library** | none | Now set on the **Media Locations** tab (see 5.5), where it is the **staging folder**: finished files wait there for you to check them. |
+| **Automatically Add to iTunes/TV Folders** | | Now on the **Media Locations** tab (see 5.5), where it is the default destination. |
 
 ## 5.2 What happens, step by step
 
 1. **Discovery.** M3 finds media files in the Incoming Folders. It ignores hidden files, packages, symbolic links, the Ready folder, and folders that still contain unfinished downloads (`.part`, `.crdownload` and similar). Anything it has already taken in, or that is already in a Queue, is skipped. A path is forgotten once the file is gone, so putting a file with the same name back later is treated as new.
 2. **TV or movie.** A name with a season and episode marker (for example `S02E05` or `2x05`) goes to the **TV Shows Queue**; everything else goes to the **Movies Queue**.
 3. **Naming.** M3 proposes `Title Vol N [Studio] (Year)`. It understands uploader-stamped names such as `2026_Uploader_Title_Studio_720p` and `03.10.2026_Uploader_Title_Studio_720p`, and scene names such as `Title.2023.1080p.WEB-DL.x264-GROUP`. You approve, edit or reject, or it is approved automatically when you have chosen that option.
-4. **Metadata or merge.** One file: the online match is checked. Several files: the parts are checked for compatibility and ordered.
+4. **Metadata or merge.** One file: the online match is checked. Several files: the parts are checked for compatibility and ordered, merged, and then the merged file gets the same online match check as a single file. The merged file appears under its final name only when it is complete (a merge of a long movie can take ten minutes or more).
 5. **Ready.** The release becomes a normal Queue item with a metadata step and a move-to-library step attached.
 6. **Start.** The Queue writes the file, searches the provider you chose, applies artwork and tags, and then moves the whole release folder into **Ready for Media Library**. If a folder with that name already exists there, the new one is called `name 2`, `name 3` and so on; nothing is overwritten.
 7. **Cleanup** (if enabled), then your final check in the Ready folder.
@@ -239,13 +241,35 @@ You can also merge by hand: select two or more items in the Queue and click **Me
 ## 5.4 Safety guarantees
 
 - Intake only moves files and folders; it never deletes. Removal happens only through the two cleanup options, and only to the **Trash**.
+- **Tagging a single file with Edit and Save works in place.** The tags are written into the file itself, the file may be renamed, and its folder is moved into **Ready for Media Library**. M3 does not keep a copy of the original and nothing is sent to the Trash, so the previous tags cannot be restored afterwards. If you want a backup, copy the file before you save. (Queue merges keep their parts unless you turn on **Clean up processed files**.)
 - Cleanup actions are written to `Removed Empty Folders.txt` and `Cleaned Up Processed Files.txt` in `~/Library/Application Support/M3/`.
 - A failed move (disk full, drive disconnected) cleans up after itself and offers another location.
 - Parts are kept after a merge unless you turn on **Clean up processed files**, so you can check the result before the originals are gone.
 
+## 5.5 Media Locations: where finished files go
+
+**Preferences → Sources → Media Locations** decides where a finished file ends up. It has three parts.
+
+**Default destination: Automatically Add to iTunes/TV Folders.** The folder the Music or TV app watches and organizes itself (by default that app's own folder, shown greyed out in the first row). Leave the first row blank to use it, or choose another folder; add more with **+** if you moved the library or keep several, and the first one is the default. A file delivered straight into one of these folders is left alone instead of being wrapped in a folder of its own, because the app files it from there.
+
+**Rules.** The **Movies** and **TV Shows** tabs each have an ordered list of rules for sending files somewhere other than the default.
+
+- A **rule** has a checkbox (to turn it on or off), a **Folder**, and one or more conditions in the form *If Genre is Documentary*. Conditions use the same fields and wording as the Filename rules: conditions on different fields must all match (And), conditions on the same field match if any one does (Or).
+- Rules are checked from the top. The **first enabled rule that matches** the file's tagged metadata decides the folder. If none matches, the default destination is used.
+- **Add Rule** adds a rule at the end of the list; **Remove Rule** deletes it. A rule with no folder is ignored.
+- For the **Rating** field the value list follows **Preferences → General → Show ratings for** (the chosen country plus the USA, or every country when set to All countries), limited to ratings that apply to movies or TV as appropriate; pick a value from the list so it matches exactly. Rules look at the metadata the file has when it is delivered, so a file with no genre tagged will not match a genre rule.
+
+**Staging folder (Ready for Media Library).** Where finished files wait for you to look them over before they reach your library, and the setting that decides whether the rules are used at all.
+
+- **Deliver automatically** is **off** by default. While it is off, every finished file goes to the staging folder, whatever the rules say, and you move it on yourself. This is the way to work while you are building trust in the system.
+- Turn it **on** and finished files skip staging: they go from the watched folder straight to the first matching rule's folder, or to the default destination. Folders that are Automatically Add folders receive the finished file alone; the originals stay behind (and go to the Trash if **Clean up processed files** is on).
+- With it off and no staging folder set, finished files stay where they are.
+
+The same choice applies everywhere a finished file is moved: Queue items, whole releases from Intake, and files saved from the editor.
+
 # 6. Common tasks
 
-**Tag one file.** Welcome window → **Tag One File** → **Search Metadata** → choose a result → **Save & Close**.
+**Tag one file.** Welcome window → **Tag One File** → **Search Metadata** → choose a result → **Save & Close**. The file is changed in place and moved to **Ready for Media Library**; no original is kept and nothing goes to the Trash.
 
 **Process a download automatically.** Add the Incoming Folder, tick **Automatically watch**, optionally tick the auto-approve and auto-merge options. New downloads appear in the Queue; open any row that shows a waiting state; click **Start**.
 
@@ -255,7 +279,7 @@ You can also merge by hand: select two or more items in the Queue and click **Me
 
 **Find files that need tagging.** Welcome window → **Scan Library for Missing Metadata**.
 
-**Undo a mistake.** In the editor use **Edit → Undo**. For files moved by cleanup, open the Trash and choose **Put Back**.
+**Undo a mistake.** Before you save, use **Edit → Undo** in the editor. After **Save** or **Save & Close** a single file cannot be restored by M3, because it was edited in place; use your own backup. For files moved by the Queue's cleanup options, open the Trash and choose **Put Back**.
 
 **Start over with a stuck download.** Remove its row, make sure the file is in the Incoming Folder, and click **Scan Now**.
 

@@ -86,7 +86,12 @@ class QueueSetOutputFilenameAction: NSObject, QueueActionProtocol {
         // first would just leave an empty folder behind once ingestion
         // moves the file out, so this is left as the one destination
         // that never gets a subfolder regardless of the preference above.
-        if let subfolder = mp4File.preferredOutputSubfolder(), destDirectory.isAutomaticMediaIngestFolder == false {
+        // Automatic delivery to an Automatically Add folder: the file is
+        // written straight into it, no folders of its own.
+        if let delivery = mp4File.deliveryFolder, delivery.isAutomaticMediaIngestFolder {
+            destDirectory = delivery
+        }
+        else if let subfolder = mp4File.preferredOutputSubfolder(), destDirectory.isAutomaticMediaIngestFolder == false {
             let components = subfolder.split(separator: "/").map(String.init)
 
             // Same Ready for Media Library redirect Document.swift's
@@ -96,7 +101,7 @@ class QueueSetOutputFilenameAction: NSObject, QueueActionProtocol {
             // involved at all) used to always land its new folder next to
             // wherever its own destination already was, even with a Ready
             // for Media Library folder configured.
-            if let readyForLibraryFolder = MediaIntakePrefs.readyForLibraryFolder {
+            if let readyForLibraryFolder = mp4File.deliveryFolder {
                 if components.count == 1 {
                     // Movie: a one-shot folder, so an existing folder with
                     // the exact same name is treated as an unrelated
@@ -290,11 +295,29 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
     private let preferredArtwork: ArtworkType
     private let preferredArtworkSize: ArtworkSize
 
+    /// The name the user approved for this release. When set, the search
+    /// uses it instead of the file's own name or tags: inside a release
+    /// the file is often called something like "01.mp4", while the
+    /// approved name is what identifies the movie.
+    let searchName: String?
+
+    /// Exact title to search for, typed or confirmed by the user on the
+    /// Metadata Review sheet. Wins over searchName and is always a movie
+    /// search (that sheet only searches movies).
+    let searchTerm: String?
+
+    /// Which of the search's results to apply (0 = the first). The Metadata
+    /// Review sheet sets this to the result the user picked.
+    let searchResultIndex: Int
+
     var type: QueueActionType { return .pre }
     var localizedDescription: String { return NSLocalizedString("Searching metadata", comment: "Action localized description.") }
     override var description: String { return NSLocalizedString("Search Metadata", comment: "Action description.") }
 
-    init(movieLanguage: String, tvShowLanguage: String, movieProvider: String, tvShowProvider: String, preferredArtwork: Int, preferredArtworkSize: Int) {
+    init(movieLanguage: String, tvShowLanguage: String, movieProvider: String, tvShowProvider: String, preferredArtwork: Int, preferredArtworkSize: Int, searchName: String? = nil, searchTerm: String? = nil, searchResultIndex: Int = 0) {
+        self.searchName = searchName
+        self.searchTerm = searchTerm
+        self.searchResultIndex = max(0, searchResultIndex)
         self.movieLanguage = movieLanguage;
         self.movieProvider = movieProvider;
 
@@ -318,8 +341,9 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
         case let .movie(title):
             let service = MetadataSearch.service(name: self.movieProvider)
             let movieSearch = MetadataSearch.movieSeach(service: service, movie: title, language: self.movieLanguage)
+            let index = self.searchResultIndex
             _ = movieSearch.search(completionHandler: {
-                if let result = $0.first {
+                if let result = ($0.indices.contains(index) ? $0[index] : $0.first) {
                     _ = movieSearch.loadAdditionalMetadata(result, completionHandler: { metadata = $0 }).run()
                 }
             }).run()
@@ -385,7 +409,14 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
 
     func runAction(_ item: QueueItem) -> Bool {
         if let file = item.mp4File {
-            let searchTerms = file.extractSearchTerms(fallbackURL: item.fileURL)
+            let searchTerms: MetadataSearchTerms
+            if let term = searchTerm, term.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
+                searchTerms = .movie(title: term.trimmingCharacters(in: .whitespacesAndNewlines))
+            } else if let name = searchName, name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
+                searchTerms = MetadataSearchTerms.fromReleaseName(name)
+            } else {
+                searchTerms = file.extractSearchTerms(fallbackURL: item.fileURL)
+            }
             if let metadata = searchMetadata(terms: searchTerms) {
 
                 for item in metadata.metadataItemsFiltered(byIdentifier: MP42MetadataKeyHDVideo) {
@@ -412,6 +443,9 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
         aCoder.encode(tvShowProvider, forKey: "_tvShowProvider")
         aCoder.encode(Int32(preferredArtwork.rawValue), forKey: "_preferredArtwork")
         aCoder.encode(Int32(preferredArtworkSize.rawValue), forKey: "_preferredArtworkSize")
+        aCoder.encode(searchName, forKey: "_searchName")
+        aCoder.encode(searchTerm, forKey: "_searchTerm")
+        aCoder.encode(Int32(searchResultIndex), forKey: "_searchResultIndex")
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -429,6 +463,9 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
         self.tvShowProvider = tvShowProvider
         self.preferredArtwork = preferredArtwork
         self.preferredArtworkSize = preferredArtworkSize
+        self.searchName = aDecoder.decodeObject(of: NSString.self, forKey: "_searchName") as String?
+        self.searchTerm = aDecoder.decodeObject(of: NSString.self, forKey: "_searchTerm") as String?
+        self.searchResultIndex = Int(aDecoder.decodeInt32(forKey: "_searchResultIndex"))
     }
 
     static var supportsSecureCoding: Bool { return true }
@@ -799,7 +836,43 @@ class QueueMoveToLibraryAction: NSObject, QueueActionProtocol {
     func runAction(_ item: QueueItem) -> Bool {
         guard let release = item.delegate?.release(withID: releaseID) else { return false }
 
+        // Media Locations tab: the first matching delivery rule's folder, else
+        // else the default (staging or Automatically Add) folder.
+        let destinationRoot = item.mp4File?.deliveryFolder ?? self.destinationRoot
+
         let sourceFolder = release.folderURL
+
+        // An Automatically Add to iTunes/TV folder takes the finished file
+        // alone, not a folder: iTunes/the TV app ingest and organize it from
+        // there. What is left of the release folder (the originals, which
+        // "Clean up processed files" can trash) stays behind for the empty
+        // folder cleanup.
+        if destinationRoot.isAutomaticMediaIngestFolder {
+            let finished = item.destURL
+            guard FileManager.default.fileExists(atPath: finished.path) else { return false }
+            let target = QueueController.uniqueFileDestination(for: destinationRoot.appendingPathComponent(finished.lastPathComponent))
+            do {
+                try FileManager.default.createDirectory(at: destinationRoot, withIntermediateDirectories: true)
+                try FileManager.default.moveItem(at: finished, to: target)
+            } catch {
+                NSLog("[FolderSync] FAILED: Queue couldn't move \(finished.lastPathComponent) to \(destinationRoot.path): \(error.localizedDescription)")
+                guard let recovered = FolderMoveRecovery.recover(error: error, itemURL: finished, folderName: finished.deletingPathExtension().lastPathComponent, movingWholeFolder: false, partialDestination: target) else {
+                    return false
+                }
+                item.destURL = recovered.appendingPathComponent(finished.lastPathComponent)
+                release.stage = .done
+                return true
+            }
+            item.destURL = target
+
+            var originals = release.mergeOrder ?? []
+            originals.append(contentsOf: release.sourceFileURLs)
+            ProcessedFileCleaner.trashOriginals(originals, oldFolder: sourceFolder, newFolder: sourceFolder, keeping: [])
+
+            release.stage = .done
+            return true
+        }
+
         let candidate = destinationRoot.appendingPathComponent(sourceFolder.lastPathComponent)
         let destination = QueueController.uniqueFolderDestination(for: candidate)
 
@@ -881,12 +954,31 @@ class QueueMoveFileToLibraryAction: NSObject, QueueActionProtocol {
         let outputURL = item.destURL
         guard fileManager.fileExists(atPath: outputURL.path) else { return false }
 
+        let destinationRoot = item.mp4File?.deliveryFolder ?? self.destinationRoot
         let outputFolder = outputURL.deletingLastPathComponent().standardizedFileURL
         let rootPath = destinationRoot.standardizedFileURL.path
 
-        // Already in a folder of its own inside Ready for Media Library.
+        // Already in a folder of its own inside the destination.
         if outputFolder.path.hasPrefix(rootPath + "/") { return true }
         if outputFolder.isAutomaticMediaIngestFolder { return true }
+
+        // Delivery to an Automatically Add folder: the file alone, no folder.
+        if destinationRoot.isAutomaticMediaIngestFolder {
+            let target = QueueController.uniqueFileDestination(for: destinationRoot.appendingPathComponent(outputURL.lastPathComponent))
+            do {
+                try fileManager.createDirectory(at: destinationRoot, withIntermediateDirectories: true)
+                try fileManager.moveItem(at: outputURL, to: target)
+                item.destURL = target
+                return true
+            } catch {
+                NSLog("[FolderSync] FAILED: Queue couldn't move \(outputURL.lastPathComponent) to \(destinationRoot.path): \(error.localizedDescription)")
+                guard let recovered = FolderMoveRecovery.recover(error: error, itemURL: outputURL, folderName: outputURL.deletingPathExtension().lastPathComponent, movingWholeFolder: false, partialDestination: target) else {
+                    return false
+                }
+                item.destURL = recovered.appendingPathComponent(outputURL.lastPathComponent)
+                return true
+            }
+        }
 
         if let kindValue = item.mp4File?.metadata.metadataItemsFiltered(byIdentifier: MP42MetadataKeyMediaKind).first?.numberValue?.intValue,
            MediaKind(rawValue: kindValue) == .tvShow {

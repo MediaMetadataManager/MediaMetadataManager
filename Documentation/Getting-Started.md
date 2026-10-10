@@ -2,7 +2,7 @@
 title: "Media Metadata Manager"
 subtitle: "Getting Started Guide"
 doctype: "Quick Start"
-version: "Documentation set of October 9, 2026"
+version: "Documentation set of October 10, 2026"
 ---
 
 # Welcome
@@ -36,7 +36,7 @@ Work flows in one direction: **Incoming Folder → Queue → (review where neede
 
 1. Choose **Media Metadata Manager → Preferences…** and open the **Sources** tab, then the **Media Intake** sub-tab.
 2. Under **Incoming Folders**, click **+** and choose the folder where your downloads finish. You can add several.
-3. Under **Ready for Media Library**, click **Choose…** and pick the folder where finished files should be placed.
+3. Open the **Media Locations** sub-tab and, under **Staging folder (Ready for Media Library)**, click **Choose…** and pick the folder where finished files should wait for you to check them. Leave **Deliver automatically** off until you trust the results. (Later you can add rules there to send, for example, documentaries or a rating to a different folder, and turn automatic delivery on; movies and TV shows have separate rules, and the default destination is the iTunes/TV Automatically Add folder.)
 4. Leave the other options at their defaults for now. Every option is off or conservative by default, so nothing happens behind your back.
 5. Still in Preferences, open **Sources → Providers** and make sure the metadata providers you want are ticked for **Movies** and **TV Shows**.
 
@@ -50,6 +50,8 @@ Use this when you just want to tag one file.
 2. In the editor, click **Search Metadata** in the toolbar. **Do not skip this step** — a file saved with no title tagged keeps its original name.
 3. Pick the best match from the results. Title, description, cast and artwork appear on the right.
 4. Click **Save**, or **Save & Close** to finish in one click.
+
+**Good to know:** the file is changed in place and then moved into your Ready for Media Library folder. M3 does not keep the original and nothing goes to the Trash. If you may want the old version back, copy the file first.
 
 # Your first batch, the Intake way
 
@@ -74,7 +76,7 @@ When you trust the results, these options in **Sources → Media Intake** remove
 | Automatically approve high-confidence naming matches | Skips the Naming Review sheet when the online title matches the file name exactly. |
 | Automatically merge multi-file releases with a clear sequence | Skips the Merge Review sheet when parts are numbered and compatible. |
 | Remove empty folders automatically | Tidies folders left behind. Items go to the Trash. |
-| Clean up processed files | Moves the original parts to the Trash after a merge or conversion. Off by default so your originals stay as a backup. |
+| Clean up processed files | Moves the original parts to the Trash after a Queue merge or conversion. Off by default so your originals stay as a backup. Does not apply to files saved from the editor. |
 
 # If something looks wrong
 
@@ -84,7 +86,7 @@ When you trust the results, these options in **Sources → Media Intake** remove
 | A row says **Rejected** | You rejected its name. Double-click the row to review it again. |
 | A merge failed | The row shows the reason in plain language, for example parts with different video formats. Reopen the row to change the selection. |
 | The match is wrong | In the Metadata Review sheet or the editor, search again or choose another result. **Search All Providers…** in the Naming Review sheet shows one result from every enabled source. |
-| You deleted something by mistake | Items removed by cleanup go to the macOS Trash and are listed in log files in `~/Library/Application Support/M3/`. |
+| You deleted something by mistake | Items removed by the Queue's cleanup options go to the macOS Trash and are listed in log files in `~/Library/Application Support/M3/`. A single file saved from the editor is changed in place and moved to Ready, with no original kept, so restore it from your own backup. |
 
 # Where to go next
 

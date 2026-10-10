@@ -91,9 +91,20 @@ public enum FileMerger {
         output.progressHandler = progressHandler
         defer { output.progressHandler = nil }
 
+        // Written under a hidden temporary name and renamed once complete,
+        // so a half-written merge never shows up under the final name
+        // (where it could be opened, scanned or tagged while still
+        // incomplete).
+        let temporary = destination.deletingLastPathComponent()
+            .appendingPathComponent(".\(destination.deletingPathExtension().lastPathComponent).merging")
+            .appendingPathExtension(destination.pathExtension)
+        try? FileManager.default.removeItem(at: temporary)
         do {
-            try output.write(to: destination, options: options)
+            try output.write(to: temporary, options: options)
+            try? FileManager.default.removeItem(at: destination)
+            try FileManager.default.moveItem(at: temporary, to: destination)
         } catch {
+            try? FileManager.default.removeItem(at: temporary)
             throw FileMergerError.writeFailed(underlying: error)
         }
 

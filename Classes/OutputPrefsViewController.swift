@@ -363,6 +363,17 @@ private final class RuleRowView: NSView, TokenChangeObserver, NSTextFieldDelegat
 
     // MARK: NSTextFieldDelegate / NSComboBoxDelegate
 
+    /// Refresh the Rating list each time the dropdown opens, so a change
+    /// to the General tab's "Show ratings for:" is picked up at once.
+    func comboBoxWillPopUp(_ notification: Notification) {
+        guard let combo = notification.object as? NSComboBox else { return }
+        for (conditionIndex, controls) in conditionControls.enumerated() where combo === controls.valueField {
+            guard conditionIndex < rule.conditions.count else { return }
+            populateAutocomplete(combo, field: rule.conditions[conditionIndex].field)
+            return
+        }
+    }
+
     func controlTextDidEndEditing(_ obj: Notification) {
         guard let field = obj.object as? NSTextField else { return }
         for (conditionIndex, controls) in conditionControls.enumerated() where field === controls.valueField {

@@ -191,6 +191,9 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             }
             self.statusLabel.stringValue = NSLocalizedString("Done", comment: "Queue -> Done")
 
+            if MediaIntakePrefs.autoRemoveCompletedItems {
+                self.removeCompletedItems(self)
+            }
             self.updateUI()
             EmptyFolderCleaner.runAutomaticallyIfEnabled()
 
@@ -396,6 +399,9 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
                     }
 
                     if let doc = doc {
+                        // A release item: search by the approved name, not
+                        // by the file's own name (often just "01.mp4").
+                        doc.searchNameHint = item.actions.compactMap { ($0 as? QueueMetadataAction)?.searchName }.first
                         NSDocumentController.shared.addDocument(doc)
                         doc.makeWindowControllers()
                         doc.showWindows()
@@ -749,7 +755,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             return
         }
 
-        let excluded = [MediaIntakePrefs.readyForLibraryFolder].compactMap { $0 }
+        let excluded = MediaIntakePrefs.allDeliveryFolders
         intakeScanInProgress = true
 
         DispatchQueue.global(qos: .utility).async { [weak self] in
@@ -1031,7 +1037,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         // output is written, a file sitting anywhere outside Ready for
         // Media Library gets a folder of its own there, whether or not it
         // had a parent folder to begin with.
-        if let readyForLibraryFolder = MediaIntakePrefs.readyForLibraryFolder {
+        if let readyForLibraryFolder = MediaIntakePrefs.fallbackDeliveryFolder {
             item.addAction(QueueMoveFileToLibraryAction(destinationRoot: readyForLibraryFolder))
         }
         return item
@@ -1945,7 +1951,8 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     /// the release pipeline -- a plain manually-added QueueItem never
     /// goes through here.
     private func attemptAutoResolveMetadata(for release: QueueRelease) {
-        guard release.stage == .pendingMetadata, release.sourceFileURLs.count == 1 else { return }
+        guard release.stage == .pendingMetadata,
+              release.sourceFileURLs.count == 1 || release.mergedFileURL != nil else { return }
 
         guard prefs.searchMetadata else {
             resolveSingleFileRelease(release)
@@ -1977,8 +1984,17 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
                                                                                      localYear: localYear,
                                                                                      onlineTitle: onlineTitle,
                                                                                      onlineYear: onlineYear)
-            } else {
+            } else if let query = query, query.season != nil, query.episode != nil {
+                // The search above is a movie search; a TV episode finding
+                // nothing there says nothing about its TV metadata, so it
+                // carries on as before.
                 highConfidence = true
+            } else {
+                // Nothing found online at all: stop at Metadata Review so
+                // the user can search with other words (or continue
+                // without metadata) instead of delivering the file with
+                // empty tags.
+                highConfidence = false
             }
 
             DispatchQueue.main.async {
@@ -2024,7 +2040,11 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         // reviewNaming(for:)/reviewMerge(for:) use.
         window.beginSheet(reviewWindow) { response in
             if response == .OK {
-                self.resolveSingleFileRelease(release, artworkOverride: reviewController.chosenArtworkType)
+                self.resolveSingleFileRelease(release,
+                                              artworkOverride: reviewController.chosenArtworkType,
+                                              searchTerm: reviewController.chosenSearchTerm,
+                                              searchResultIndex: reviewController.chosenResultIndex,
+                                              skipMetadata: reviewController.hasMatch == false)
                 self.updateUI()
             }
             // .cancel: leave the release parked in .pendingMetadata, same
@@ -2041,22 +2061,25 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     /// the review sheet's Portrait/Landscape toggle, takes the place of
     /// the global providerArtwork preference for this one release only --
     /// everything else about QueueMetadataAction's wiring is unchanged.
-    private func resolveSingleFileRelease(_ release: QueueRelease, artworkOverride: ArtworkType? = nil) {
-        guard let sourceURL = release.sourceFileURLs.first else { return }
+    private func resolveSingleFileRelease(_ release: QueueRelease, artworkOverride: ArtworkType? = nil, searchTerm: String? = nil, searchResultIndex: Int = 0, skipMetadata: Bool = false) {
+        guard let sourceURL = release.mergedFileURL ?? release.sourceFileURLs.first else { return }
 
         let destURL = destination(for: sourceURL)
         let item = QueueItem(fileURL: sourceURL, destination: destURL)
 
-        if prefs.searchMetadata {
+        if prefs.searchMetadata && skipMetadata == false {
             let artwork = artworkOverride ?? ArtworkType(rawValue: prefs.providerArtwork) ?? .poster
             item.addAction(QueueMetadataAction(movieLanguage: prefs.movieProviderLanguage,
                                                 tvShowLanguage: prefs.tvShowProviderLanguage,
                                                 movieProvider: prefs.movieProvider,
                                                 tvShowProvider: prefs.tvShowProvider,
                                                 preferredArtwork: artwork.rawValue,
-                                                preferredArtworkSize: prefs.providerArtworkSize))
+                                                preferredArtworkSize: prefs.providerArtworkSize,
+                                                searchName: release.approvedName ?? release.folderURL.lastPathComponent,
+                                                searchTerm: searchTerm,
+                                                searchResultIndex: searchResultIndex))
         }
-        if let readyForLibraryFolder = MediaIntakePrefs.readyForLibraryFolder {
+        if let readyForLibraryFolder = MediaIntakePrefs.fallbackDeliveryFolder {
             item.addAction(QueueMoveToLibraryAction(releaseID: release.id, destinationRoot: readyForLibraryFolder))
         }
 
@@ -2108,7 +2131,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     /// rather than asking via a save panel (see runMerge(for:order:)
     /// below and the design doc's 4.5), so it still needs to never
     /// silently overwrite something already sitting there.
-    private static func uniqueFileDestination(for candidate: URL) -> URL {
+    static func uniqueFileDestination(for candidate: URL) -> URL {
         guard FileManager.default.fileExists(atPath: candidate.path) else { return candidate }
 
         let parent = candidate.deletingLastPathComponent()
@@ -2146,6 +2169,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     ///    resolveMergedRelease(_:mergedFileURL:) below.
     private func runMerge(for release: QueueRelease, order: [URL]) {
         release.mergeOrder = order
+        release.mergedFileURL = nil
         release.stage = .merging
         release.mergeProgress = 0
         updateUI()
@@ -2186,24 +2210,15 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     /// kept as its own small method rather than folded into
     /// resolveSingleFileRelease(_:) since the source URL here is a just-
     /// written merge output, not release.sourceFileURLs.first.
+    ///
+    /// A merged release now takes the same metadata step a single file
+    /// does: a confident online match resolves it straight away, anything
+    /// else parks it in .pendingMetadata so the Metadata Review sheet
+    /// (double-click / Edit) lets the user confirm or search again.
     private func resolveMergedRelease(_ release: QueueRelease, mergedFileURL: URL) {
-        let destURL = destination(for: mergedFileURL)
-        let item = QueueItem(fileURL: mergedFileURL, destination: destURL)
-
-        if prefs.searchMetadata {
-            item.addAction(QueueMetadataAction(movieLanguage: prefs.movieProviderLanguage,
-                                                tvShowLanguage: prefs.tvShowProviderLanguage,
-                                                movieProvider: prefs.movieProvider,
-                                                tvShowProvider: prefs.tvShowProvider,
-                                                preferredArtwork: prefs.providerArtwork,
-                                                preferredArtworkSize: prefs.providerArtworkSize))
-        }
-        if let readyForLibraryFolder = MediaIntakePrefs.readyForLibraryFolder {
-            item.addAction(QueueMoveToLibraryAction(releaseID: release.id, destinationRoot: readyForLibraryFolder))
-        }
-
-        release.resolvedItem = item
-        release.stage = .pendingLibraryMove
+        release.mergedFileURL = mergedFileURL
+        release.stage = .pendingMetadata
+        attemptAutoResolveMetadata(for: release)
         updateUI()
     }
 

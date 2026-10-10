@@ -40,13 +40,13 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
     private var scanNowButton: NSButton!
     private var scanResultLabel: NSTextField!
     private var readyForLibraryFolderField: NSTextField!
-    private var automaticMediaIngestFolderList: FolderListView!
     private var autoWatchCheckbox: NSButton!
     private var renameAfterMergeCheckbox: NSButton!
     private var autoApproveHighConfidenceCheckbox: NSButton!
     private var autoMergeOnSequenceCheckbox: NSButton!
     private var autoCleanEmptyFoldersCheckbox: NSButton!
     private var autoCleanProcessedFilesCheckbox: NSButton!
+    private var autoRemoveCompletedCheckbox: NSButton!
 
     /// Maps each editable folder field to the preference it writes to, so
     /// one text-field delegate method (controlTextDidEndEditing(_:)) can
@@ -79,6 +79,7 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         descriptionLabel.preferredMaxLayoutWidth = 620
 
         let intakeList = FolderListView()
+        intakeList.alwaysKeepsOneRow = true
         intakeList.onChange = { MediaIntakePrefs.intakeFolders = $0 }
         intakeList.onLayoutChange = { [weak self] in self?.folderListLayoutDidChange() }
         intakeList.setFolders(MediaIntakePrefs.intakeFolders)
@@ -108,7 +109,7 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         autoApproveHighConfidenceCheckbox.translatesAutoresizingMaskIntoConstraints = false
         autoApproveHighConfidenceCheckbox.toolTip = NSLocalizedString("When the naming review window finds an online match whose title and year agree with the local filename guess, it fills it in and approves automatically after a moment instead of waiting for a manual click. The window still briefly shows the match first, so there's time to reject it if it looks wrong.", comment: "")
 
-        let readyForLibrarySection = makeFolderRow(title: NSLocalizedString("Ready for Media Library", comment: ""),
+        _ = makeFolderRow(title: NSLocalizedString("Ready for Media Library", comment: ""),
                                                     chooseAction: #selector(chooseReadyForLibraryFolder(_:)),
                                                     getValue: { MediaIntakePrefs.readyForLibraryFolder },
                                                     setValue: { MediaIntakePrefs.readyForLibraryFolder = $0 },
@@ -134,38 +135,23 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         autoCleanProcessedFilesCheckbox.translatesAutoresizingMaskIntoConstraints = false
         autoCleanProcessedFilesCheckbox.toolTip = NSLocalizedString("Once a release has been merged or converted and moved into Ready for Media Library, move the original files it was made from (the separate parts, or the unconverted source) to the Trash so they can be recovered from there, and add their paths to a log file (Cleaned Up Processed Files.txt in Application Support/M3). The finished file is never touched. Leave this off to keep the originals next to the result as a backup in case a merge turns out badly.", comment: "")
 
-        // "Media Locations" is deliberately small today -- just the one
-        // folder below -- but is meant to grow into the place the user
-        // configures every location their media lives, per their own
-        // framing of this request.
-        let mediaLocationsHeaderLabel = NSTextField(labelWithString: NSLocalizedString("Media Locations", comment: ""))
-        mediaLocationsHeaderLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
-        mediaLocationsHeaderLabel.translatesAutoresizingMaskIntoConstraints = false
+        autoRemoveCompletedCheckbox = NSButton(checkboxWithTitle: NSLocalizedString("Remove finished items from the Queue automatically", comment: ""),
+                                                target: self, action: #selector(toggleAutoRemoveCompleted(_:)))
+        autoRemoveCompletedCheckbox.translatesAutoresizingMaskIntoConstraints = false
+        autoRemoveCompletedCheckbox.toolTip = NSLocalizedString("When a Queue run finishes, the finished rows (the ones with a checkmark) are taken off the list for you. Only the rows go; your files are not touched. Failed rows and rows still waiting for you stay.", comment: "")
 
-        let mediaLocationsDescriptionLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Leave blank to use the location iTunes/the TV app set up automatically. Add more if you keep several libraries.", comment: ""))
-        mediaLocationsDescriptionLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
-        mediaLocationsDescriptionLabel.textColor = .secondaryLabelColor
-        mediaLocationsDescriptionLabel.translatesAutoresizingMaskIntoConstraints = false
-        mediaLocationsDescriptionLabel.preferredMaxLayoutWidth = 620
-
-        let ingestList = FolderListView()
-        // Shown greyed-out in the first row while nothing is set, so the
-        // user can see where files will actually land by default -- see
-        // MediaIntakePrefs.defaultAutomaticMediaIngestFolderURL().
-        ingestList.placeholder = MediaIntakePrefs.defaultAutomaticMediaIngestFolderURL()?.path
-            ?? NSLocalizedString("Not Set", comment: "")
-        ingestList.onChange = { MediaIntakePrefs.automaticMediaIngestFolders = $0 }
-        ingestList.onLayoutChange = { [weak self] in self?.folderListLayoutDidChange() }
-        ingestList.setFolders(MediaIntakePrefs.automaticMediaIngestFolders)
-        automaticMediaIngestFolderList = ingestList
-        let automaticMediaIngestSection = makeFolderListSection(title: NSLocalizedString("Automatically Add to iTunes/TV Folders", comment: ""), list: ingestList)
-        automaticMediaIngestSection.toolTip = NSLocalizedString("A file saved straight into one of these folders is left alone instead of being wrapped in its own folder, since iTunes/the TV app ingests and organizes it from there itself. Defaults to the location iTunes/the TV app set up automatically; add folders here only if you've relocated that one or keep more than one library.", comment: "")
+        // The Ready for Media Library folder moved to the Media Locations tab,
+        // where it is the staging folder.
+        let deliveryNoteLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Where finished files are delivered (the staging folder, the iTunes/TV Automatically Add folders, and rules by genre, rating, year and so on) is set on the Media Locations tab.", comment: ""))
+        deliveryNoteLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        deliveryNoteLabel.textColor = .secondaryLabelColor
+        deliveryNoteLabel.translatesAutoresizingMaskIntoConstraints = false
+        deliveryNoteLabel.preferredMaxLayoutWidth = 620
 
         let mainStack = NSStackView(views: [headerLabel, descriptionLabel, intakeSection,
                                              autoWatchCheckbox, autoApproveHighConfidenceCheckbox,
-                                             renameAfterMergeCheckbox, autoMergeOnSequenceCheckbox, autoCleanEmptyFoldersCheckbox, autoCleanProcessedFilesCheckbox,
-                                             readyForLibrarySection,
-                                             mediaLocationsHeaderLabel, mediaLocationsDescriptionLabel, automaticMediaIngestSection])
+                                             renameAfterMergeCheckbox, autoMergeOnSequenceCheckbox, autoCleanEmptyFoldersCheckbox, autoCleanProcessedFilesCheckbox, autoRemoveCompletedCheckbox,
+                                             deliveryNoteLabel])
         mainStack.orientation = .vertical
         mainStack.alignment = .leading
         mainStack.spacing = 12
@@ -173,13 +159,12 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         mainStack.setCustomSpacing(16, after: descriptionLabel)
         mainStack.setCustomSpacing(8, after: autoWatchCheckbox)
         mainStack.setCustomSpacing(8, after: autoApproveHighConfidenceCheckbox)
-        mainStack.setCustomSpacing(20, after: readyForLibrarySection)
+        mainStack.setCustomSpacing(20, after: deliveryNoteLabel)
         mainStack.setCustomSpacing(8, after: renameAfterMergeCheckbox)
         mainStack.setCustomSpacing(8, after: autoMergeOnSequenceCheckbox)
         mainStack.setCustomSpacing(8, after: autoCleanEmptyFoldersCheckbox)
-        mainStack.setCustomSpacing(20, after: autoCleanProcessedFilesCheckbox)
-        mainStack.setCustomSpacing(4, after: mediaLocationsHeaderLabel)
-        mainStack.setCustomSpacing(12, after: mediaLocationsDescriptionLabel)
+        mainStack.setCustomSpacing(8, after: autoCleanProcessedFilesCheckbox)
+        mainStack.setCustomSpacing(20, after: autoRemoveCompletedCheckbox)
         mainStack.translatesAutoresizingMaskIntoConstraints = false
 
         view.addSubview(mainStack)
@@ -190,11 +175,7 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
             mainStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
 
             intakeSection.leadingAnchor.constraint(equalTo: mainStack.leadingAnchor),
-            intakeSection.trailingAnchor.constraint(equalTo: mainStack.trailingAnchor),
-            readyForLibrarySection.leadingAnchor.constraint(equalTo: mainStack.leadingAnchor),
-            readyForLibrarySection.trailingAnchor.constraint(equalTo: mainStack.trailingAnchor),
-            automaticMediaIngestSection.leadingAnchor.constraint(equalTo: mainStack.leadingAnchor),
-            automaticMediaIngestSection.trailingAnchor.constraint(equalTo: mainStack.trailingAnchor)
+            intakeSection.trailingAnchor.constraint(equalTo: mainStack.trailingAnchor)
         ])
 
         mainStack.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20).isActive = true
@@ -206,6 +187,7 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         autoMergeOnSequenceCheckbox.state = MediaIntakePrefs.autoMergeOnSequence ? .on : .off
         autoCleanEmptyFoldersCheckbox.state = MediaIntakePrefs.autoCleanEmptyFolders ? .on : .off
         autoCleanProcessedFilesCheckbox.state = MediaIntakePrefs.autoCleanProcessedFiles ? .on : .off
+        autoRemoveCompletedCheckbox.state = MediaIntakePrefs.autoRemoveCompletedItems ? .on : .off
     }
 
     // MARK: - Layout helpers
@@ -398,6 +380,10 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
     @objc private func toggleAutoCleanProcessedFiles(_ sender: NSButton) {
         MediaIntakePrefs.autoCleanProcessedFiles = sender.state == .on
     }
+
+    @objc private func toggleAutoRemoveCompleted(_ sender: NSButton) {
+        MediaIntakePrefs.autoRemoveCompletedItems = sender.state == .on
+    }
 }
 
 
@@ -409,7 +395,7 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
 /// typing a path and pressing Return / clicking away, picking a folder, adding
 /// or removing a row -- reports the full list of non-empty, de-duplicated
 /// folders through onChange, so the owner has exactly one place to save.
-private final class FolderListView: NSStackView, NSTextFieldDelegate {
+final class FolderListView: NSStackView, NSTextFieldDelegate {
 
     /// Called with every non-empty folder in the list, in row order.
     var onChange: (([URL]) -> Void)?
@@ -418,6 +404,14 @@ private final class FolderListView: NSStackView, NSTextFieldDelegate {
     /// Greyed-out text of the first row while it's empty.
     var placeholder: String = NSLocalizedString("Not Set", comment: "")
     var maximumRows = 10
+    /// When true the list always keeps one row, so the minus button is disabled while only one row is left
+    /// (the row can still be edited with Choose or by typing).
+    var alwaysKeepsOneRow = false
+    /// A folder the app uses on its own while the first row is blank (for
+    /// example the folder iTunes/the TV app set up). When set, plus works on
+    /// that blank first row, and the default is saved explicitly as the
+    /// first folder as soon as a second one is entered, so nothing is lost.
+    var implicitDefault: URL?
 
     private final class Row {
         let stack: NSStackView
@@ -522,8 +516,10 @@ private final class FolderListView: NSStackView, NSTextFieldDelegate {
     private func updateButtons() {
         for (index, row) in rows.enumerated() {
             let isBlank = row.field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            row.add.isEnabled = isBlank == false && rows.count < maximumRows
-            row.remove.isEnabled = !(rows.count == 1 && isBlank)
+            let otherBlankRowExists = rows.enumerated().contains { $0.offset != index && $0.element.field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            let blankButUsesDefault = isBlank && index == 0 && implicitDefault != nil && otherBlankRowExists == false
+            row.add.isEnabled = (isBlank == false || blankButUsesDefault) && rows.count < maximumRows
+            row.remove.isEnabled = alwaysKeepsOneRow ? rows.count > 1 : !(rows.count == 1 && isBlank)
             row.field.placeholderString = index == 0
                 ? placeholder
                 : NSLocalizedString("Choose or type a folder path", comment: "")
@@ -540,6 +536,11 @@ private final class FolderListView: NSStackView, NSTextFieldDelegate {
             if seen.insert(url.path).inserted {
                 urls.append(url)
             }
+        }
+        if let implicitDefault = implicitDefault, urls.isEmpty == false,
+           rows.first?.field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true,
+           seen.contains(implicitDefault.standardizedFileURL.path) == false {
+            urls.insert(implicitDefault.standardizedFileURL, at: 0)
         }
         onChange?(urls)
     }

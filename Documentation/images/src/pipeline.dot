@@ -20,7 +20,8 @@ digraph G {
   ready [label="Item ready in the Queue\nmetadata + move-to-library attached"];
   start2[label="Start: write file, fetch metadata and artwork, tag"];
   move  [label="Move to Ready for Media Library"];
-  clean [label="Optional cleanup\noriginals to Trash, empty folders removed", fillcolor="#efe6f5", color="#8061a0"];
+  clean [label="Optional cleanup (Queue runs only)\nmerged/converted originals to Trash, empty folders removed", fillcolor="#efe6f5", color="#8061a0"];
+  edit  [label="Tag One File / Edit + Save\nedited in place, no original kept, no Trash", fillcolor="#fff2cc", color="#d6b656"];
   end   [label="Ready for Media Library\nyour final check before the media server", fillcolor="#2f7d4f", fontcolor="white", color="#2f7d4f"];
 
   start -> watch -> settle -> tv;
@@ -39,6 +40,8 @@ digraph G {
   mgrev -> merge;
   merge -> ready;
   ready -> start2 -> move -> clean -> end;
+  edit -> move [label=" Save & Close", style=dashed];
+  { rank=same; edit; start2 }
   { rank=same; tv; tvq }
   { rank=same; meta; mseq }
   { rank=same; mrev; mgrev }

@@ -16,6 +16,20 @@ private extension String {
     }
 }
 
+extension MetadataSearchTerms {
+    /// Search terms for an approved release name ("Title Vol N [Studio] (Year)"
+    /// or a scene-style name): just the bare title, or series/season/episode.
+    static func fromReleaseName(_ name: String) -> MetadataSearchTerms {
+        if let parsed = ReleaseFilenameParser.parse(name) {
+            if let season = parsed.season, let episode = parsed.episode {
+                return .tvShow(seriesName: parsed.title, season: season, episode: episode)
+            }
+            return .movie(title: parsed.title)
+        }
+        return .movie(title: ReleaseFilenameParser.normalizedDelimiters(name))
+    }
+}
+
 extension MP42File {
 
     enum TrackHDType : Int {

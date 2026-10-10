@@ -58,6 +58,11 @@ final class Document: NSDocument {
     /// see DocumentWindowController.searchMetadata(_:).
     var sourceFileURLHint: URL?
 
+    /// The approved release name, when this document was opened from a
+    /// Queue release item. The metadata search uses it in preference to the
+    /// file's own name, which inside a release is often just "01.mp4".
+    var searchNameHint: String?
+
     override init() {
         self.cancelled = false
         self.options = [:]
@@ -440,6 +445,23 @@ final class Document: NSDocument {
             return
         }
 
+        // Automatic delivery to an Automatically Add folder: the file alone
+        // goes there, with no folder of its own.
+        if let ingest = mp4.deliveryFolder, ingest.isAutomaticMediaIngestFolder {
+            let fileManager = FileManager.default
+            let target = QueueController.uniqueFileDestination(for: ingest.appendingPathComponent(fileURL.lastPathComponent))
+            do {
+                try fileManager.createDirectory(at: ingest, withIntermediateDirectories: true)
+                try fileManager.moveItem(at: fileURL, to: target)
+                self.fileURL = target
+                NSLog("[FolderSync] syncFolderStructureIfNeeded: moved \(target.lastPathComponent) into the Automatically Add folder")
+            } catch {
+                NSLog("[FolderSync] FAILED: couldn't move \(fileURL.lastPathComponent) into the Automatically Add folder: \(error.localizedDescription)")
+                recoverFromFolderMoveFailure(error: error, fileURL: fileURL, folderName: fileURL.deletingPathExtension().lastPathComponent, movingWholeFolder: false, partialDestination: target)
+            }
+            return
+        }
+
         switch mediaKind {
         case .movie:
             ensureOwnFolder(fileURL: fileURL, targetName: subfolder)
@@ -488,7 +510,7 @@ final class Document: NSDocument {
         // below fall through to renameEnclosingFolder(fileURL:currentFolder:to:)
         // -- which does its own, more specific "already there" check --
         // instead of stopping here.
-        if MediaIntakePrefs.readyForLibraryFolder == nil {
+        if mp4.deliveryFolder == nil {
             guard currentFolder.lastPathComponent != targetName else {
                 NSLog("[FolderSync] ensureOwnFolder: folder \(currentFolder.lastPathComponent) already named \(targetName) -- nothing to do")
                 return
@@ -557,7 +579,7 @@ final class Document: NSDocument {
         // in-place rename below does -- a shared staging folder is far
         // more likely to already hold something using that exact name
         // than a torrent/download's own folder is.
-        if let readyForLibraryFolder = MediaIntakePrefs.readyForLibraryFolder {
+        if let readyForLibraryFolder = mp4.deliveryFolder {
             let candidate = readyForLibraryFolder.appendingPathComponent(targetName)
 
             guard currentFolder.standardizedFileURL != candidate.standardizedFileURL else {
@@ -633,7 +655,7 @@ final class Document: NSDocument {
         // directly under Ready for Media Library instead of inside
         // fileURL's current (shared) folder, rather than creating it
         // locally and then having to move it a second time.
-        if let readyForLibraryFolder = MediaIntakePrefs.readyForLibraryFolder {
+        if let readyForLibraryFolder = mp4.deliveryFolder {
             let candidate = readyForLibraryFolder.appendingPathComponent(targetName)
             let targetFolder = QueueController.uniqueFolderDestination(for: candidate)
 
@@ -694,7 +716,7 @@ final class Document: NSDocument {
         // QueueSetOutputFilenameAction's identical TV branch
         // (Classes/QueueAction.swift) for the straight-through-the-Queue
         // path.
-        if let readyForLibraryFolder = MediaIntakePrefs.readyForLibraryFolder {
+        if let readyForLibraryFolder = mp4.deliveryFolder {
             var targetFolder = readyForLibraryFolder
             for component in components {
                 targetFolder.appendPathComponent(component)
@@ -758,7 +780,7 @@ final class Document: NSDocument {
     private func preventSleep() {
         sleepAssertionSuccess = IOPMAssertionCreateWithName(kIOPMAssertPreventUserIdleSystemSleep as CFString,
                                                   IOPMAssertionLevel(kIOPMAssertionLevelOn),
-                                                  "Subler Save Operation" as CFString,
+                                                  "Media Metadata Manager Save Operation" as CFString,
                                                   &sleepAssertion)
     }
 

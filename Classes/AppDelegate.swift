@@ -286,7 +286,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
                 defaults.set(Date(), forKey: "SBDonateAskDate")
 
                 let alert = NSAlert()
-                alert.messageText = NSLocalizedString("Support Subler", comment: "Donation -> title")
+                alert.messageText = NSLocalizedString("Support Media Metadata Manager", comment: "Donation -> title")
                 alert.informativeText = NSLocalizedString(" A lot of time and effort have gone into development, coding, and refinement.\n If you enjoy using it, please consider showing your appreciation with a donation.", comment: "Donation -> message")
                 alert.alertStyle = .informational
 
@@ -375,7 +375,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
         if state == .working || QueueController.tvShows.status == .working {
             let alert = NSAlert()
-            alert.messageText = NSLocalizedString("Are you sure you want to quit Subler?", comment: "Quit alert title.")
+            alert.messageText = NSLocalizedString("Are you sure you want to quit Media Metadata Manager?", comment: "Quit alert title.")
             alert.informativeText = NSLocalizedString("Your current queue will be lost. Do you want to quit anyway?", comment: "Quit alert description.")
             alert.addButton(withTitle: NSLocalizedString("Quit", comment: "Quit alert default action."))
             alert.addButton(withTitle: NSLocalizedString("Don't Quit", comment: "Quit alert cancel action."))

@@ -527,6 +527,27 @@ enum MediaIntakePrefs {
         set { ud.set(newValue, forKey: SBMediaIntakeReadyForLibraryFolder) }
     }
 
+    /// Delivery rules (see DeliveryRules.swift), one ordered list for
+    /// movies and one for TV shows. Stored as JSON, like the naming rules.
+    static var movieDeliveryRules: [DeliveryRule] {
+        get { deliveryRules(forKey: "SBMovieDeliveryRules") }
+        set { setDeliveryRules(newValue, forKey: "SBMovieDeliveryRules") }
+    }
+
+    static var tvDeliveryRules: [DeliveryRule] {
+        get { deliveryRules(forKey: "SBTVShowDeliveryRules") }
+        set { setDeliveryRules(newValue, forKey: "SBTVShowDeliveryRules") }
+    }
+
+    private static func deliveryRules(forKey key: String) -> [DeliveryRule] {
+        guard let data = ud.data(forKey: key) else { return [] }
+        return (try? JSONDecoder().decode([DeliveryRule].self, from: data)) ?? []
+    }
+
+    private static func setDeliveryRules(_ rules: [DeliveryRule], forKey key: String) {
+        ud.set(try? JSONEncoder().encode(rules), forKey: key)
+    }
+
     private static let SBAutomaticMediaIngestFolder = "SBAutomaticMediaIngestFolder"
 
     /// The user's explicit override of iTunes/Apple TV's own "Automatically
@@ -654,6 +675,16 @@ enum MediaIntakePrefs {
     @Stored(key: "SBMediaIntakeRenameSourceFolderAfterMerge", defaultValue: false)
     static var renameSourceFolderAfterMerge: Bool
 
+    /// "Automatic delivery" (Media Locations tab). Off (the default): finished
+    /// files go to the staging folder (Ready for Media Library) for the user
+    /// to look through, whatever the delivery rules say. On: they go straight
+    /// from the watched folder to their final destination -- the first
+    /// matching delivery rule's folder, else the default Automatically Add
+    /// folder -- with no staging step. Off by default so trust in the rules
+    /// is built up before they act without a human look.
+    @Stored(key: "SBMediaIntakeDeliverAutomatically", defaultValue: false)
+    static var deliverAutomatically: Bool
+
     /// When true, NamingReviewWindowController automatically approves a
     /// naming match it's confident about, rather than always waiting for
     /// a manual Approve click -- see
@@ -704,4 +735,12 @@ enum MediaIntakePrefs {
     /// as a backup.
     @Stored(key: "SBMediaIntakeAutoCleanProcessedFiles", defaultValue: false)
     static var autoCleanProcessedFiles: Bool
+
+    /// When true, the Queue drops its finished rows (the ones showing a
+    /// checkmark) by itself as soon as a run completes, instead of leaving
+    /// them until "Remove completed items" or the next launch. Only
+    /// removes rows from the list; files are never touched. Failed rows and
+    /// rows still waiting on you stay. Off by default.
+    @Stored(key: "SBMediaIntakeAutoRemoveCompletedItems", defaultValue: false)
+    static var autoRemoveCompletedItems: Bool
 }

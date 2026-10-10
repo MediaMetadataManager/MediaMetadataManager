@@ -133,7 +133,7 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
         headerLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
         headerLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        let descriptionLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Add a metadata source by describing its search API: where to search, where the results are in its response, and which response fields map to which annotations. No coding required. Double-click a source below to edit it, or click + to add a new one. To install a plugin, drag its .bundle file onto the list below; restart Subler afterward to start using it.", comment: ""))
+        let descriptionLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Add a metadata source by describing its search API: where to search, where the results are in its response, and which response fields map to which annotations. No coding required. Double-click a source below to edit it, or click + to add a new one. To install a plugin, drag its .bundle file onto the list below; restart Media Metadata Manager afterward to start using it.", comment: ""))
         descriptionLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         descriptionLabel.textColor = .secondaryLabelColor
         descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -376,7 +376,7 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
         showRestartNotice(messageText: installedNames.count == 1
             ? String(format: NSLocalizedString("\u{201c}%@\u{201d} installed", comment: ""), installedNames[0])
             : NSLocalizedString("Plugins installed", comment: ""),
-            informativeText: NSLocalizedString("Restart Subler to finish installing this plugin and make it available for searching.", comment: ""))
+            informativeText: NSLocalizedString("Restart Media Metadata Manager to finish installing this plugin and make it available for searching.", comment: ""))
     }
 
     private func removePlugin(at index: Int) {
@@ -418,7 +418,7 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
         selectedRow = nil
         updateRemoveButtonState()
         showRestartNotice(messageText: String(format: NSLocalizedString("\u{201c}%@\u{201d} removed", comment: ""), plugin.name),
-                           informativeText: NSLocalizedString("Restart Subler to finish removing this plugin.", comment: ""))
+                           informativeText: NSLocalizedString("Restart Media Metadata Manager to finish removing this plugin.", comment: ""))
     }
 
     private func showRestartNotice(messageText: String, informativeText: String) {
@@ -1636,7 +1636,7 @@ final class CustomSourceDetailViewController: NSViewController, NSTableViewDataS
         revealButton.bezelStyle = .smallSquare
         revealButton.isBordered = false
         revealButton.translatesAutoresizingMaskIntoConstraints = false
-        revealButton.toolTip = NSLocalizedString("Show/hide the API key -- useful for confirming it matches exactly what you tested outside Subler.", comment: "")
+        revealButton.toolTip = NSLocalizedString("Show/hide the API key -- useful for confirming it matches exactly what you tested outside Media Metadata Manager.", comment: "")
         // A borderless image-only button otherwise shrink-wraps to almost
         // nothing (the icon alone renders barely 10pt tall) -- too small to
         // notice next to the field it belongs to, so give it a real hit

@@ -70,6 +70,10 @@ import Cocoa
     var mergeOrder: [URL]?
     /// Friendly, already-translated MergeCompatibilityError text.
     var mergeErrorMessage: String?
+    /// The finished merge output, set once the merge succeeds. From then on
+    /// the release goes through the same metadata step as a single-file
+    /// release, using this file instead of sourceFileURLs.first.
+    var mergedFileURL: URL?
     /// Mirrors FileMerger's progressHandler while stage == .merging.
     /// Deliberately not persisted -- see encode(with:) below.
     var mergeProgress: Double = 0
@@ -104,6 +108,7 @@ import Cocoa
         aCoder.encode(approvedName, forKey: "SBQueueReleaseApprovedName")
         aCoder.encode(mergeOrder as NSArray?, forKey: "SBQueueReleaseMergeOrder")
         aCoder.encode(mergeErrorMessage, forKey: "SBQueueReleaseMergeErrorMessage")
+        aCoder.encode(mergedFileURL, forKey: "SBQueueReleaseMergedFileURL")
         aCoder.encode(resolvedItem, forKey: "SBQueueReleaseResolvedItem")
         // mergeProgress is deliberately not persisted -- meaningless after
         // a relaunch, same as QueueItem doesn't persist a partial mux's
@@ -128,6 +133,7 @@ import Cocoa
         self.approvedName = aDecoder.decodeObject(of: [NSString.classForCoder()], forKey: "SBQueueReleaseApprovedName") as? String
         self.mergeOrder = aDecoder.decodeObject(of: [NSArray.classForCoder(), NSURL.classForCoder()], forKey: "SBQueueReleaseMergeOrder") as? [URL]
         self.mergeErrorMessage = aDecoder.decodeObject(of: [NSString.classForCoder()], forKey: "SBQueueReleaseMergeErrorMessage") as? String
+        self.mergedFileURL = aDecoder.decodeObject(of: [NSURL.classForCoder()], forKey: "SBQueueReleaseMergedFileURL") as? URL
         self.resolvedItem = aDecoder.decodeObject(of: [QueueItem.classForCoder()], forKey: "SBQueueReleaseResolvedItem") as? QueueItem
         self.mergeProgress = 0
     }

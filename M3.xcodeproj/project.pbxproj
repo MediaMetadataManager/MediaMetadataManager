@@ -168,6 +168,8 @@
 		E79E91123052337A00E6790F /* JSONPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = E79E910F3052337A00E6790F /* JSONPath.swift */; };
 		E79E91133052337A00E6790F /* CustomMetadataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = E79E910D3052337A00E6790F /* CustomMetadataSource.swift */; };
 		E79E91143052337A00E6790F /* CustomSourceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E79E910E3052337A00E6790F /* CustomSourceService.swift */; };
+		1AA25149E9104C77A83E7401 /* DeliveryRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACB701BD1EF043748B8C66EE /* DeliveryRules.swift */; };
+		D4EFD689A1F24C259984C5C3 /* DestinationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2192B775CE1476DA1DF2E00 /* DestinationsViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -503,6 +505,8 @@
 		E79E910F3052337A00E6790F /* JSONPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = JSONPath.swift; path = Classes/MetadataImporters/JSONPath.swift; sourceTree = "<group>"; };
 		F2D41964ACF4C1D604153CE3 /* FileMerger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FileMerger.swift; path = Classes/FileMerge/FileMerger.swift; sourceTree = "<group>"; };
 		F695DD5A03A57793AC404052 /* ReleaseFilenameParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ReleaseFilenameParser.swift; path = Classes/ReleaseFilenameParser.swift; sourceTree = "<group>"; };
+		ACB701BD1EF043748B8C66EE /* DeliveryRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeliveryRules.swift; path = Classes/DeliveryRules.swift; sourceTree = "<group>"; };
+		E2192B775CE1476DA1DF2E00 /* DestinationsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DestinationsViewController.swift; path = Classes/DestinationsViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -798,6 +802,8 @@
 				388469EA51042D6EC3AF3572 /* M3MetadataPlugin.swift */,
 				F4B68AD3CF0E4E2B09015426 /* ApplicationSupport.swift */,
 				FAC5C90B445A6903EB6FFB45 /* NamingRules.swift */,
+				E2192B775CE1476DA1DF2E00 /* DestinationsViewController.swift */,
+				ACB701BD1EF043748B8C66EE /* DeliveryRules.swift */,
 				C0C5F7D7ADC08B85CCE23553 /* MetadataPluginLoader.swift */,
 				2BF00667E410ED649678F87D /* PluginMetadataService.swift */,
 				78F1234573B59467680FB4F5 /* PluginBridge.swift */,
@@ -1017,6 +1023,8 @@
 				89180CB4FDB355EFDDAFC194 /* M3MetadataPlugin.swift in Sources */,
 				E0F2A669B4D8A22CDE0B1C52 /* ApplicationSupport.swift in Sources */,
 				C239A027CD1B8044A21A5C30 /* NamingRules.swift in Sources */,
+				D4EFD689A1F24C259984C5C3 /* DestinationsViewController.swift in Sources */,
+				1AA25149E9104C77A83E7401 /* DeliveryRules.swift in Sources */,
 				09A37CF68361D710E6F82A20 /* MetadataPluginLoader.swift in Sources */,
 				6B34409BB9F7180708169C19 /* PluginMetadataService.swift in Sources */,
 				2BA508D03CD1BE6BC015FD9F /* PluginBridge.swift in Sources */,

@@ -377,7 +377,7 @@ final class Queue {
     private func disableSleep() {
         sleepAssertionSuccess = IOPMAssertionCreateWithName(kIOPMAssertPreventUserIdleSystemSleep as CFString,
                                                             IOPMAssertionLevel(kIOPMAssertionLevelOn),
-                                                            "Subler Queue" as CFString,
+                                                            "Media Metadata Manager Queue" as CFString,
                                                             &sleepAssertion)
     }
 

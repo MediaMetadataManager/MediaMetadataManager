@@ -442,7 +442,12 @@ final class DocumentWindowController: NSWindowController, NSWindowDelegate, Trac
     // MARK: Metadata
 
     @IBAction func searchMetadata(_ sender: Any?) {
-        let terms = mp4.extractSearchTerms(fallbackURL : doc.fileURL ?? doc.sourceFileURLHint)
+        let terms: MetadataSearchTerms
+        if let hint = doc.searchNameHint, hint.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
+            terms = MetadataSearchTerms.fromReleaseName(hint)
+        } else {
+            terms = mp4.extractSearchTerms(fallbackURL : doc.fileURL ?? doc.sourceFileURLHint)
+        }
         let controller = MetadataSearchViewController(delegate: self, searchTerms: terms)
         self.contentViewController?.presentAsSheet(controller)
     }
