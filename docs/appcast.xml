@@ -3,8 +3,24 @@
     <channel>
         <title>M3</title>
         <item>
+            <title>1.0.1</title>
+            <pubDate>Sat, 10 Oct 2026 16:30:25 -0700</pubDate>
+            <sparkle:version>1.0.1</sparkle:version>
+            <sparkle:shortVersionString>1.0.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
+            <description><![CDATA[<html><body style="font-family:-apple-system;font-size:13px">
+<h3>Media Metadata Manager 1.0.1</h3><ul>
+<li>Fixed: the release notes shown in the update window no longer cut long entries off after their first line.</li>
+</ul></body></html>
+]]></description>
+            <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.0.1/MediaMetadataManager-1.0.1.zip" length="13344193" type="application/octet-stream" sparkle:edSignature="kCnfKLXSMcP0SKO7RDvMLTnLEKlvcsDeDsREz/CO0iO0p/QRroiU2R9gpSRrTZpw8iYVMm9hXU/gUkQEsrClCw=="/>
+            <sparkle:deltas>
+                <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.0.1/M31.0.1-1.0.0.delta" sparkle:deltaFrom="1.0.0" length="2210" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980240" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="LGWR0/nuSX1F/kgUYbbVNC0kuFJx0zEUwYLP0z/pkmUxJud2iQk+Nv87RJwN9BFs6OjAhlelTH4+jZGioa7rDw=="/>
+            </sparkle:deltas>
+        </item>
+        <item>
             <title>1.0.0</title>
-            <pubDate>Sat, 10 Oct 2026 15:58:55 -0700</pubDate>
+            <pubDate>Sat, 10 Oct 2026 16:30:27 -0700</pubDate>
             <sparkle:version>1.0.0</sparkle:version>
             <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
