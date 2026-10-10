@@ -1,0 +1,21 @@
+/* Class = "NSTabViewItem"; label = "Chapters"; ObjectID = "11"; */
+"11.label" = "Chapitres";
+
+/* Class = "NSTableView"; ibExternalAccessibilityDescription = "Chapters"; ObjectID = "22"; */
+"22.ibExternalAccessibilityDescription" = "Chapitres";
+
+/* Class = "NSTableColumn"; headerCell.title = "Time"; ObjectID = "24"; */
+"24.headerCell.title" = "Heure";
+
+/* Class = "NSTableColumn"; headerCell.title = "Title"; ObjectID = "25"; */
+"25.headerCell.title" = "Titre";
+
+/* Class = "NSButton"; ibShadowedToolTip = "Delete selected chapter"; ObjectID = "31"; */
+"31.ibShadowedToolTip" = "Supprimer le chapitre sélectionné";
+
+/* Class = "NSButton"; ibShadowedToolTip = "Add chapter"; ObjectID = "42"; */
+"42.ibShadowedToolTip" = "Ajouter un chapitre";
+
+/* Class = "NSMenuItem"; title = "Rename every chapter"; ObjectID = "SOg-Lz-v5L"; */
+"SOg-Lz-v5L.title" = "Renommer chaque chapitre";
+

@@ -1,0 +1,15 @@
+/* Class = "NSButton"; ibShadowedToolTip = "Edit selected set"; ObjectID = "C1d-lu-T7S"; */
+"C1d-lu-T7S.ibShadowedToolTip" = "Modifier l'ensemble sélectionné";
+
+/* Class = "NSButton"; ibShadowedToolTip = "Remove selected set"; ObjectID = "gBf-6T-hQv"; */
+"gBf-6T-hQv.ibShadowedToolTip" = "Retirer l'ensemble sélectionné";
+
+/* Class = "NSTableView"; ibExternalAccessibilityDescription = "Sets"; ObjectID = "iRF-P7-a3Q"; */
+"iRF-P7-a3Q.ibExternalAccessibilityDescription" = "Ensembles";
+
+/* Class = "NSButton"; ibShadowedToolTip = "Remove selected set"; ObjectID = "SIg-lA-6FA"; */
+"SIg-lA-6FA.ibShadowedToolTip" = "Retirer l'ensemble sélectionné";
+
+/* Class = "NSButtonCell"; title = "Edit"; ObjectID = "W45-Bf-XCJ"; */
+"W45-Bf-XCJ.title" = "Modifier";
+

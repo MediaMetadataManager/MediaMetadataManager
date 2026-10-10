@@ -1,0 +1,45 @@
+digraph G {
+  graph [rankdir=TB, fontname="Inter", bgcolor="white", nodesep=0.45, ranksep=0.5, pad=0.3, dpi=170];
+  node  [shape=box, style="rounded,filled", fontname="Inter", fontsize=11, color="#2b5d8a", fillcolor="#e6f0fa", penwidth=1.2, margin="0.18,0.10"];
+  edge  [fontname="Inter", fontsize=9.5, color="#4a5b6c", arrowsize=0.8];
+
+  start [label="Incoming Folder\n(one or more)", shape=box, style="rounded,filled", fillcolor="#2b5d8a", fontcolor="white", color="#2b5d8a"];
+  watch [label="Discovery\nAuto-watch or Scan Now"];
+  settle[label="Settle check\nwaits until the download has finished"];
+  tv    [label="TV episode?", shape=diamond, style=filled, fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+  tvq   [label="TV Shows Queue\n(its own window)"];
+  row   [label="Row in Movies Queue\nrelease = one folder of files"];
+  name  [label="Naming\nsuggested name: Title Vol N [Studio] (Year)"];
+  nrev  [label="Naming Review\nyou approve, edit or reject", fillcolor="#fff4d6", color="#c79a1c"];
+  files [label="One file or several?", shape=diamond, style=filled, fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+  meta  [label="Metadata match\nconfident?", shape=diamond, style=filled, fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+  mrev  [label="Metadata Review\nconfirm match, pick artwork shape", fillcolor="#fff4d6", color="#c79a1c"];
+  mseq  [label="Several files: in clear order\nand compatible?", shape=diamond, style=filled, fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+  mgrev [label="Merge Review\nreorder and confirm", fillcolor="#fff4d6", color="#c79a1c"];
+  merge [label="Lossless merge\nno re-encode, chapter at each join"];
+  ready [label="Item ready in the Queue\nmetadata + move-to-library attached"];
+  start2[label="Start: write file, fetch metadata and artwork, tag"];
+  move  [label="Move to Ready for Media Library"];
+  clean [label="Optional cleanup\noriginals to Trash, empty folders removed", fillcolor="#efe6f5", color="#8061a0"];
+  end   [label="Ready for Media Library\nyour final check before the media server", fillcolor="#2f7d4f", fontcolor="white", color="#2f7d4f"];
+
+  start -> watch -> settle -> tv;
+  tv -> tvq [label=" yes"];
+  tv -> row [label=" no"];
+  row -> name -> nrev;
+  nrev -> files [label=" approved"];
+  name -> files [label=" auto-approved\n (confident match)", style=dashed];
+  files -> meta [label=" one"];
+  files -> mseq [label=" several"];
+  meta -> ready [label=" yes"];
+  meta -> mrev [label=" no"];
+  mrev -> ready;
+  mseq -> merge [label=" yes (after 1 s)"];
+  mseq -> mgrev [label=" no"];
+  mgrev -> merge;
+  merge -> ready;
+  ready -> start2 -> move -> clean -> end;
+  { rank=same; tv; tvq }
+  { rank=same; meta; mseq }
+  { rank=same; mrev; mgrev }
+}

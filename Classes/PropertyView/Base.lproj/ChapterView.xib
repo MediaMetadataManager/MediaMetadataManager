@@ -1,0 +1,452 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24127" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+    <dependencies>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24127"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="ChapterViewController" customModule="Subler" customModuleProvider="target">
+            <connections>
+                <outlet property="actions" destination="IvH-Ff-dyN" id="EiR-xB-dq9"/>
+                <outlet property="removeChapter" destination="31" id="faJ-CI-g36"/>
+                <outlet property="tabView" destination="10" id="CC8-n9-JPu"/>
+                <outlet property="tableView" destination="22" id="7Za-v5-yKx"/>
+                <outlet property="view" destination="1" id="2"/>
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
+        <customObject id="-3" userLabel="Application" customClass="NSObject"/>
+        <customView id="1">
+            <rect key="frame" x="0.0" y="0.0" width="751" height="272"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <subviews>
+                <tabView fixedFrame="YES" controlSize="small" translatesAutoresizingMaskIntoConstraints="NO" id="10">
+                    <rect key="frame" x="-11" y="-12" width="773" height="279"/>
+                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                    <tabViewItems>
+                        <tabViewItem label="Chapters" identifier="1" id="11">
+                            <view key="view" id="12">
+                                <rect key="frame" x="10" y="29" width="753" height="237"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <subviews>
+                                    <scrollView autohidesScrollers="YES" horizontalLineScroll="16" horizontalPageScroll="10" verticalLineScroll="16" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="19">
+                                        <rect key="frame" x="17" y="40" width="719" height="191"/>
+                                        <clipView key="contentView" id="gfP-N5-8Ji">
+                                            <rect key="frame" x="1" y="1" width="717" height="189"/>
+                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                            <subviews>
+                                                <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="plain" columnSelection="YES" multipleSelection="NO" autosaveColumns="NO" rowHeight="14" headerView="23" viewBased="YES" id="22" customClass="ExpandedTableView" customModule="Subler" customModuleProvider="target">
+                                                    <rect key="frame" x="0.0" y="0.0" width="717" height="172"/>
+                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                    <size key="intercellSpacing" width="3" height="2"/>
+                                                    <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                    <tableViewGridLines key="gridStyleMask" vertical="YES"/>
+                                                    <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
+                                                    <tableColumns>
+                                                        <tableColumn identifier="time" width="96" minWidth="40" maxWidth="1000" id="24">
+                                                            <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Time">
+                                                                <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
+                                                                <color key="backgroundColor" white="0.33333299" alpha="1" colorSpace="calibratedWhite"/>
+                                                            </tableHeaderCell>
+                                                            <textFieldCell key="dataCell" controlSize="small" lineBreakMode="truncatingTail" selectable="YES" editable="YES" alignment="left" id="27">
+                                                                <font key="font" metaFont="controlContent" size="11"/>
+                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                <allowedInputSourceLocales>
+                                                                    <string>ti_ER</string>
+                                                                    <string>ar_LY</string>
+                                                                    <string>kok_IN</string>
+                                                                    <string>mk_MK</string>
+                                                                    <string>eo</string>
+                                                                    <string>fr_CH</string>
+                                                                    <string>sw</string>
+                                                                    <string>so_ET</string>
+                                                                    <string>gv</string>
+                                                                    <string>ar_BH</string>
+                                                                    <string>hy_AM_REVISED</string>
+                                                                    <string>it_IT</string>
+                                                                    <string>bg_BG</string>
+                                                                    <string>ro</string>
+                                                                    <string>es_HN</string>
+                                                                    <string>en_BE</string>
+                                                                    <string>is</string>
+                                                                    <string>kw_GB</string>
+                                                                    <string>kl</string>
+                                                                    <string>ga_IE</string>
+                                                                    <string>nl_NL</string>
+                                                                    <string>uk</string>
+                                                                    <string>fr_CA</string>
+                                                                    <string>sk_SK</string>
+                                                                    <string>es_AR</string>
+                                                                    <string>en_MT</string>
+                                                                    <string>fr_BE</string>
+                                                                    <string>ca</string>
+                                                                    <string>cs_CZ</string>
+                                                                    <string>fr_FR</string>
+                                                                    <string>en_ZA</string>
+                                                                    <string>sl</string>
+                                                                    <string>fa</string>
+                                                                    <string>so</string>
+                                                                    <string>pt</string>
+                                                                    <string>et_EE</string>
+                                                                    <string>eu_ES</string>
+                                                                    <string>fi</string>
+                                                                    <string>de_CH</string>
+                                                                    <string>or</string>
+                                                                    <string>gu_IN</string>
+                                                                    <string>mt_MT</string>
+                                                                    <string>nb</string>
+                                                                    <string>ms</string>
+                                                                    <string>es_CR</string>
+                                                                    <string>as_IN</string>
+                                                                    <string>ar_SA</string>
+                                                                    <string>am</string>
+                                                                    <string>pl</string>
+                                                                    <string>hu</string>
+                                                                    <string>lv</string>
+                                                                    <string>ar_DZ</string>
+                                                                    <string>ur</string>
+                                                                    <string>pt_PT</string>
+                                                                    <string>eu</string>
+                                                                    <string>so_DJ</string>
+                                                                    <string>de</string>
+                                                                    <string>en_IN</string>
+                                                                    <string>hr_HR</string>
+                                                                    <string>ar_AE</string>
+                                                                    <string>gu</string>
+                                                                    <string>lt</string>
+                                                                    <string>te_IN</string>
+                                                                    <string>ar_KW</string>
+                                                                    <string>sr_Latn</string>
+                                                                    <string>de_AT</string>
+                                                                    <string>en_US</string>
+                                                                    <string>es_PR</string>
+                                                                    <string>pl_PL</string>
+                                                                    <string>uz_Cyrl_UZ</string>
+                                                                    <string>ar_EG</string>
+                                                                    <string>it_CH</string>
+                                                                    <string>nl</string>
+                                                                    <string>haw_US</string>
+                                                                    <string>is_IS</string>
+                                                                    <string>en_IE</string>
+                                                                    <string>kl_GL</string>
+                                                                    <string>ps</string>
+                                                                    <string>zh_Hans_CN</string>
+                                                                    <string>ar</string>
+                                                                    <string>ru_UA</string>
+                                                                    <string>th_TH</string>
+                                                                    <string>fr_LU</string>
+                                                                    <string>uz_Latn_UZ</string>
+                                                                    <string>az</string>
+                                                                    <string>bn_IN</string>
+                                                                    <string>es_MX</string>
+                                                                    <string>kk_KZ</string>
+                                                                    <string>en_US_POSIX</string>
+                                                                    <string>el_GR</string>
+                                                                    <string>he</string>
+                                                                    <string>es_UY</string>
+                                                                    <string>nn_NO</string>
+                                                                    <string>sr</string>
+                                                                    <string>sk</string>
+                                                                    <string>ur_PK</string>
+                                                                    <string>es_PA</string>
+                                                                    <string>sv_FI</string>
+                                                                    <string>zh</string>
+                                                                    <string>es_DO</string>
+                                                                    <string>en_CA</string>
+                                                                    <string>en_BW</string>
+                                                                    <string>de_DE</string>
+                                                                    <string>haw</string>
+                                                                    <string>pa_IN</string>
+                                                                    <string>sq</string>
+                                                                    <string>kw</string>
+                                                                    <string>ga</string>
+                                                                    <string>ml</string>
+                                                                    <string>mt</string>
+                                                                    <string>af_ZA</string>
+                                                                    <string>az_Latn</string>
+                                                                    <string>ko_KR</string>
+                                                                    <string>fa_AF</string>
+                                                                    <string>ps_AF</string>
+                                                                    <string>be_BY</string>
+                                                                    <string>bn</string>
+                                                                    <string>it</string>
+                                                                    <string>sr_Latn_CS</string>
+                                                                    <string>zh_Hans</string>
+                                                                    <string>as</string>
+                                                                    <string>ms_MY</string>
+                                                                    <string>be</string>
+                                                                    <string>sl_SI</string>
+                                                                    <string>fa_IR</string>
+                                                                    <string>es_EC</string>
+                                                                    <string>kok</string>
+                                                                    <string>es_PY</string>
+                                                                    <string>ta_IN</string>
+                                                                    <string>am_ET</string>
+                                                                    <string>es_CO</string>
+                                                                    <string>uz_Latn</string>
+                                                                    <string>el</string>
+                                                                    <string>zh_Hant_MO</string>
+                                                                    <string>kk</string>
+                                                                    <string>kn</string>
+                                                                    <string>zh_Hant</string>
+                                                                    <string>en</string>
+                                                                    <string>es_PE</string>
+                                                                    <string>pt_BR</string>
+                                                                    <string>ar_LB</string>
+                                                                    <string>en_NZ</string>
+                                                                    <string>es_ES</string>
+                                                                    <string>en_HK</string>
+                                                                    <string>es_BO</string>
+                                                                    <string>hu_HU</string>
+                                                                    <string>sr_Cyrl</string>
+                                                                    <string>nb_NO</string>
+                                                                    <string>sv</string>
+                                                                    <string>vi</string>
+                                                                    <string>ti_ET</string>
+                                                                    <string>bg</string>
+                                                                    <string>om</string>
+                                                                    <string>de_LU</string>
+                                                                    <string>en_SG</string>
+                                                                    <string>id_ID</string>
+                                                                    <string>ur_IN</string>
+                                                                    <string>uz</string>
+                                                                    <string>da</string>
+                                                                    <string>ru_RU</string>
+                                                                    <string>es_US</string>
+                                                                    <string>es_VE</string>
+                                                                    <string>ko</string>
+                                                                    <string>ja</string>
+                                                                    <string>af</string>
+                                                                    <string>ar_YE</string>
+                                                                    <string>lt_LT</string>
+                                                                    <string>om_KE</string>
+                                                                    <string>zh_Hans_SG</string>
+                                                                    <string>es_NI</string>
+                                                                    <string>he_IL</string>
+                                                                    <string>en_PK</string>
+                                                                    <string>en_PH</string>
+                                                                    <string>az_Cyrl_AZ</string>
+                                                                    <string>en_AU</string>
+                                                                    <string>az_Cyrl</string>
+                                                                    <string>ta</string>
+                                                                    <string>ar_MA</string>
+                                                                    <string>sw_KE</string>
+                                                                    <string>tr_TR</string>
+                                                                    <string>zh_Hant_HK</string>
+                                                                    <string>en_ZW</string>
+                                                                    <string>de_BE</string>
+                                                                    <string>mk</string>
+                                                                    <string>pa</string>
+                                                                    <string>da_DK</string>
+                                                                    <string>es_GT</string>
+                                                                    <string>es</string>
+                                                                    <string>ar_IQ</string>
+                                                                    <string>az_Latn_AZ</string>
+                                                                    <string>so_SO</string>
+                                                                    <string>lv_LV</string>
+                                                                    <string>mr</string>
+                                                                    <string>te</string>
+                                                                    <string>sq_AL</string>
+                                                                    <string>ml_IN</string>
+                                                                    <string>uk_UA</string>
+                                                                    <string>hi_IN</string>
+                                                                    <string>ca_ES</string>
+                                                                    <string>ar_TN</string>
+                                                                    <string>id</string>
+                                                                    <string>om_ET</string>
+                                                                    <string>cs</string>
+                                                                    <string>fo_FO</string>
+                                                                    <string>hy_AM</string>
+                                                                    <string>en_GB</string>
+                                                                    <string>sr_Cyrl_CS</string>
+                                                                    <string>gl_ES</string>
+                                                                    <string>sw_TZ</string>
+                                                                    <string>ro_RO</string>
+                                                                    <string>cy</string>
+                                                                    <string>fr</string>
+                                                                    <string>ms_BN</string>
+                                                                    <string>so_KE</string>
+                                                                    <string>tr</string>
+                                                                    <string>gl</string>
+                                                                    <string>cy_GB</string>
+                                                                    <string>ar_OM</string>
+                                                                    <string>fo</string>
+                                                                    <string>es_CL</string>
+                                                                    <string>sv_SE</string>
+                                                                    <string>ar_JO</string>
+                                                                    <string>uz_Cyrl</string>
+                                                                    <string>zh_Hant_TW</string>
+                                                                    <string>et</string>
+                                                                    <string>hi</string>
+                                                                    <string>fi_FI</string>
+                                                                    <string>nn</string>
+                                                                    <string>th</string>
+                                                                    <string>ar_SY</string>
+                                                                    <string>ja_JP</string>
+                                                                    <string>gv_GB</string>
+                                                                    <string>hy</string>
+                                                                    <string>en_VI</string>
+                                                                    <string>kn_IN</string>
+                                                                    <string>ti</string>
+                                                                    <string>ar_QA</string>
+                                                                    <string>es_SV</string>
+                                                                    <string>hr</string>
+                                                                    <string>ru</string>
+                                                                    <string>ar_SD</string>
+                                                                    <string>mr_IN</string>
+                                                                    <string>vi_VN</string>
+                                                                    <string>nl_BE</string>
+                                                                    <string>or_IN</string>
+                                                                </allowedInputSourceLocales>
+                                                            </textFieldCell>
+                                                            <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
+                                                            <prototypeCellViews>
+                                                                <tableCellView id="lUr-1t-Gov">
+                                                                    <rect key="frame" x="1" y="1" width="96" height="17"/>
+                                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                    <subviews>
+                                                                        <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="sbg-eG-N9u">
+                                                                            <rect key="frame" x="0.0" y="3" width="96" height="14"/>
+                                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
+                                                                            <textFieldCell key="cell" lineBreakMode="truncatingTail" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" alignment="right" id="fIl-II-Tfv">
+                                                                                <font key="font" metaFont="controlContent" size="11"/>
+                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                            </textFieldCell>
+                                                                            <connections>
+                                                                                <action selector="setChapterTimeStamp:" target="-2" id="SNb-Yy-l6Q"/>
+                                                                            </connections>
+                                                                        </textField>
+                                                                    </subviews>
+                                                                    <connections>
+                                                                        <outlet property="textField" destination="sbg-eG-N9u" id="rpX-jo-DcW"/>
+                                                                    </connections>
+                                                                </tableCellView>
+                                                            </prototypeCellViews>
+                                                        </tableColumn>
+                                                        <tableColumn identifier="title" width="615" minWidth="40" maxWidth="2000" id="25">
+                                                            <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Title">
+                                                                <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
+                                                                <color key="backgroundColor" white="0.33333299" alpha="1" colorSpace="calibratedWhite"/>
+                                                            </tableHeaderCell>
+                                                            <textFieldCell key="dataCell" controlSize="small" lineBreakMode="truncatingTail" selectable="YES" editable="YES" alignment="left" id="26">
+                                                                <font key="font" metaFont="controlContent" size="11"/>
+                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                            </textFieldCell>
+                                                            <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
+                                                            <prototypeCellViews>
+                                                                <tableCellView id="SuA-T8-hMx">
+                                                                    <rect key="frame" x="100" y="1" width="615" height="17"/>
+                                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                    <subviews>
+                                                                        <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="KkS-kR-z72">
+                                                                            <rect key="frame" x="0.0" y="3" width="615" height="14"/>
+                                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
+                                                                            <textFieldCell key="cell" lineBreakMode="truncatingTail" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" id="Ktq-AC-XnR">
+                                                                                <font key="font" metaFont="controlContent" size="11"/>
+                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                            </textFieldCell>
+                                                                            <connections>
+                                                                                <action selector="setChapterTitle:" target="-2" id="6Jm-gc-jcn"/>
+                                                                            </connections>
+                                                                        </textField>
+                                                                    </subviews>
+                                                                    <connections>
+                                                                        <outlet property="textField" destination="KkS-kR-z72" id="Psh-7t-gco"/>
+                                                                    </connections>
+                                                                </tableCellView>
+                                                            </prototypeCellViews>
+                                                        </tableColumn>
+                                                    </tableColumns>
+                                                    <accessibility description="Chapters"/>
+                                                    <connections>
+                                                        <outlet property="dataSource" destination="-2" id="28"/>
+                                                        <outlet property="delegate" destination="-2" id="29"/>
+                                                    </connections>
+                                                </tableView>
+                                            </subviews>
+                                        </clipView>
+                                        <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="21">
+                                            <rect key="frame" x="1" y="183" width="446" height="15"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                        </scroller>
+                                        <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="20">
+                                            <rect key="frame" x="412" y="17" width="15" height="176"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                        </scroller>
+                                        <tableHeaderView key="headerView" id="23">
+                                            <rect key="frame" x="0.0" y="0.0" width="717" height="17"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                        </tableHeaderView>
+                                    </scrollView>
+                                    <button toolTip="Add chapter" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="42">
+                                        <rect key="frame" x="11" y="9" width="36" height="27"/>
+                                        <buttonCell key="cell" type="push" bezelStyle="rounded" image="NSAddTemplate" imagePosition="only" alignment="center" controlSize="small" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="43">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="smallSystem"/>
+                                        </buttonCell>
+                                        <connections>
+                                            <action selector="addChapter:" target="-2" id="50"/>
+                                        </connections>
+                                    </button>
+                                    <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="IvH-Ff-dyN">
+                                        <rect key="frame" x="70" y="12" width="45" height="22"/>
+                                        <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="center" controlSize="small" lineBreakMode="truncatingTail" borderStyle="border" imageScaling="proportionallyDown" inset="2" pullsDown="YES" id="frw-Vk-Gwo">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="controlContent" size="11"/>
+                                            <menu key="menu" id="T3N-JJ-mWq">
+                                                <items>
+                                                    <menuItem image="NSActionTemplate" hidden="YES" id="B0i-yb-Nf4">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                    </menuItem>
+                                                    <menuItem title="Rename every chapter" id="SOg-Lz-v5L">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="renameChapters:" target="-2" id="82u-lm-Qty"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                </items>
+                                            </menu>
+                                        </popUpButtonCell>
+                                    </popUpButton>
+                                    <button toolTip="Delete selected chapter" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="31">
+                                        <rect key="frame" x="36" y="9" width="36" height="27"/>
+                                        <buttonCell key="cell" type="push" bezelStyle="rounded" image="NSRemoveTemplate" imagePosition="only" alignment="center" controlSize="small" enabled="NO" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="32">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="smallSystem"/>
+                                        </buttonCell>
+                                        <connections>
+                                            <action selector="removeChapter:" target="-2" id="48"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                                <constraints>
+                                    <constraint firstItem="19" firstAttribute="leading" secondItem="12" secondAttribute="leading" constant="17" id="21K-r4-gXZ"/>
+                                    <constraint firstItem="31" firstAttribute="top" secondItem="42" secondAttribute="top" id="GlU-QC-OYe"/>
+                                    <constraint firstItem="42" firstAttribute="top" secondItem="19" secondAttribute="bottom" constant="8" symbolic="YES" id="Ngw-J5-tMS"/>
+                                    <constraint firstItem="42" firstAttribute="leading" secondItem="19" secondAttribute="leading" id="XGG-xy-ibf"/>
+                                    <constraint firstAttribute="trailing" secondItem="19" secondAttribute="trailing" constant="17" id="cNR-fN-seC"/>
+                                    <constraint firstItem="19" firstAttribute="top" secondItem="12" secondAttribute="top" constant="6" id="dMH-VU-NKD"/>
+                                    <constraint firstAttribute="bottom" secondItem="42" secondAttribute="bottom" constant="20" id="mjM-zH-dIu"/>
+                                    <constraint firstItem="IvH-Ff-dyN" firstAttribute="leading" secondItem="31" secondAttribute="trailing" constant="8" symbolic="YES" id="rvP-0R-kpo"/>
+                                    <constraint firstItem="31" firstAttribute="leading" secondItem="42" secondAttribute="trailing" constant="1" id="teO-jO-fZC"/>
+                                    <constraint firstItem="IvH-Ff-dyN" firstAttribute="top" secondItem="31" secondAttribute="top" id="yyG-lL-AQz"/>
+                                </constraints>
+                            </view>
+                        </tabViewItem>
+                    </tabViewItems>
+                </tabView>
+            </subviews>
+            <point key="canvasLocation" x="-36.5" y="-92"/>
+        </customView>
+    </objects>
+    <resources>
+        <image name="NSActionTemplate" width="20" height="20"/>
+        <image name="NSAddTemplate" width="18" height="17"/>
+        <image name="NSRemoveTemplate" width="18" height="5"/>
+    </resources>
+</document>
