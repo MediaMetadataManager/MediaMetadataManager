@@ -25,6 +25,15 @@ PUB="${2:-}"
 [[ "$VERSION" =~ ^[0-9]+(\.[0-9]+){1,2}$ ]] || { echo "version must look like 1.0.1"; exit 2; }
 
 cd "$DEV"
+# Every released zip is kept in release-archive/ (not in git, not public) so the
+# appcast can keep older entries. A version that is already archived has been
+# released and must never be rebuilt: users hold the old bytes and signature.
+ARCHIVE="$DEV/release-archive"
+if [ -e "$ARCHIVE/MediaMetadataManager-$VERSION.zip" ] && [ "${M3_REBUILD:-0}" != "1" ]; then
+    echo "error: $VERSION is already in release-archive/ (already released). Use a new version number."
+    echo "       (Only if it was never published: M3_REBUILD=1 Tools/make-release.sh $VERSION ...)"
+    exit 1
+fi
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
     echo "error: uncommitted changes. Commit first so the release matches the repo."
     exit 1
@@ -72,28 +81,49 @@ ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
 {
   echo "<html><body style=\"font-family:-apple-system;font-size:13px\">"
   echo "<h3>Media Metadata Manager $VERSION</h3><ul>"
-  awk '/^## Unreleased/{f=1;next} /^## /{f=0} f && /^- /{sub(/^- /,""); gsub(/\*\*/,""); gsub(/&/,"\\&amp;"); gsub(/</,"\\&lt;"); print "<li>" $0 "</li>"}' RELEASE_NOTES.md
+  awk '
+    function flush() { if (cur != "") { gsub(/\*\*/,"",cur); gsub(/&/,"\\&amp;",cur); gsub(/</,"\\&lt;",cur); print "<li>" cur "</li>"; cur="" } }
+    /^## Unreleased/ { f=1; next }
+    /^## /           { flush(); f=0 }
+    f && /^- /       { flush(); cur=substr($0,3); next }
+    f && /^[ \t]+[^ \t]/ && cur != "" { t=$0; sub(/^[ \t]+/,"",t); cur=cur " " t; next }
+    f                { flush() }
+    END              { flush() }
+  ' RELEASE_NOTES.md
   echo "</ul></body></html>"
 } > "${ZIP%.zip}.html"
+
+# 5b. bring earlier releases back so the appcast keeps their entries
+mkdir -p "$ARCHIVE"
+for f in "$ARCHIVE"/MediaMetadataManager-*.zip "$ARCHIVE"/MediaMetadataManager-*.html; do
+    [ -e "$f" ] || continue
+    [ "$(basename "$f")" = "$(basename "$ZIP")" ] && continue
+    [ "$(basename "$f")" = "$(basename "${ZIP%.zip}.html")" ] && continue
+    cp "$f" "$OUT/updates/"
+done
 
 # 6. appcast
 TAG="v$VERSION"
 PREFIX="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/$TAG/"
 "$BIN/generate_appcast" --download-url-prefix "$PREFIX" \
     --embed-release-notes "$OUT/updates"
-if [ -n "$PUB" ]; then
-    mkdir -p "$PUB/docs"; cp "$OUT/updates/appcast.xml" "$PUB/docs/appcast.xml"
-    echo "Appcast copied to $PUB/docs/appcast.xml"
-fi
+# (The appcast is NOT copied into the public clone here: export-public.sh would
+# commit it with the next snapshot and it could go live before the release zip.
+# Tools/publish-appcast.sh does it after checking the zip downloads.)
+
+# 7. archive this release (only now that everything above succeeded)
+cp "$ZIP" "${ZIP%.zip}.html" "$ARCHIVE"/
 
 echo
 echo "Done. Zip: $ZIP"
 echo
-echo "Next (you run these):"
-echo "  git add M3.xcodeproj && git commit -m 'Version $VERSION'      # dev repo"
-echo "  Tools/export-public.sh <public-clone>                         # snapshot"
-echo "  cd <public-clone> && git push"
-echo "  gh release create $TAG '$ZIP' --repo MediaMetadataManager/MediaMetadataManager --title '$VERSION' --notes-file <notes>"
-echo "  cd <public-clone> && git add docs/appcast.xml && git commit -m 'Appcast $VERSION' && git push"
-echo "Order matters: upload the release BEFORE pushing the appcast, so no one is offered an update that 404s."
-echo "Note: the appcast keeps older entries only if their zips are in $OUT/updates; copy previous zips there first if you want delta/older entries."
+PUBARG="${PUB:-<public-clone>}"
+echo "Next (you run these, in this order):"
+echo "  git add M3.xcodeproj && git commit -m 'Version $VERSION'       # dev repo"
+echo "  Tools/export-public.sh $PUBARG                                  # snapshot"
+echo "  git -C $PUBARG push                                             # source only"
+echo "  gh release create $TAG '$ZIP' --repo MediaMetadataManager/MediaMetadataManager --title '$VERSION' --notes '...'"
+echo "      (or on github.com: Releases > Draft a new release, tag $TAG, attach the zip, Publish)"
+echo "  Tools/publish-appcast.sh $VERSION $PUBARG                       # checks the zip downloads, then publishes the feed"
+echo "Release first, appcast last, so no one is offered an update that 404s."
+echo "Older releases in release-archive/ were included, so the appcast lists them too."

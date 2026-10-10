@@ -12,6 +12,10 @@ next round of work.
 
 ## Unreleased
 
+- Fixed: the release notes shown in the update window no longer cut long entries off after their first line.
+
+## 1.0.0 (2026-10-10)
+
 - Added: Media Intake now actually watches the Incoming Folders (file-system events plus a 20-second sweep) and feeds the Queue; **Scan Now** forces a pass. TV episodes go to a separate **TV Shows Queue** window; the movie window is titled **Movies Queue**.
 - Added: several Incoming and Automatically-Add folders, with + / - buttons.
 - Added: opt-in **Clean up processed files** moves the original parts to the Trash after a successful merge or conversion and logs them in `Cleaned Up Processed Files.txt`.
@@ -38,10 +42,7 @@ next round of work.
 - Changed: iTunes Store artwork is no longer fetched (it was broken and added nothing).
 - Ported from upstream Subler: undo/redo for tracks, chapters, metadata and the document UI; improved TVDB series-name matching; a queue decode-crash fix; an opt-in 4K HD Video flag.
 
-- Fixed: MediaMetadataManager could be silently overwritten by a real
-  upstream Subler auto-update, because the old Sparkle update-feed
-  configuration was still pointing at Subler's appcast. Auto-update is
-  now fully disabled for this fork.
+- Fixed: MediaMetadataManager could be silently overwritten by a real upstream Subler auto-update, because the old Sparkle update-feed configuration was still pointing at Subler's appcast. Updates now come only from this project's own signed feed.
 - Fixed: the Custom Source detail window's Field Mapping section (the
   mapping/discovered-fields tables) could be scrolled or resized out of
   view entirely if the window was shrunk. The identity/search/auth

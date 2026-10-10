@@ -22,3 +22,6 @@ DerivedData
 # CocoaPods
 Pods
 build-release/
+
+# Released zips kept for the Sparkle appcast (see Tools/make-release.sh)
+release-archive/
