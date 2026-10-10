@@ -142,7 +142,7 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
 
         // The Ready for Media Library folder moved to the Media Locations tab,
         // where it is the staging folder.
-        let deliveryNoteLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Where finished files are delivered (the staging folder, the iTunes/TV Automatically Add folders, and rules by genre, rating, year and so on) is set on the Media Locations tab.", comment: ""))
+        let deliveryNoteLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Where finished files are delivered (the staging folder, the Apple TV Automatically Add folders, and rules by genre, rating, year and so on) is set on the Media Locations tab.", comment: ""))
         deliveryNoteLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         deliveryNoteLabel.textColor = .secondaryLabelColor
         deliveryNoteLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -407,11 +407,13 @@ final class FolderListView: NSStackView, NSTextFieldDelegate {
     /// When true the list always keeps one row, so the minus button is disabled while only one row is left
     /// (the row can still be edited with Choose or by typing).
     var alwaysKeepsOneRow = false
-    /// A folder the app uses on its own while the first row is blank (for
-    /// example the folder iTunes/the TV app set up). When set, plus works on
-    /// that blank first row, and the default is saved explicitly as the
-    /// first folder as soon as a second one is entered, so nothing is lost.
+    /// A folder the app follows on its own while the first row is blank (for
+    /// example the Automatically Add folder the Apple TV app's settings
+    /// point to). When set, plus works on that blank first row, and the row
+    /// stays blank so the default keeps following the app's setting.
     var implicitDefault: URL?
+    /// Called with whether the first row is blank, each time the list changes.
+    var onFirstRowBlankChange: ((Bool) -> Void)?
 
     private final class Row {
         let stack: NSStackView
@@ -445,14 +447,15 @@ final class FolderListView: NSStackView, NSTextFieldDelegate {
 
     /// Replaces the list's rows with one per folder (or a single blank
     /// row when there are none). Doesn't call onChange.
-    func setFolders(_ urls: [URL]) {
+    func setFolders(_ urls: [URL], leadingBlankRow: Bool = false) {
         for row in rows {
             removeArrangedSubview(row.stack)
             row.stack.removeFromSuperview()
         }
         rows.removeAll()
 
-        let paths = urls.isEmpty ? [""] : urls.map { $0.path }
+        var paths = urls.isEmpty ? [""] : urls.map { $0.path }
+        if leadingBlankRow && urls.isEmpty == false { paths.insert("", at: 0) }
         for path in paths {
             let row = makeRow(path: path)
             rows.append(row)
@@ -537,11 +540,7 @@ final class FolderListView: NSStackView, NSTextFieldDelegate {
                 urls.append(url)
             }
         }
-        if let implicitDefault = implicitDefault, urls.isEmpty == false,
-           rows.first?.field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true,
-           seen.contains(implicitDefault.standardizedFileURL.path) == false {
-            urls.insert(implicitDefault.standardizedFileURL, at: 0)
-        }
+        onFirstRowBlankChange?(rows.first?.field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true)
         onChange?(urls)
     }
 

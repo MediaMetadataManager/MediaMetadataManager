@@ -564,6 +564,31 @@ enum MediaIntakePrefs {
         set { setFolderList(newValue, forKey: SBAutomaticMediaIngestFolders) }
     }
 
+    /// The "Media folder location" a media app (Apple TV or Music) is set to,
+    /// read from that app's own preferences: its saved bookmark first, which
+    /// survives the folder being moved or renamed, then the plain URL.
+    private static func mediaFolderFromApp(domain: String) -> URL? {
+        if let data = CFPreferencesCopyAppValue("media-folder-bookmark" as CFString, domain as CFString) as? Data {
+            var stale = false
+            if let url = try? URL(resolvingBookmarkData: data, options: [.withoutUI], relativeTo: nil, bookmarkDataIsStale: &stale),
+               FileManager.default.fileExists(atPath: url.path) {
+                return url
+            }
+        }
+        if let string = CFPreferencesCopyAppValue("media-folder-url" as CFString, domain as CFString) as? String,
+           let url = URL(string: string), url.isFileURL,
+           FileManager.default.fileExists(atPath: url.path) {
+            return url
+        }
+        return nil
+    }
+
+    /// True while the first row of the Automatically Add list is left blank,
+    /// meaning "follow the Apple TV app's own setting" even when more folders
+    /// are listed after it.
+    @Stored(key: "SBMediaIntakeIngestListFollowsAppleTV", defaultValue: false)
+    static var ingestListFollowsAppleTV: Bool
+
     /// iTunes/Apple TV's own default "Automatically Add to..." folder,
     /// computed from FileManager's Movies/Music directory lookup rather
     /// than a hardcoded absolute path, so this tracks wherever the
@@ -584,6 +609,16 @@ enum MediaIntakePrefs {
     static func defaultAutomaticMediaIngestFolderURL() -> URL? {
         let fileManager = FileManager.default
 
+        // First choice: what the Apple TV app itself is set to (Settings >
+        // Files > Media folder location), so a library the user moved is
+        // followed without any setup here.
+        if let configured = mediaFolderFromApp(domain: "com.apple.TV") {
+            for name in ["Automatically Add to TV.localized", "Automatically Add to TV"] {
+                let candidate = configured.appendingPathComponent(name)
+                if fileManager.fileExists(atPath: candidate.path) { return candidate }
+            }
+        }
+
         if let moviesFolder = fileManager.urls(for: .moviesDirectory, in: .userDomainMask).first {
             let tvAutoAdd = moviesFolder
                 .appendingPathComponent("TV")
@@ -602,6 +637,15 @@ enum MediaIntakePrefs {
                 .appendingPathComponent("Automatically Add to iTunes.localized")
             if fileManager.fileExists(atPath: legacyMoviesAutoAdd.path) {
                 return legacyMoviesAutoAdd
+            }
+        }
+
+        // The Music app's own setting, same idea (older Macs and Music-only
+        // setups).
+        if let configured = mediaFolderFromApp(domain: "com.apple.Music") {
+            for name in ["Automatically Add to Music.localized", "Automatically Add to Music"] {
+                let candidate = configured.appendingPathComponent(name)
+                if fileManager.fileExists(atPath: candidate.path) { return candidate }
             }
         }
 

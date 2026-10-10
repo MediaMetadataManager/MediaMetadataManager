@@ -406,11 +406,11 @@ final class DestinationsViewController: NSViewController, NSTabViewDelegate {
         // Default destination: the iTunes / Apple TV "Automatically Add"
         // folders. A file delivered straight into one is left alone instead
         // of being wrapped in a folder of its own.
-        let ingestTitleLabel = NSTextField(labelWithString: NSLocalizedString("Default destination: Automatically Add to iTunes/TV Folders", comment: ""))
+        let ingestTitleLabel = NSTextField(labelWithString: NSLocalizedString("Default destination: Apple TV Automatically Add Folders", comment: ""))
         ingestTitleLabel.font = NSFont.boldSystemFont(ofSize: NSFont.smallSystemFontSize)
         ingestTitleLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        let ingestDescriptionLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Leave blank to use the location iTunes/the TV app set up automatically. Add more if you keep several libraries; the first one is the default.", comment: ""))
+        let ingestDescriptionLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Leave the first row blank to follow the Media folder location in the Apple TV app\u{2019}s own settings, so it keeps working if you change it there. Add more if you keep several libraries; the first row is the default.", comment: ""))
         ingestDescriptionLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         ingestDescriptionLabel.textColor = .secondaryLabelColor
         ingestDescriptionLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -423,9 +423,11 @@ final class DestinationsViewController: NSViewController, NSTabViewDelegate {
             ?? NSLocalizedString("Not Set", comment: "")
         ingestList.implicitDefault = MediaIntakePrefs.defaultAutomaticMediaIngestFolderURL()
         ingestList.onChange = { MediaIntakePrefs.automaticMediaIngestFolders = $0 }
+        ingestList.onFirstRowBlankChange = { MediaIntakePrefs.ingestListFollowsAppleTV = $0 }
         ingestList.onLayoutChange = { [weak self] in self?.notifyLayoutChange() }
-        ingestList.setFolders(MediaIntakePrefs.automaticMediaIngestFolders)
-        ingestList.toolTip = NSLocalizedString("A file delivered straight into one of these folders is left alone instead of being wrapped in its own folder, since iTunes/the TV app ingests and organizes it from there itself.", comment: "")
+        ingestList.setFolders(MediaIntakePrefs.automaticMediaIngestFolders,
+                              leadingBlankRow: MediaIntakePrefs.ingestListFollowsAppleTV)
+        ingestList.toolTip = NSLocalizedString("A file delivered straight into one of these folders is left alone instead of being wrapped in its own folder, since the Apple TV app ingests and organizes it from there itself.", comment: "")
 
         // Rules, one list per media kind.
         let rulesTitleLabel = NSTextField(labelWithString: NSLocalizedString("Rules (checked in order, first match wins; anything else goes to the default destination)", comment: ""))

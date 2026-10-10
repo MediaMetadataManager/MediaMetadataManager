@@ -1,48 +1,96 @@
 digraph G {
-  graph [rankdir=TB, fontname="Inter", bgcolor="white", nodesep=0.45, ranksep=0.5, pad=0.3, dpi=170];
-  node  [shape=box, style="rounded,filled", fontname="Inter", fontsize=11, color="#2b5d8a", fillcolor="#e6f0fa", penwidth=1.2, margin="0.18,0.10"];
-  edge  [fontname="Inter", fontsize=9.5, color="#4a5b6c", arrowsize=0.8];
-
-  start [label="Incoming Folder\n(one or more)", shape=box, style="rounded,filled", fillcolor="#2b5d8a", fontcolor="white", color="#2b5d8a"];
-  watch [label="Discovery\nAuto-watch or Scan Now"];
-  settle[label="Settle check\nwaits until the download has finished"];
-  tv    [label="TV episode?", shape=diamond, style=filled, fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
-  tvq   [label="TV Shows Queue\n(its own window)"];
-  row   [label="Row in Movies Queue\nrelease = one folder of files"];
-  name  [label="Naming\nsuggested name: Title Vol N [Studio] (Year)"];
-  nrev  [label="Naming Review\nyou approve, edit or reject", fillcolor="#fff4d6", color="#c79a1c"];
-  files [label="One file or several?", shape=diamond, style=filled, fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
-  meta  [label="Metadata match\nconfident?", shape=diamond, style=filled, fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
-  mrev  [label="Metadata Review\nconfirm match, pick artwork shape", fillcolor="#fff4d6", color="#c79a1c"];
-  mseq  [label="Several files: in clear order\nand compatible?", shape=diamond, style=filled, fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
-  mgrev [label="Merge Review\nreorder and confirm", fillcolor="#fff4d6", color="#c79a1c"];
-  merge [label="Lossless merge\nno re-encode, chapter at each join"];
-  ready [label="Item ready in the Queue\nmetadata + move-to-library attached"];
-  start2[label="Start: write file, fetch metadata and artwork, tag"];
-  move  [label="Move to Ready for Media Library"];
-  clean [label="Optional cleanup (Queue runs only)\nmerged/converted originals to Trash, empty folders removed", fillcolor="#efe6f5", color="#8061a0"];
-  edit  [label="Tag One File / Edit + Save\nedited in place, no original kept, no Trash", fillcolor="#fff2cc", color="#d6b656"];
-  end   [label="Ready for Media Library\nyour final check before the media server", fillcolor="#2f7d4f", fontcolor="white", color="#2f7d4f"];
-
-  start -> watch -> settle -> tv;
-  tv -> tvq [label=" yes"];
-  tv -> row [label=" no"];
-  row -> name -> nrev;
-  nrev -> files [label=" approved"];
-  name -> files [label=" auto-approved\n (confident match)", style=dashed];
-  files -> meta [label=" one"];
-  files -> mseq [label=" several"];
-  meta -> ready [label=" yes"];
-  meta -> mrev [label=" no"];
-  mrev -> ready;
-  mseq -> merge [label=" yes (after 1 s)"];
-  mseq -> mgrev [label=" no"];
-  mgrev -> merge;
-  merge -> ready;
-  ready -> start2 -> move -> clean -> end;
-  edit -> move [label=" Save & Close", style=dashed];
-  { rank=same; edit; start2 }
-  { rank=same; tv; tvq }
-  { rank=same; meta; mseq }
-  { rank=same; mrev; mgrev }
+  graph [rankdir=TB, fontname="Inter", bgcolor="white", nodesep=0.35, ranksep=0.42, pad=0.3, dpi=130, newrank=true, compound=true];
+  node  [fontname="Inter", style="rounded,filled", penwidth=1.3, margin="0.16,0.09"];
+  edge  [fontname="Inter", fontsize=10, color="#4a5b6c", fontcolor="#33414f", arrowsize=0.8];
+  subgraph cluster_intake {
+    label="Media Intake: watched folders"; fontname="Inter"; fontsize=13; fontcolor="#33414f"; style="rounded"; color="#c4ccd4"; labeljust=l; margin=14;
+    IF [label=<<FONT COLOR="white" POINT-SIZE="12"><B>Incoming Folders</B></FONT><BR/><FONT COLOR="white" POINT-SIZE="10">one or more, set on the Media Intake tab</FONT>>, shape=box, style="rounded,filled", fillcolor="#2b5d8a", color="#2b5d8a"];
+    DISC [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Discovery</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">Automatically watch (folder watcher + 20 s check)<BR/>or the Scan Now button</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    SET [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Filter and settle</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">skips hidden files, delivery folders and unfinished<BR/>downloads; waits until sizes stop changing</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    TV [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>TV episode?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+    TVQ [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>TV Shows Queue</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">its own window; same steps</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    ROW [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Release row in Movies Queue</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">one folder of files<BR/>(a loose file gets a folder of its own)</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    AA [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Auto-approve on and<BR/>confident title match?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+    NR [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Naming Review</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">approve, edit the name, or reject<BR/>Search All Providers</FONT>>, shape=box, style="rounded,filled", fillcolor="#fff4d6", color="#c79a1c"];
+    REJ [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Rejected</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">row stays parked in the Queue</FONT>>, shape=box, style="rounded,filled", fillcolor="#f9dede", color="#b04a4a"];
+    REN2 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Folder renamed</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">Title Vol N [Studio] (Year)</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    NF [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>One file or several?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+    MT [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Online match for the<BR/>name, confident?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+    MR [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Metadata Review</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">search again with other words, pick a result,<BR/>choose Portrait or Landscape art,<BR/>or Continue Without Metadata</FONT>>, shape=box, style="rounded,filled", fillcolor="#fff4d6", color="#c79a1c"];
+    SEV [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Auto-merge on, parts<BR/>numbered and compatible?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+    AM [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Auto-merge</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">starts after about 1 s<BR/>(opening the row cancels it)</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    MRV [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Merge Review</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">pick files, drag into order,<BR/>compatibility check</FONT>>, shape=box, style="rounded,filled", fillcolor="#fff4d6", color="#c79a1c"];
+    MG [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Lossless merge</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">no re-encode, a chapter at each join;<BR/>written under a hidden name, renamed when complete</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    MF [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Merge failed</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">reason shown on the row;<BR/>reopen and retry</FONT>>, shape=box, style="rounded,filled", fillcolor="#f9dede", color="#b04a4a"];
+    RDY [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Item ready in the Queue</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">metadata search and delivery actions attached</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+  }
+  subgraph cluster_run {
+    label="Queue run"; fontname="Inter"; fontsize=13; fontcolor="#33414f"; style="rounded"; color="#c4ccd4"; labeljust=l; margin=14;
+    ST [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Start</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">Auto-Start, or the Start button</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    ACT [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Actions, then write the file</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">clear old tags, search metadata and artwork (a release<BR/>searches by its approved name), set filename,<BR/>subtitles, track tidy-ups, optimize</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+  }
+  subgraph cluster_deliver {
+    label="Delivery (Preferences > Sources > Media Locations)"; fontname="Inter"; fontsize=13; fontcolor="#33414f"; style="rounded"; color="#c4ccd4"; labeljust=l; margin=14;
+    DEL [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Deliver automatically?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+    STG [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Staging folder</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">Ready for Media Library: your check before the library.<BR/>Rules are ignored. No staging folder set: file stays put</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    RUL [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>First enabled rule<BR/>that matches?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+    RF [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>The rule's folder</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">Movies and TV Shows have separate rule lists<BR/>(genre, rating, year, ...)</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    DF [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Default destination</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">Apple TV Automatically Add folder;<BR/>blank first row follows the Apple TV app's setting</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    AAF [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Automatically Add<BR/>folder?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+    FILE [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Finished file goes in alone</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">the Apple TV app files it from there</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    FOLD [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Folder moved in</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">release folder, or movie / Show/Season folder;<BR/>"name 2", "name 3" if the name is taken</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+  }
+  subgraph cluster_after {
+    label="Afterwards"; fontname="Inter"; fontsize=13; fontcolor="#33414f"; style="rounded"; color="#c4ccd4"; labeljust=l; margin=14;
+    CL [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Clean up processed<BR/>files on?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+    TR [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Originals to the Trash</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">merged parts / unconverted source, logged</FONT>>, shape=box, style="rounded,filled", fillcolor="#efe6f5", color="#8061a0"];
+    EF [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Remove empty folders</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">if on: Incoming and staging folders, to the Trash, logged</FONT>>, shape=box, style="rounded,filled", fillcolor="#efe6f5", color="#8061a0"];
+    AR [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Remove finished items<BR/>automatically on?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+    RM [label=<<FONT COLOR="white" POINT-SIZE="12"><B>Row leaves the Queue</B></FONT><BR/><FONT COLOR="white" POINT-SIZE="10">the file is where delivery put it</FONT>>, shape=box, style="rounded,filled", fillcolor="#2f7d4f", color="#2f7d4f"];
+    KEEP [label=<<FONT COLOR="white" POINT-SIZE="12"><B>Row stays with a checkmark</B></FONT><BR/><FONT COLOR="white" POINT-SIZE="10">until Remove completed items or the next launch</FONT>>, shape=box, style="rounded,filled", fillcolor="#2f7d4f", color="#2f7d4f"];
+  }
+  IF -> DISC;
+  DISC -> SET;
+  SET -> TV;
+  TV -> TVQ [label="yes"];
+  TV -> ROW [label="no"];
+  ROW -> AA;
+  AA -> NR [label="no"];
+  AA -> REN2 [label="yes", style=dashed];
+  NR -> REN2 [label="approve"];
+  NR -> REJ [label="reject"];
+  REJ -> NR [label="reopen", style=dashed];
+  REN2 -> NF;
+  NF -> MT [label="one"];
+  NF -> SEV [label="several"];
+  MT -> RDY [label="yes"];
+  MT -> MR [label="no, or nothing found"];
+  MR -> RDY;
+  SEV -> AM [label="yes"];
+  SEV -> MRV [label="no"];
+  AM -> MG;
+  MRV -> MG;
+  MG -> MF [label="cannot merge"];
+  MF -> MRV [label="retry", style=dashed];
+  MG -> MT [label="merged file: same check\nas a single file"];
+  RDY -> ST;
+  ST -> ACT;
+  ACT -> DEL;
+  DEL -> RUL [label="yes"];
+  DEL -> STG [label="no"];
+  RUL -> RF [label="yes"];
+  RUL -> DF [label="no"];
+  RF -> AAF;
+  DF -> AAF;
+  AAF -> FILE [label="yes"];
+  AAF -> FOLD [label="no"];
+  STG -> FOLD;
+  FILE -> CL;
+  FOLD -> CL;
+  FOLD -> EF [label="after the run", style=dashed];
+  CL -> TR [label="yes"];
+  CL -> AR [label="no"];
+  TR -> AR;
+  AR -> RM [label="yes"];
+  AR -> KEEP [label="no"];
 }

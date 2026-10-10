@@ -14,7 +14,7 @@ This folder holds the documentation set for **Media Metadata Manager (M3)**. Eac
 |---|---|
 | `Internal/` | Maintainer documentation. Review before publishing publicly: it names optional plugins and records development practice. |
 | `images/` | Figures used by the manuals. `images/src/` holds the Graphviz and matplotlib sources so they can be regenerated. |
-| `diagrams/` | Editable draw.io source of the Media Intake flowchart (`M3-intake-pipeline.drawio`). Open it with diagrams.net or the draw.io desktop app. |
+| `diagrams/` | Editable draw.io version of the complete app flow chart (`M3-app-flow.drawio`). Open it with diagrams.net or the draw.io desktop app. It is generated: change `images/src/flow.py` and run `python3 images/src/flow.py .` from this folder (needs Graphviz) to refresh it together with `images/app-flow.png` and `images/pipeline.png`. |
 
 ## Uploading selectively to GitHub
 

@@ -33,6 +33,8 @@ This guide describes every window, menu and setting of Media Metadata Manager (M
 
 **Naming rule.** A template that builds a file name from the file's tagged metadata, for example `Title [Studio] (Year)`. Rules can be conditional.
 
+![The complete flow of the app: every way in, the Editor, the Queue, Media Intake, delivery and cleanup. Yellow boxes are the moments where M3 asks for your decision.](images/app-flow.png)
+
 # 2. Installing and starting M3
 
 M3 is built from source in Xcode (see the project README for build instructions). The built app is a normal Mac application; copy it to your Applications folder.
@@ -111,12 +113,12 @@ Closing an editor window does not remove its row.
 |---|---|---|
 | Waiting for naming | The folder was found; its name is not yet approved. | Double-click to open Naming Review. |
 | Naming rejected | You rejected the suggested name. The row stays so nothing is lost. | Double-click to review again. |
-| Waiting for metadata review | One file; the online match was not confident enough. | Double-click to open Metadata Review. |
+| Waiting for metadata review | One file (or a merged file); the online match was not confident enough, or nothing was found. | Double-click to open Metadata Review. |
 | Waiting for merge order | Several files; the order is not yet confirmed. | Double-click to open Merge Review. |
 | Merging | The parts are being joined. | Wait; progress is shown on the row. |
 | Merge failed | The parts could not be joined. The reason is shown in plain language. | Double-click, adjust the selection, retry. |
 | Ready | A single file is ready to be written. | Click **Start**. |
-| Done | The folder has been moved to its destination (the staging folder, or with automatic delivery on, the final destination). | Remove it with **Remove completed items**. |
+| Done | The release has been delivered: to the staging folder, or with automatic delivery on, to its final destination. | Remove it with **Remove completed items**, or turn on **Remove finished items from the Queue automatically**. |
 
 **Context menu.** Right-click a row for **Reveal in Finder**, **Edit…**, **Remove from queue** and **Remove completed items**. You can also drag rows to change their order, and drop files or folders from Finder into the window.
 
@@ -192,7 +194,7 @@ Four sub-tabs:
 - **Providers** — tick the built-in providers you want for Movies and for TV Shows. Installed plugins appear in the same list, each with a **Configure…** button where the plugin needs settings. **Complete Content Search** asks TheMovieDB to include its complete result set.
 - **Custom Sources** — define your own providers (see section 7).
 - **Media Intake** — the Intake workflow settings (see section 5).
-- **Media Locations** — where finished files are delivered: the iTunes/TV Automatically Add folders as the default, rules by metadata, and the staging folder (see 5.5).
+- **Media Locations** — where finished files are delivered: the Apple TV Automatically Add folder as the default, rules by metadata, and the staging folder (see 5.5).
 
 ## Support
 
@@ -200,7 +202,7 @@ Links to sponsor Media Metadata Manager through GitHub Sponsors and to the origi
 
 # 5. Media Intake in detail
 
-![The complete Intake pipeline.](images/pipeline.png)
+![The Intake pipeline, from the watched folder to delivery. Yellow boxes are the moments where M3 asks for your decision.](images/pipeline.png)
 
 ## 5.1 Settings reference
 
@@ -218,7 +220,7 @@ All of these are in **Preferences → Sources → Media Intake**. Hover over any
 | **Clean up processed files** | off | After a release is moved into Ready for Media Library, moves the original files it was made from (the parts that were merged, or the unconverted source when the Queue converted a file) to the Trash and logs them. The finished file is never touched. This applies to Queue runs only; it does not apply to a file you tag with Edit and Save (see 5.4). |
 | **Remove finished items from the Queue automatically** | off | When a Queue run finishes, the rows with a checkmark are taken off the list. Only the rows are removed, never files. Failed rows and rows still waiting for you stay. |
 | **Ready for Media Library** | none | Now set on the **Media Locations** tab (see 5.5), where it is the **staging folder**: finished files wait there for you to check them. |
-| **Automatically Add to iTunes/TV Folders** | | Now on the **Media Locations** tab (see 5.5), where it is the default destination. |
+| **Automatically Add to Apple TV Folders** | | Now on the **Media Locations** tab (see 5.5), where it is the default destination. |
 
 ## 5.2 What happens, step by step
 
@@ -250,7 +252,7 @@ You can also merge by hand: select two or more items in the Queue and click **Me
 
 **Preferences → Sources → Media Locations** decides where a finished file ends up. It has three parts.
 
-**Default destination: Automatically Add to iTunes/TV Folders.** The folder the Music or TV app watches and organizes itself (by default that app's own folder, shown greyed out in the first row). Leave the first row blank to use it, or choose another folder; add more with **+** if you moved the library or keep several, and the first one is the default. A file delivered straight into one of these folders is left alone instead of being wrapped in a folder of its own, because the app files it from there.
+**Default destination: Apple TV Automatically Add Folders.** The folder the Apple TV app watches and organizes itself. Leave the first row blank and M3 follows the **Media folder location** in the Apple TV app's own settings (Settings → Files), read each time it is needed, so a library you move later is picked up without any change here; the folder it currently resolves to is shown greyed out in the first row. Type or choose a folder in the first row to override it, or add more rows with **+** if you keep several libraries (the first row is the default). If the Apple TV app is not set up, M3 falls back to the Music app's setting and the usual locations. A file delivered straight into one of these folders is left alone instead of being wrapped in a folder of its own, because the app files it from there.
 
 **Rules.** The **Movies** and **TV Shows** tabs each have an ordered list of rules for sending files somewhere other than the default.
 

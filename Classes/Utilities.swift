@@ -143,15 +143,19 @@ extension URL {
         let standardizedSelf = self.standardizedFileURL
 
         let configured = MediaIntakePrefs.automaticMediaIngestFolders
-        if configured.isEmpty == false {
-            return configured.contains { $0.standardizedFileURL.path == standardizedSelf.path }
+        if configured.contains(where: { $0.standardizedFileURL.path == standardizedSelf.path }) {
+            return true
         }
 
-        if let detected = MediaIntakePrefs.defaultAutomaticMediaIngestFolderURL() {
-            return detected.standardizedFileURL == standardizedSelf
+        let detected = MediaIntakePrefs.defaultAutomaticMediaIngestFolderURL()
+        if let detected = detected, detected.standardizedFileURL == standardizedSelf {
+            return true
         }
 
-        return lastPathComponent.lowercased().hasPrefix("automatically add to ")
+        if configured.isEmpty && detected == nil {
+            return lastPathComponent.lowercased().hasPrefix("automatically add to ")
+        }
+        return false
     }
 }
 

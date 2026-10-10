@@ -36,7 +36,7 @@ Work flows in one direction: **Incoming Folder → Queue → (review where neede
 
 1. Choose **Media Metadata Manager → Preferences…** and open the **Sources** tab, then the **Media Intake** sub-tab.
 2. Under **Incoming Folders**, click **+** and choose the folder where your downloads finish. You can add several.
-3. Open the **Media Locations** sub-tab and, under **Staging folder (Ready for Media Library)**, click **Choose…** and pick the folder where finished files should wait for you to check them. Leave **Deliver automatically** off until you trust the results. (Later you can add rules there to send, for example, documentaries or a rating to a different folder, and turn automatic delivery on; movies and TV shows have separate rules, and the default destination is the iTunes/TV Automatically Add folder.)
+3. Open the **Media Locations** sub-tab and, under **Staging folder (Ready for Media Library)**, click **Choose…** and pick the folder where finished files should wait for you to check them. Leave **Deliver automatically** off until you trust the results. (Later you can add rules there to send, for example, documentaries or a rating to a different folder, and turn automatic delivery on; movies and TV shows have separate rules, and the default destination is the Apple TV Automatically Add folder, followed from the Apple TV app's own settings.)
 4. Leave the other options at their defaults for now. Every option is off or conservative by default, so nothing happens behind your back.
 5. Still in Preferences, open **Sources → Providers** and make sure the metadata providers you want are ticked for **Movies** and **TV Shows**.
 

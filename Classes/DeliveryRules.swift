@@ -52,12 +52,16 @@ extension MediaIntakePrefs {
     /// wait for the user to look them over when automatic delivery is off.
     static var stagingFolder: URL? { return readyForLibraryFolder }
 
-    /// The default final destination: the first Automatically Add to
-    /// iTunes/TV folder the user listed, else the one iTunes/the TV app set
-    /// up themselves (detected live).
+    /// The default final destination. When the first row of the Automatically
+    /// Add list is blank (or the list is empty) it is the folder the Apple TV
+    /// app's own settings point to, read live; otherwise the first folder the
+    /// user listed.
     static var finalDefaultFolder: URL? {
-        if let first = automaticMediaIngestFolders.first(where: { $0.path.isEmpty == false }) { return first }
-        return defaultAutomaticMediaIngestFolderURL()
+        let listed = automaticMediaIngestFolders.first(where: { $0.path.isEmpty == false })
+        if listed == nil || ingestListFollowsAppleTV {
+            return defaultAutomaticMediaIngestFolderURL() ?? listed
+        }
+        return listed
     }
 
     /// Where a file goes when no rule applies: the final default folder in
