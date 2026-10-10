@@ -4,6 +4,8 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
+	<key>CFBundleDisplayName</key>
+	<string>Media Metadata Manager</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -149,8 +151,6 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>${PRODUCT_NAME}</string>
-	<key>CFBundleDisplayName</key>
-	<string>Media Metadata Manager</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -175,6 +175,14 @@
 	<string>NSApplication</string>
 	<key>OSAScriptingDefinition</key>
 	<string>MediaMetadataManager.sdef</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://mediametadatamanager.github.io/MediaMetadataManager/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>1pPuANHHX/bhkEhxECu/+u/I3C+ppkWGWiPp7FeeUvA=</string>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict>
