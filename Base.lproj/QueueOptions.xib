@@ -9,7 +9,6 @@
         <customObject id="-2" userLabel="File's Owner" customClass="SBOptionsViewController">
             <connections>
                 <outlet property="destButton" destination="86l-GG-SpO" id="F1P-Kx-280"/>
-                <outlet property="sendToExternalApp" destination="zVi-vU-sh2" id="blI-Vu-abD"/>
                 <outlet property="view" destination="UlG-O3-eNc" id="hzl-ex-WZi"/>
             </connections>
         </customObject>
@@ -654,20 +653,6 @@
                         </binding>
                     </connections>
                 </button>
-                <button translatesAutoresizingMaskIntoConstraints="NO" id="zVi-vU-sh2">
-                    <rect key="frame" x="111" y="69" width="145" height="16"/>
-                    <buttonCell key="cell" type="check" title="Send to AppleTV/iTunes" bezelStyle="regularSquare" imagePosition="left" alignment="left" controlSize="small" state="on" inset="2" id="4an-VK-S2u">
-                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                        <font key="font" metaFont="label" size="11"/>
-                    </buttonCell>
-                    <connections>
-                        <binding destination="-2" name="value" keyPath="self.options.sendToiTunes" id="NBZ-1e-YyZ">
-                            <dictionary key="options">
-                                <bool key="NSValidatesImmediately" value="YES"/>
-                            </dictionary>
-                        </binding>
-                    </connections>
-                </button>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="k33-Yf-DbF">
                     <rect key="frame" x="263" y="469" width="73" height="17"/>
                     <popUpButtonCell key="cell" type="roundRect" title="Standard" bezelStyle="roundedRect" alignment="left" controlSize="small" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" selectedItem="goC-ck-how" id="obA-0k-yqE">
@@ -786,7 +771,6 @@
                 <constraint firstItem="ccd-Xn-Dj3" firstAttribute="top" secondItem="08Q-2k-0Gb" secondAttribute="bottom" constant="15" id="9cv-6n-XUW"/>
                 <constraint firstAttribute="bottom" secondItem="yI9-2a-q2a" secondAttribute="bottom" constant="20" id="9sX-va-Dwk"/>
                 <constraint firstItem="ZZk-4j-Ji7" firstAttribute="leading" secondItem="swT-iM-shZ" secondAttribute="trailing" constant="9" id="DAW-9N-Oi1"/>
-                <constraint firstItem="zVi-vU-sh2" firstAttribute="leading" secondItem="9GN-f6-r2j" secondAttribute="leading" id="Eua-v1-wC3"/>
                 <constraint firstItem="zEH-aV-Tl7" firstAttribute="top" secondItem="KWg-Ak-bB6" secondAttribute="bottom" constant="5" id="G6e-3t-3Qo"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="ccd-Xn-Dj3" secondAttribute="trailing" constant="20" symbolic="YES" id="GMb-eq-e9x"/>
                 <constraint firstItem="Ce4-O7-Iu4" firstAttribute="top" secondItem="tLh-V3-OfB" secondAttribute="bottom" constant="4" id="GZU-yB-OvD"/>
@@ -797,7 +781,6 @@
                 <constraint firstItem="tLh-V3-OfB" firstAttribute="leading" secondItem="bDo-OD-bck" secondAttribute="trailing" constant="8" symbolic="YES" id="LkT-ae-DtF"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="9GN-f6-r2j" secondAttribute="trailing" constant="20" symbolic="YES" id="MDf-Y0-K0I"/>
                 <constraint firstItem="FJc-Hc-zCR" firstAttribute="leading" secondItem="LiA-V6-VEx" secondAttribute="leading" constant="16" id="MQ9-dx-nHh"/>
-                <constraint firstItem="zVi-vU-sh2" firstAttribute="top" secondItem="zEH-aV-Tl7" secondAttribute="bottom" constant="5" id="Mmx-43-nCr"/>
                 <constraint firstItem="swT-iM-shZ" firstAttribute="baseline" secondItem="ZZk-4j-Ji7" secondAttribute="baseline" id="NVg-BO-A8O"/>
                 <constraint firstItem="slL-2h-MPl" firstAttribute="top" secondItem="0qr-Nt-Pan" secondAttribute="bottom" constant="6" symbolic="YES" id="Nn2-m3-qrI"/>
                 <constraint firstItem="ntU-85-AaJ" firstAttribute="baseline" secondItem="ztL-LO-XhV" secondAttribute="baseline" id="P2e-3H-9uY"/>
@@ -867,7 +850,7 @@
                 <constraint firstItem="Pdq-s0-erT" firstAttribute="top" secondItem="YJ5-of-VuU" secondAttribute="bottom" constant="4" id="wvH-wm-dox"/>
                 <constraint firstItem="3et-YT-WBR" firstAttribute="top" secondItem="swT-iM-shZ" secondAttribute="bottom" constant="8" symbolic="YES" id="y2J-57-qCW"/>
                 <constraint firstItem="DVM-Js-DwK" firstAttribute="leading" secondItem="NhN-Lg-awX" secondAttribute="trailing" constant="9" id="yIt-8L-VbD"/>
-                <constraint firstItem="MGZ-hB-jhx" firstAttribute="top" secondItem="zVi-vU-sh2" secondAttribute="bottom" constant="16" id="zMD-eX-e2y"/>
+                <constraint firstItem="MGZ-hB-jhx" firstAttribute="top" secondItem="zEH-aV-Tl7" secondAttribute="bottom" constant="16" id="zMD-eX-e2y"/>
                 <constraint firstItem="MGZ-hB-jhx" firstAttribute="leading" secondItem="yI9-2a-q2a" secondAttribute="leading" id="zpo-Kd-EaI"/>
             </constraints>
             <point key="canvasLocation" x="-1040" y="-23"/>

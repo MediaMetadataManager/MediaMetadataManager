@@ -34,6 +34,8 @@ class PresetPrefsViewController: NSViewController, SectionsTableViewDataSource, 
         tableView.dataSource = self
         tableView.delegate = self
 
+        addIntroduction()
+
         tableView.reloadData()
 
         observer = NotificationCenter.default.addObserver(forName: PresetManager.updateNotification,
@@ -47,6 +49,39 @@ class PresetPrefsViewController: NSViewController, SectionsTableViewDataSource, 
 
     required init?(coder: NSCoder) {
         fatalError()
+    }
+
+    /// A heading and short description above the list, laid out like the
+    /// other Preferences tabs. The list itself comes from the nib; its top
+    /// edge is moved from the top of the view to below this text.
+    private func addIntroduction() {
+        guard let scrollView = tableView.enclosingScrollView else { return }
+
+        let headerLabel = NSTextField(labelWithString: NSLocalizedString("Sets", comment: "Sets prefs header"))
+        headerLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
+        headerLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        let descriptionLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("A Set is a saved group of settings you can reuse. Metadata sets hold tag values, such as genre, studio or rating, that you can apply to a file from its edit window. Queue sets hold a whole group of Queue options, so a run can be repeated the same way. Choose a set in the Queue options and it is applied to every item automatically, which makes sets a handy step in a workflow: add files, and each one is tagged the same way as it is processed.", comment: "Sets prefs description"))
+        descriptionLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        descriptionLabel.textColor = .secondaryLabelColor
+        descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
+        descriptionLabel.preferredMaxLayoutWidth = 520
+
+        view.addSubview(headerLabel)
+        view.addSubview(descriptionLabel)
+
+        for constraint in view.constraints where constraint.firstItem === scrollView && constraint.firstAttribute == .top {
+            constraint.isActive = false
+        }
+
+        NSLayoutConstraint.activate([
+            headerLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
+            headerLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            descriptionLabel.topAnchor.constraint(equalTo: headerLabel.bottomAnchor, constant: 4),
+            descriptionLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            descriptionLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            scrollView.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: 12)
+        ])
     }
 
     // MARK: Table View with sections

@@ -257,7 +257,7 @@ private final class RuleRowView: NSView, TokenChangeObserver, NSTextFieldDelegat
         comboBox.removeAllItems()
         let values = field == MP42MetadataKeyRating
             ? Ratings.conditionAutocompleteValues(mediaKind: mediaKind)
-            : (MetadataPrefs.namingConditionValueHistory[field] ?? [])
+            : (NamingCondition.fixedValues(for: field) ?? MetadataPrefs.namingConditionValueHistory[field] ?? [])
         comboBox.addItems(withObjectValues: values)
     }
 
@@ -386,7 +386,8 @@ private final class RuleRowView: NSView, TokenChangeObserver, NSTextFieldDelegat
             // the kind of unmatchable typo ("USA NC-17") this feature
             // exists to prevent. Every other field's history is fair
             // game.
-            if rule.conditions[conditionIndex].field != MP42MetadataKeyRating {
+            if rule.conditions[conditionIndex].field != MP42MetadataKeyRating,
+               NamingCondition.fixedValues(for: rule.conditions[conditionIndex].field) == nil {
                 MetadataPrefs.recordNamingConditionValue(field.stringValue, for: rule.conditions[conditionIndex].field)
             }
             onChange?(rule)
@@ -598,19 +599,22 @@ class OutputPrefsViewController: NSViewController, NSTabViewDelegate {
         tabView.addTabViewItem(movieTabViewItem)
         tabView.addTabViewItem(tvShowTabViewItem)
 
-        let footer = NSTextField(wrappingLabelWithString: NSLocalizedString("Set the format to create a custom filename in the Save As… panel and in the queue. Each rule's checkbox enables or disables it. A conditional rule's own name is used instead of the default whenever all of its conditions match the file's metadata.", comment: ""))
-        footer.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
-        footer.textColor = .secondaryLabelColor
+        let headerLabel = NSTextField(labelWithString: NSLocalizedString("Filename", comment: "Filename prefs header"))
+        headerLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
+        headerLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        let mainStack = NSStackView(views: [
-            tabView,
-            NSBox.separatorBox(),
-            footer
-        ])
+        let descriptionLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Set the format to create a custom filename in the Save As\u{2026} panel and in the queue. Each rule's checkbox enables or disables it. A conditional rule's own name is used instead of the default whenever all of its conditions match the file's metadata.", comment: ""))
+        descriptionLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        descriptionLabel.textColor = .secondaryLabelColor
+        descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
+        descriptionLabel.preferredMaxLayoutWidth = 620
+
+        let mainStack = NSStackView(views: [headerLabel, descriptionLabel, tabView])
         mainStack.translatesAutoresizingMaskIntoConstraints = false
         mainStack.orientation = .vertical
         mainStack.alignment = .leading
-        mainStack.spacing = 10
+        mainStack.spacing = 12
+        mainStack.setCustomSpacing(4, after: headerLabel)
 
         view.addSubview(mainStack)
 
@@ -619,7 +623,8 @@ class OutputPrefsViewController: NSViewController, NSTabViewDelegate {
             mainStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             mainStack.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
             mainStack.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
-            footer.widthAnchor.constraint(equalToConstant: 560)
+            tabView.leadingAnchor.constraint(equalTo: mainStack.leadingAnchor),
+            tabView.trailingAnchor.constraint(equalTo: mainStack.trailingAnchor)
         ])
     }
 

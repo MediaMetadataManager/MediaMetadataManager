@@ -239,7 +239,7 @@ private final class DeliveryRuleRowView: NSView, NSTextFieldDelegate, NSComboBox
         comboBox.removeAllItems()
         let values = field == MP42MetadataKeyRating
             ? Ratings.conditionAutocompleteValues(mediaKind: mediaKind)
-            : (MetadataPrefs.namingConditionValueHistory[field] ?? [])
+            : (NamingCondition.fixedValues(for: field) ?? MetadataPrefs.namingConditionValueHistory[field] ?? [])
         comboBox.addItems(withObjectValues: values)
     }
 
@@ -313,7 +313,8 @@ private final class DeliveryRuleRowView: NSView, NSTextFieldDelegate, NSComboBox
         for (conditionIndex, controls) in conditionControls.enumerated() where field === controls.valueField {
             guard conditionIndex < rule.conditions.count else { return }
             rule.conditions[conditionIndex].value = field.stringValue
-            if rule.conditions[conditionIndex].field != MP42MetadataKeyRating {
+            if rule.conditions[conditionIndex].field != MP42MetadataKeyRating,
+               NamingCondition.fixedValues(for: rule.conditions[conditionIndex].field) == nil {
                 MetadataPrefs.recordNamingConditionValue(field.stringValue, for: rule.conditions[conditionIndex].field)
             }
             onChange?(rule)
@@ -397,7 +398,7 @@ final class DestinationsViewController: NSViewController, NSTabViewDelegate {
         headerLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
         headerLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        let descriptionLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Where a finished file goes. With automatic delivery on, a file goes to the first enabled rule below whose conditions all match its tagged metadata, and otherwise to the default destination. With it off, every finished file waits in the staging folder for you to look over first.", comment: ""))
+        let descriptionLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Where a finished file goes. With automatic delivery on, a movie is checked against the Movies rules and a TV episode against the TV Shows rules (decided by its Media Kind tag, so no rule is needed for that). It goes to the first enabled rule whose conditions all match its tagged metadata, and otherwise to the default destination. With it off, every finished file waits in the staging folder for you to look over first.", comment: ""))
         descriptionLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         descriptionLabel.textColor = .secondaryLabelColor
         descriptionLabel.translatesAutoresizingMaskIntoConstraints = false

@@ -12,6 +12,17 @@ next round of work.
 
 ## Unreleased
 
+## 1.0.5 (2026-10-11)
+
+- Fixed: in a Media Locations or Filename rule, the value list for **Media Kind** was empty, and a typed value such as "Movie" never matched because the file stores Media Kind as a number. The list now offers the same names as the Metadata tab (Movie, TV Show and so on), and they match. **Content Rating** gets its list too.
+- Improved: when the Queue looks up a title by itself it now searches every provider enabled on the Providers tab and merges the results of those that found the same title. The provider chosen in the Queue options is the primary one; blank fields are filled from the others, cast, genre and crew lists are combined, the longest description is kept, and artwork from all of them is pooled. A provider that found a different title is ignored. Editing a single file still uses the provider you choose.
+- Improved: a file edited where it sits (a file already in the staging folder or another delivery folder) is copied aside first, in a hidden file next to it, and put back if the edit fails or M3 is quit part-way. The copy is deleted when the edit is done. On APFS the copy is instant and takes no extra space; if there is no room for a copy the edit goes ahead without one.
+- Removed: the **Send to TV** checkbox in the Queue options. Finished files are delivered by the Media Locations settings (staging folder or straight to the library), so a separate send to the TV app only caused confusion.
+- Fixed: a release that was merging when M3 was quit came back stuck as "merging" and could not be removed or retried. It now comes back as a failed merge, and Edit reopens the merge sheet.
+- Fixed: a Set chosen in the Queue options was not applied to releases coming through the Intake workflow (only to files added by hand). It is now applied after the online search, and its values win over what the search found: every tag the Set fills in replaces the searched value, and tags it leaves blank keep the searched value. Nothing else is erased.
+- Fixed: the **Artwork Position** choice in General preferences was never saved, so the Queue ignored it. It is now saved at once and the Queue always follows it.
+- Improved: the Media Intake, Filename and Sets tabs have a heading and short description at the top, like the other tabs. The Sets description explains what Sets are and how they fit into a workflow. Media Locations explains that Movies and TV Shows are routed by Media Kind with no rule needed. The Media Intake note at the bottom was removed and one tooltip reworded.
+
 ## 1.0.4 (2026-10-10)
 
 - Improved: the Library scan reads only each file's tags instead of loading the whole file, which is far lighter on a large or external drive. The status line names the file being read, a file that cannot be read within 20 seconds is listed as unreadable and skipped, and the scan stops with a message if three in a row fail. Slow reads go to the message log.

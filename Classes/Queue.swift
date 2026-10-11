@@ -57,7 +57,18 @@ final class Queue {
             items = []
         }
 
-        items.compactMap { $0.effectiveItem } .filter { $0.status == .working } .forEach { $0.status = .failed }
+        for item in items.compactMap({ $0.effectiveItem }) where item.status == .working {
+            item.restoreInterruptedEdit()
+            item.status = .failed
+        }
+
+        // A release that was merging when M3 quit has no merge running any
+        // more. Left as "merging" it could never be removed or retried, so
+        // it is moved to "merge failed", where Edit reopens the merge sheet.
+        for release in items.compactMap({ $0.release }) where release.stage == .merging {
+            release.stage = .mergeFailed
+            release.mergeErrorMessage = NSLocalizedString("M3 was quit while this release was merging. Open it to check the order and merge again.", comment: "Release merge interrupted by quitting")
+        }
     }
 
     /// Decodes a persisted queue file, preferring the current QueueRow

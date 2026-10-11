@@ -1044,13 +1044,10 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             item.addAction(QueueColorSpaceAction(tag: tag))
         }
         if let set = prefs.metadataSet {
-            item.addAction(QueueSetAction(preset: set))
+            item.addAction(QueueSetAction(preset: set, setWins: true))
         }
         if prefs.optimize {
             item.addAction(QueueOptimizeAction())
-        }
-        if prefs.sendToiTunes {
-            item.addAction(QueueSendToiTunesAction())
         }
  //MARK: Change Selected Tracks by Language
         if prefs.changeAudioLanguage {
@@ -2007,11 +2004,21 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         let movieLanguage = prefs.movieProviderLanguage
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let service = MetadataSearch.service(name: movieProvider)
-            let search = MetadataSearch.movieSeach(service: service, movie: localTitle, language: movieLanguage)
+            // The chosen provider first, then every other enabled one --
+            // the first to find the title decides.
+            let enabled = MetadataSearch.movieProviders
+            var order: [String] = enabled.contains(movieProvider) ? [movieProvider] : []
+            order.append(contentsOf: enabled.filter { $0 != movieProvider })
+            if order.isEmpty { order = [movieProvider] }
 
             var results: [MetadataResult] = []
-            search.search(completionHandler: { results = $0 }).run()
+            for providerName in order {
+                let service = MetadataSearch.service(name: providerName)
+                let language = providerName == movieProvider ? movieLanguage : MetadataSearch.defaultLanguage(service: service, type: .movie)
+                let search = MetadataSearch.movieSeach(service: service, movie: localTitle, language: language)
+                search.search(completionHandler: { results = $0 }).run()
+                if results.isEmpty == false { break }
+            }
 
             let onlineTitle = results.first?[.name] as? String
             let onlineYear = ParsedMediaName.firstFourDigitYear(in: results.first?[.releaseDate] as? String)
@@ -2116,6 +2123,11 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
                                                 searchName: release.approvedName ?? release.folderURL.lastPathComponent,
                                                 searchTerm: searchTerm,
                                                 searchResultIndex: searchResultIndex))
+        }
+        // The Set chosen in the Queue options, applied after the search so
+        // its values win over what the search found.
+        if let set = prefs.metadataSet {
+            item.addAction(QueueSetAction(preset: set, setWins: true))
         }
         if let readyForLibraryFolder = MediaIntakePrefs.fallbackDeliveryFolder {
             item.addAction(QueueMoveToLibraryAction(releaseID: release.id, destinationRoot: readyForLibraryFolder))

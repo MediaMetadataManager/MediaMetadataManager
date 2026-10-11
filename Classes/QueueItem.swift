@@ -323,6 +323,55 @@ import MP42Foundation
         }
     }
 
+    // MARK: Safety copy for in-place edits
+
+    /// Where the copy of a file being edited in place is kept: next to it,
+    /// hidden, with an extension no scan looks at.
+    static func safetyCopyURL(for url: URL) -> URL {
+        return url.deletingLastPathComponent().appendingPathComponent(".\(url.lastPathComponent).m3-backup")
+    }
+
+    /// Copies `url` aside before it is edited in place. Returns nil, and
+    /// logs it, when there is not room for a copy on the volume (the edit
+    /// then goes ahead without one, as it always used to).
+    static func makeSafetyCopy(of url: URL) -> URL? {
+        let fileManager = FileManager.default
+        let copy = safetyCopyURL(for: url)
+        try? fileManager.removeItem(at: copy)
+        do {
+            try fileManager.copyItem(at: url, to: copy)
+            return copy
+        } catch {
+            try? fileManager.removeItem(at: copy)
+            Logger.shared.write(toLog: "No safety copy made for \(url.lastPathComponent): \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    /// Puts the copy back over the file after a failed edit.
+    static func restoreSafetyCopy(_ copy: URL, over url: URL) {
+        do {
+            _ = try FileManager.default.replaceItemAt(url, withItemAt: copy)
+            Logger.shared.write(toLog: "Restored \(url.lastPathComponent) after a failed edit")
+        } catch {
+            Logger.shared.write(toLog: "Could not restore \(url.lastPathComponent): \(error.localizedDescription). The original is kept as \(copy.lastPathComponent)")
+        }
+    }
+
+    static func discardSafetyCopy(_ copy: URL) {
+        try? FileManager.default.removeItem(at: copy)
+    }
+
+    /// Run when the Queue is loaded: a copy still sitting next to the file
+    /// of an item that was working when M3 quit means the edit never
+    /// finished, so the original is put back.
+    func restoreInterruptedEdit() {
+        let copy = QueueItem.safetyCopyURL(for: destURL)
+        if FileManager.default.fileExists(atPath: copy.path) {
+            QueueItem.restoreSafetyCopy(copy, over: destURL)
+        }
+    }
+
     func process() throws {
         do {
             try performProcess()
@@ -372,10 +421,25 @@ import MP42Foundation
             }
         }
 
+        // An existing file edited where it sits is changed in place, so a
+        // copy of it is set aside first and put back if the edit fails. On
+        // an APFS volume the copy is instant and uses no extra space.
+        var safetyCopy: URL? = nil
+        defer { if let copy = safetyCopy { QueueItem.discardSafetyCopy(copy) } }
+
         if cancelled == false {
             if filePathURL == destURL && mp4.hasFileRepresentation {
                 // We have an existing mp4 file, update it
-                try mp4.update(options: attributes)
+                safetyCopy = QueueItem.makeSafetyCopy(of: filePathURL)
+                do {
+                    try mp4.update(options: attributes)
+                } catch {
+                    if let copy = safetyCopy {
+                        QueueItem.restoreSafetyCopy(copy, over: filePathURL)
+                        safetyCopy = nil
+                    }
+                    throw error
+                }
             } else {
                 // Write the new file to disk
                 try mp4.write(to: destURL, options: attributes)

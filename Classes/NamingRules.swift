@@ -103,6 +103,15 @@ struct NamingCondition: Codable {
         self.value = value
     }
 
+    /// Fixed lists of values for fields that only take a few (the same
+    /// labels the Metadata tab shows), used to fill a condition's value
+    /// dropdown. Nil for fields without one.
+    static func fixedValues(for field: String) -> [String]? {
+        if field == MP42MetadataKeyMediaKind { return MovieViewController.mediaKinds.map { $0.title } }
+        if field == MP42MetadataKeyContentRating { return MovieViewController.contentRatings.map { $0.title } }
+        return nil
+    }
+
     func matches(metadata: MP42Metadata) -> Bool {
         let item = metadata.metadataItemsFiltered(byIdentifier: field).first
         let comparableValue = NamingCondition.comparableValue(for: field, item: item)
@@ -143,6 +152,9 @@ struct NamingCondition: Codable {
            let rawValue = item?.stringValue, rawValue.contains("|") {
             let components = rawValue.components(separatedBy: "|")
             return components.count > 1 ? components[1] : rawValue
+        }
+        if field == MP42MetadataKeyMediaKind, let code = item?.numberValue?.intValue {
+            return MovieViewController.mediaKinds.first { $0.value == code }?.title ?? item?.stringValue
         }
         if field == MP42MetadataKeyContentRating, let code = item?.numberValue?.intValue {
             return MovieViewController.contentRatings.first { $0.value == code }?.title ?? item?.stringValue

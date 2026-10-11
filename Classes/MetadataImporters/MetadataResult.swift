@@ -492,3 +492,116 @@ public final class MetadataResult {
     }
 
 }
+
+// MARK: - Combining results from several providers
+
+extension MetadataResult {
+
+    /// Fields holding a comma separated list of names. Combined results
+    /// keep every distinct name from every provider.
+    private static let listKeys: Set<Key> = [.genre, .cast, .director, .producers, .screenwriters, .composer, .executiveProducer]
+
+    /// Free-text descriptions. Combined results keep the longest one.
+    private static let longTextKeys: Set<Key> = [.description, .longDescription, .seriesDescription]
+
+    /// Identifiers that only mean something to the provider that issued
+    /// them. Never copied from one provider's result into another's.
+    private static let identifierKeys: Set<Key> = [.contentID, .artistID, .playlistID, .iTunesCountry, .iTunesURL,
+                                                    .serviceContentID, .serviceAdditionalContentID, .serviceEpisodeID, .episodeID]
+
+    private static func text(of value: Any?) -> String {
+        guard let value = value else { return "" }
+        let string = (value as? String) ?? "\(value)"
+        return string.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func union(_ first: String, _ second: String) -> String {
+        var seen = Set<String>()
+        var names: [String] = []
+        for part in (first + "," + second).split(separator: ",") {
+            let name = part.trimmingCharacters(in: .whitespacesAndNewlines)
+            if name.isEmpty == false, seen.insert(name.lowercased()).inserted {
+                names.append(name)
+            }
+        }
+        return names.joined(separator: ", ")
+    }
+
+    /// Whether `candidate` (from another provider) describes the same title
+    /// as `self`. Without this check a provider that found a different
+    /// movie would contaminate the combined result.
+    func describesSameTitle(as candidate: MetadataResult, searchTitle: String?) -> Bool {
+        func normalized(_ value: Any?) -> String {
+            return NamingReviewWindowController.normalizedForComparison(MetadataResult.text(of: value))
+        }
+        func similar(_ a: String, _ b: String) -> Bool {
+            if a.isEmpty || b.isEmpty { return true }   // nothing to compare
+            if a == b { return true }
+            let (shorter, longer) = a.count <= b.count ? (a, b) : (b, a)
+            return shorter.count >= 6 && longer.contains(shorter)
+        }
+
+        if mediaKind == .tvShow {
+            if similar(normalized(self[.seriesName]), normalized(candidate[.seriesName])) == false { return false }
+            for key in [Key.season, Key.episodeNumber] {
+                let a = MetadataResult.text(of: self[key]), b = MetadataResult.text(of: candidate[key])
+                if a.isEmpty == false, b.isEmpty == false, a != b { return false }
+            }
+            return true
+        }
+
+        let mine = normalized(self[.name]), theirs = normalized(candidate[.name])
+        let searched = NamingReviewWindowController.normalizedForComparison(searchTitle ?? "")
+        let titleAgrees = similar(mine, theirs) || (searched.isEmpty == false && similar(searched, theirs))
+        guard titleAgrees else { return false }
+
+        let myYear = ParsedMediaName.firstFourDigitYear(in: MetadataResult.text(of: self[.releaseDate]))
+        let theirYear = ParsedMediaName.firstFourDigitYear(in: MetadataResult.text(of: candidate[.releaseDate]))
+        if let a = myYear.flatMap({ Int($0) }), let b = theirYear.flatMap({ Int($0) }) {
+            return abs(a - b) <= 1
+        }
+        return true
+    }
+
+    /// Builds one result from several providers' results for the same
+    /// title. The first result is the primary: its value is kept for
+    /// single-value fields (title, release date, studio, rating...) and
+    /// every blank field is filled from the others. Name lists (cast,
+    /// genre, directors...) are combined, the longest description wins,
+    /// and the artwork of every provider is pooled so the preferred
+    /// artwork can be picked from all of it.
+    static func combine(_ results: [MetadataResult]) -> MetadataResult? {
+        guard let primary = results.first else { return nil }
+        guard results.count > 1 else { return primary }
+
+        let combined = MetadataResult()
+        combined.dictionary = primary.dictionary
+        combined.mediaKind = primary.mediaKind
+        combined.contentRating = primary.contentRating
+        combined.chapters = primary.chapters
+        combined.remoteArtworks = primary.remoteArtworks
+        combined.artworks = primary.artworks
+
+        for other in results.dropFirst() {
+            for (key, value) in other.dictionary {
+                let incoming = text(of: value)
+                if incoming.isEmpty || identifierKeys.contains(key) { continue }
+
+                let existing = text(of: combined.dictionary[key])
+                if existing.isEmpty {
+                    combined.dictionary[key] = value
+                } else if listKeys.contains(key) {
+                    combined.dictionary[key] = union(existing, incoming)
+                } else if longTextKeys.contains(key), incoming.count > existing.count {
+                    combined.dictionary[key] = value
+                }
+            }
+
+            if combined.contentRating == 0 { combined.contentRating = other.contentRating }
+            if combined.chapters.isEmpty { combined.chapters = other.chapters }
+            combined.remoteArtworks = Artwork.unique(artworks: combined.remoteArtworks + other.remoteArtworks)
+            combined.artworks.append(contentsOf: other.artworks)
+        }
+        return combined
+    }
+}

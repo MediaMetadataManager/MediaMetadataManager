@@ -54,8 +54,25 @@ final class QueuePreferences: NSObject {
     @objc dynamic var movieProviderLanguage: String
     @objc dynamic var tvShowProvider: String
     @objc dynamic var tvShowProviderLanguage: String
-    @objc dynamic var providerArtwork: Int
-    @objc dynamic var providerArtworkSize: Int
+    /// The artwork choice is one setting shown in two places (General
+    /// preferences and the Queue options), each with its own instance of
+    /// this class. A change is therefore saved at once, and picked up by
+    /// every other instance (see artworkDefaultsChanged), instead of
+    /// waiting for a save that the General pane never makes.
+    @objc dynamic var providerArtwork: Int {
+        didSet {
+            if oldValue != providerArtwork {
+                UserDefaults.standard.set(providerArtwork, forKey: QueuePreferences.SBQueueProviderArtwork)
+            }
+        }
+    }
+    @objc dynamic var providerArtworkSize: Int {
+        didSet {
+            if oldValue != providerArtworkSize {
+                UserDefaults.standard.set(providerArtworkSize, forKey: QueuePreferences.SBQueueProviderArtworkSize)
+            }
+        }
+    }
 
     @objc dynamic var organize: Bool
     @objc dynamic var fixFallbacks: Bool
@@ -141,6 +158,22 @@ final class QueuePreferences: NSObject {
         recordOnly = true
         writeValues()
         recordOnly = false
+
+        NotificationCenter.default.addObserver(self, selector: #selector(artworkDefaultsChanged(_:)),
+                                               name: UserDefaults.didChangeNotification, object: nil)
+    }
+
+    /// Another instance (or anything else) saved a different artwork
+    /// choice: follow it, so the Queue always uses what General says.
+    @objc private func artworkDefaultsChanged(_ notification: Notification) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            let defaults = UserDefaults.standard
+            let artwork = defaults.integer(forKey: QueuePreferences.SBQueueProviderArtwork)
+            if artwork != self.providerArtwork { self.providerArtwork = artwork }
+            let size = defaults.integer(forKey: QueuePreferences.SBQueueProviderArtworkSize)
+            if size != self.providerArtworkSize { self.providerArtworkSize = size }
+        }
     }
 
     convenience init(preset: QueuePreset) {

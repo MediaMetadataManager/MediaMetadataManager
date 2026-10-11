@@ -128,9 +128,9 @@ The **Settings** button reveals the options applied to items you add by hand and
 
 - **Global options:** *Auto-Start the queue*; *Show Notification When Done* (macOS asks permission the first time).
 - **Location** and **File Type** (`mp4` or `m4v`) for the output.
-- **Apply Set**, **Fetch Metadata** and the provider language for Movies and TV Shows, **Artwork** shape (Portrait, Landscape, Square or Rectangle), and **Set output filename**.
+- **Apply Set** (applied after the online search, for hand-added files and Intake releases alike: the tags the Set fills in replace the searched values, and tags it leaves blank keep them), **Fetch Metadata** and the provider language for Movies and TV Shows, **Artwork** shape (Portrait, Landscape, Square or Rectangle), and **Set output filename**.
 - **Track tidy-ups:** *Clear existing metadata*, *Rename chapter titles*, *Organize groups*, *Prettify audio track names*, *Fix audio fallbacks*, *Clear track names*, *Load external subtitles*, *Complete tracks language*, *Enable audio / subtitle track with language*.
-- **Optimize**, **Send to AppleTV/iTunes** and the **color space** options.
+- **Optimize** and the **color space** options. Where a finished file goes is decided by the Media Locations tab (see 5.5), not by the Queue options.
 
 ## 3.4 Review sheets
 
@@ -170,7 +170,7 @@ Choose which tags are shown for Movies and TV Shows and in what order. **Fill Se
 
 ## Sets
 
-Create and edit Sets: named collections of tag values that can be applied to a file with one click, or automatically by the Queue.
+Create and edit Sets: saved groups of settings you can reuse. Metadata sets hold tag values (genre, studio, rating and so on) that can be applied to a file with one click; Queue sets hold a group of Queue options. Choose a set in the Queue options and it is applied to every item automatically, so sets can be a step in a workflow: add files and each one is tagged the same way as it is processed.
 
 ## Filename
 
@@ -259,6 +259,8 @@ You can also merge by hand: select two or more items in the Queue and click **Me
 
 **Rules.** The **Movies** and **TV Shows** tabs each have an ordered list of rules for sending files somewhere other than the default.
 
+Which list a file is checked against is decided by its **Media Kind** tag: a TV Show goes through the TV Shows rules and everything else, including a file with no Media Kind, through the Movies rules. You never need a rule that says Movie goes to Movies or TV Show goes to TV Shows; rules are only for choosing a different folder within a kind. In a rule, the Media Kind value list offers the same names as the Metadata tab (Movie, TV Show and so on).
+
 - A **rule** has a checkbox (to turn it on or off), a **Folder**, and one or more conditions in the form *If Genre is Documentary*. Conditions use the same fields and wording as the Filename rules: conditions on different fields must all match (And), conditions on the same field match if any one does (Or).
 - Rules are checked from the top. The **first enabled rule that matches** the file's tagged metadata decides the folder. If none matches, the default destination is used.
 - **Add Rule** adds a rule at the end of the list; **Remove Rule** deletes it. A rule with no folder is ignored.
@@ -292,7 +294,7 @@ The same choice applies everywhere a finished file is moved: Queue items, whole 
 
 # 7. Metadata sources
 
-**Built-in providers.** TheMovieDB, TheTVDB, Apple TV and the iTunes Store. Each can be switched on or off separately for movies and TV in Preferences → Sources → Providers. The Queue uses the provider chosen in Queue Options for its automatic lookup; the naming window consults every enabled provider in turn.
+**Built-in providers.** TheMovieDB, TheTVDB, Apple TV and the iTunes Store. Each can be switched on or off separately for movies and TV in Preferences → Sources → Providers. The Queue's automatic lookup searches every enabled provider and merges the results of those that found the same title: the provider chosen in Queue Options is the primary one (its title, date, studio and rating are kept), blanks are filled in from the others, cast, genre and crew lists are combined, the longest description is kept, and artwork from all of them is pooled so the **Artwork** choice in General can be met. A provider that found a different title is ignored. The naming window consults every enabled provider in turn. When you edit a single file you choose the provider yourself.
 
 **Custom Sources.** In Preferences → Sources → Custom Sources, click **+** to define a source from a web API: a base address, a search address, a detail address, and a table that maps the API's fields to M3's tags. Each source opens in its own window. Requests time out rather than hang, and request and response bodies are written to the message log to help you debug a mapping. A new source that you close without entering anything is discarded, so clicking **+** several times never leaves empty "New Source" rows behind.
 

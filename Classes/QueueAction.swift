@@ -273,8 +273,16 @@ class QueueSetAction : NSObject, QueueActionProtocol {
 
     private let preset: MetadataPreset
 
-    init(preset: MetadataPreset) {
+    /// When the Set was chosen in the Queue options, its values are the
+    /// user's own rules for the library and win over what the online
+    /// search just found: every tag the Set fills in replaces the searched
+    /// value, and tags the Set leaves blank keep the searched value.
+    /// Nothing else is erased, whatever the Set's own replace options say.
+    private let setWins: Bool
+
+    init(preset: MetadataPreset, setWins: Bool = false) {
         self.preset = preset.copy() as! MetadataPreset
+        self.setWins = setWins
     }
 
     var type: QueueActionType { return .pre }
@@ -288,6 +296,19 @@ class QueueSetAction : NSObject, QueueActionProtocol {
             MP42MetadataItemDataType.integerArray.rawValue | MP42MetadataItemDataType.date.rawValue
 
         var items = preset.metadata.metadataItemsFiltered(by: MP42MetadataItemDataType(rawValue: dataTypes))
+
+        if setWins {
+            let setItems = items.filter { $0.isEffectivelyEmpty == false }
+            metadata.removeItems(metadata.metadataItemsFiltered(byIdentifiers: setItems.map { $0.identifier }))
+            metadata.addItems(setItems)
+
+            let setArtworks = preset.metadata.metadataItemsFiltered(byIdentifier: MP42MetadataKeyCoverArt)
+            if setArtworks.isEmpty == false {
+                metadata.removeItems(metadata.metadataItemsFiltered(byIdentifier: MP42MetadataKeyCoverArt))
+                metadata.addItems(setArtworks)
+            }
+            return true
+        }
 
         // Preferences > Metadata > "Overwrite existing metadata" wins over
         // this Set's own replace-annotations/replace-artworks choice, when
@@ -343,11 +364,13 @@ class QueueSetAction : NSObject, QueueActionProtocol {
 
     func encode(with aCoder: NSCoder) {
         aCoder.encode(preset, forKey: "SBQueueActionSet")
+        aCoder.encode(setWins, forKey: "SBQueueActionSetWins")
     }
 
     required init?(coder aDecoder: NSCoder) {
         guard let preset = aDecoder.decodeObject(of: MetadataPreset.self, forKey: "SBQueueActionSet") else { return nil }
         self.preset = preset
+        self.setWins = aDecoder.decodeBool(forKey: "SBQueueActionSetWins")
     }
 
     static var supportsSecureCoding: Bool { return true }
@@ -405,43 +428,114 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
         return MP42Image(data: data, type: MP42_ART_JPEG)
     }
 
-    private func searchMetadata(info: MetadataSearchTerms) -> MetadataResult? {
+    /// The providers to search, in order: the one chosen in the Queue options
+    /// first (when it is still enabled), then every other provider enabled
+    /// on the Providers tab. The first provider that finds the title is the
+    /// primary one.
+    private func providerOrder(preferred: String, enabled: [String]) -> [String] {
+        var order: [String] = enabled.contains(preferred) ? [preferred] : []
+        order.append(contentsOf: enabled.filter { $0 != preferred })
+        return order.isEmpty ? [preferred] : order
+    }
+
+    private func findMovie(provider providerName: String, title: String, language: String, index: Int) -> MetadataResult? {
+        let service = MetadataSearch.service(name: providerName)
+        let movieSearch = MetadataSearch.movieSeach(service: service, movie: title, language: language)
         var metadata: MetadataResult? = nil
+        _ = movieSearch.search(completionHandler: {
+            if let result = ($0.indices.contains(index) ? $0[index] : $0.first) {
+                _ = movieSearch.loadAdditionalMetadata(result, completionHandler: { metadata = $0 }).run()
+            }
+        }).run()
+        return metadata
+    }
+
+    private func findTVShow(provider providerName: String, series: String, season: Int?, episode: Int?, language: String) -> MetadataResult? {
+        let service = MetadataSearch.service(name: providerName)
+        let tvSearch = MetadataSearch.tvSearch(service: service, tvShow: series, season: season, episode: episode, language: language)
+        var metadata: MetadataResult? = nil
+        _ = tvSearch.search(completionHandler: {
+            if let result = $0.first {
+                _ = tvSearch.loadAdditionalMetadata(result, completionHandler: { metadata = $0 }).run()
+            }
+        }).run()
+        return metadata
+    }
+
+    /// Searches every enabled provider and merges what the ones that found
+    /// the same title return into one result: each provider has data the
+    /// others lack. A provider that found a different title is ignored.
+    /// `provider` is the primary one, whose artwork is preferred.
+    private func searchMetadata(info: MetadataSearchTerms) -> (result: MetadataResult, provider: String)? {
+        var matches: [(provider: String, result: MetadataResult)] = []
+        var skipped: [String] = []
 
         switch info {
         case let .movie(title):
-            let service = MetadataSearch.service(name: self.movieProvider)
-            let movieSearch = MetadataSearch.movieSeach(service: service, movie: title, language: self.movieLanguage)
-            let index = self.searchResultIndex
-            _ = movieSearch.search(completionHandler: {
-                if let result = ($0.indices.contains(index) ? $0[index] : $0.first) {
-                    _ = movieSearch.loadAdditionalMetadata(result, completionHandler: { metadata = $0 }).run()
+            for providerName in providerOrder(preferred: self.movieProvider, enabled: MetadataSearch.movieProviders) {
+                let isChosenProvider = providerName == self.movieProvider
+                let service = MetadataSearch.service(name: providerName)
+                let language = isChosenProvider ? self.movieLanguage : MetadataSearch.defaultLanguage(service: service, type: .movie)
+                // The result index is the user's pick from the chosen
+                // provider's list; other providers start from their first.
+                let index = isChosenProvider ? self.searchResultIndex : 0
+
+                var candidate: MetadataResult? = nil
+                // Once one provider has found the title, the others are
+                // asked for its proper name, which they know better than a
+                // file name.
+                if let properName = matches.first?.result[.name] as? String, properName.isEmpty == false, properName != title {
+                    candidate = findMovie(provider: providerName, title: properName, language: language, index: 0)
                 }
-            }).run()
+                if candidate == nil {
+                    candidate = findMovie(provider: providerName, title: title, language: language, index: index)
+                }
+                guard let found = candidate else { continue }
+
+                if let primary = matches.first?.result, primary.describesSameTitle(as: found, searchTitle: title) == false {
+                    skipped.append(providerName)
+                    continue
+                }
+                matches.append((providerName, found))
+            }
         case let .tvShow(seriesName, season, episode):
-            let service = MetadataSearch.service(name: self.tvShowProvider)
-            let tvSearch = MetadataSearch.tvSearch(service: service, tvShow: seriesName, season: season, episode: episode, language: tvShowLanguage)
-            _ = tvSearch.search(completionHandler: {
-                if let result = $0.first {
-                    _ = tvSearch.loadAdditionalMetadata(result, completionHandler: { metadata = $0 }).run()
+            for providerName in providerOrder(preferred: self.tvShowProvider, enabled: MetadataSearch.tvProviders) {
+                let isChosenProvider = providerName == self.tvShowProvider
+                let service = MetadataSearch.service(name: providerName)
+                let language = isChosenProvider ? self.tvShowLanguage : MetadataSearch.defaultLanguage(service: service, type: .tvShow)
+                guard let found = findTVShow(provider: providerName, series: seriesName, season: season, episode: episode, language: language) else { continue }
+
+                if let primary = matches.first?.result, primary.describesSameTitle(as: found, searchTitle: seriesName) == false {
+                    skipped.append(providerName)
+                    continue
                 }
-            }).run()
+                matches.append((providerName, found))
+            }
         case .none:
             break
         }
 
-        return metadata
+        guard let primary = matches.first, let combined = MetadataResult.combine(matches.map { $0.result }) else { return nil }
+
+        var note = "Metadata search merged " + matches.map { $0.provider }.joined(separator: ", ")
+        if skipped.isEmpty == false {
+            note += "; ignored (different title): " + skipped.joined(separator: ", ")
+        }
+        Logger.shared.write(toLog: note)
+
+        return (combined, primary.provider)
     }
 
     private func searchMetadata(terms: MetadataSearchTerms) -> MP42Metadata? {
 
-        guard let metadata = searchMetadata(info: terms) else { return nil }
+        guard let found = searchMetadata(info: terms) else { return nil }
+        let metadata = found.result
 
         let artworks = metadata.remoteArtworks
 
         if preferredArtwork != .none && artworks.isEmpty == false {
             let artwork: Artwork? = {
-                let provider = terms.isMovie ? self.movieProvider : self.tvShowProvider
+                let provider = found.provider
                 let type = terms.isMovie && preferredArtwork.isMovieType == false ? .poster : preferredArtwork
 
                 // TV box art is conventionally square -- TheTVDB/TheMovieDB

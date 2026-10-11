@@ -131,7 +131,7 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         autoMergeOnSequenceCheckbox = NSButton(checkboxWithTitle: NSLocalizedString("Automatically merge multi-file releases with a clear sequence", comment: ""),
                                                 target: self, action: #selector(toggleAutoMergeOnSequence(_:)))
         autoMergeOnSequenceCheckbox.translatesAutoresizingMaskIntoConstraints = false
-        autoMergeOnSequenceCheckbox.toolTip = NSLocalizedString("Once naming is approved for a release with more than one file, merge them automatically -- in the order their names already indicate (01/02/\u{2026}, Part 1/Part 2, \u{2026}) -- instead of always stopping at the manual reorder sheet. Only applies when every file in the set has a clearly detected sequence number and they're confirmed compatible; otherwise the row still waits for you to confirm the order, same as today.", comment: "")
+        autoMergeOnSequenceCheckbox.toolTip = NSLocalizedString("Once naming is approved for a release with more than one file, merge them automatically -- in the order their names already indicate (01/02/\u{2026}, Part 1/Part 2, \u{2026}) -- instead of always stopping at the manual reorder sheet. Only applies when every file in the set has a clearly detected sequence number and they're confirmed compatible; otherwise the row waits for you to confirm the order.", comment: "")
 
         autoCleanEmptyFoldersCheckbox = NSButton(checkboxWithTitle: NSLocalizedString("Remove empty folders automatically", comment: ""),
                                                   target: self, action: #selector(toggleAutoCleanEmptyFolders(_:)))
@@ -148,18 +148,9 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         autoRemoveCompletedCheckbox.translatesAutoresizingMaskIntoConstraints = false
         autoRemoveCompletedCheckbox.toolTip = NSLocalizedString("When a Queue run finishes, the finished rows (the ones with a checkmark) are taken off the list for you. Only the rows go; your files are not touched. Failed rows and rows still waiting for you stay.", comment: "")
 
-        // The Ready for Media Library folder moved to the Media Locations tab,
-        // where it is the staging folder.
-        let deliveryNoteLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Where finished files are delivered (the staging folder, the Apple TV Automatically Add folders, and rules by genre, rating, year and so on) is set on the Media Locations tab.", comment: ""))
-        deliveryNoteLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
-        deliveryNoteLabel.textColor = .secondaryLabelColor
-        deliveryNoteLabel.translatesAutoresizingMaskIntoConstraints = false
-        deliveryNoteLabel.preferredMaxLayoutWidth = 620
-
         let mainStack = NSStackView(views: [headerLabel, descriptionLabel, intakeSection,
                                              autoWatchCheckbox, autoApproveHighConfidenceCheckbox,
-                                             renameAfterMergeCheckbox, autoMergeOnSequenceCheckbox, autoCleanEmptyFoldersCheckbox, autoCleanProcessedFilesCheckbox, autoRemoveCompletedCheckbox,
-                                             deliveryNoteLabel])
+                                             renameAfterMergeCheckbox, autoMergeOnSequenceCheckbox, autoCleanEmptyFoldersCheckbox, autoCleanProcessedFilesCheckbox, autoRemoveCompletedCheckbox])
         mainStack.orientation = .vertical
         mainStack.alignment = .leading
         mainStack.spacing = 12
@@ -167,7 +158,6 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         mainStack.setCustomSpacing(16, after: descriptionLabel)
         mainStack.setCustomSpacing(8, after: autoWatchCheckbox)
         mainStack.setCustomSpacing(8, after: autoApproveHighConfidenceCheckbox)
-        mainStack.setCustomSpacing(20, after: deliveryNoteLabel)
         mainStack.setCustomSpacing(8, after: renameAfterMergeCheckbox)
         mainStack.setCustomSpacing(8, after: autoMergeOnSequenceCheckbox)
         mainStack.setCustomSpacing(8, after: autoCleanEmptyFoldersCheckbox)

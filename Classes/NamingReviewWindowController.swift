@@ -410,7 +410,7 @@ final class NamingReviewWindowController: NSWindowController {
     /// collapses runs of whitespace -- enough to make "Some Movie Vol. 2"
     /// and "some movie vol 2" compare equal without pulling in a full
     /// fuzzy-matching library for what's meant to be a strict check.
-    private static func normalizedForComparison(_ title: String) -> String {
+    static func normalizedForComparison(_ title: String) -> String {
         let lowered = title.lowercased()
         let kept = lowered.unicodeScalars.filter {
             CharacterSet.alphanumerics.contains($0) || CharacterSet.whitespaces.contains($0)

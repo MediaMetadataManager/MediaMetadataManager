@@ -593,7 +593,8 @@ class MovieViewController: PropertyView, NSTableViewDataSource, ExpandedTableVie
                     (title: NSLocalizedString("Clean", comment: ""), value: 2),
                     (title: NSLocalizedString("Explicit", comment: ""), value: 4)]
 
-    private static let mediaKinds: [(title: String, value: Int)] =
+    // Not private: NamingCondition reuses this list (see contentRatings above).
+    static let mediaKinds: [(title: String, value: Int)] =
                    [(title: NSLocalizedString("Home Video", comment: ""), value: 0),
                     (title: NSLocalizedString("Music", comment: ""), value: 1),
                     (title: NSLocalizedString("Audiobook", comment: ""), value: 2),

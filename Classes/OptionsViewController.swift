@@ -10,7 +10,6 @@ import MP42Foundation
 
 final class OptionsViewController: NSViewController, NSUserInterfaceValidations {
 
-    @IBOutlet weak var sendToExternalApp: NSButton!
     @IBOutlet var destButton: NSPopUpButton!
 
     @objc private dynamic let options: QueuePreferences
@@ -61,10 +60,6 @@ final class OptionsViewController: NSViewController, NSUserInterfaceValidations 
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        if #available(macOS 10.15, *) {
-            sendToExternalApp.title = NSLocalizedString("Send to TV", comment: "Send to tv app menu item")
-        }
-
         // Observe the providers changes
         // to update the specific provider languages popup
 

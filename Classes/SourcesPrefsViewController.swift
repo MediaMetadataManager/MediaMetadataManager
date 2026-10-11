@@ -264,7 +264,7 @@ final class SourcesPrefsViewController: NSViewController, NSTabViewDelegate {
         headerLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
         headerLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        let descriptionLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Turn the built-in providers on or off, separately for movies and TV shows. A disabled provider is removed from the search provider menu and the batch queue options. Custom sources are always available and are configured on the Custom Sources tab.", comment: ""))
+        let descriptionLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Turn the built-in providers on or off, separately for movies and TV shows. A disabled provider is removed from the search provider menu and the Queue options. When the Queue looks up a title on its own, it searches every provider ticked here and merges what the ones that found the same title return, so the result is as complete as possible. When you edit a single file, you choose the provider yourself. Custom sources are always available and are configured on the Custom Sources tab.", comment: ""))
         descriptionLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         descriptionLabel.textColor = .secondaryLabelColor
         descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
