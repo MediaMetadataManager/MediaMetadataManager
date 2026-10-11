@@ -38,6 +38,7 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
 
     private var intakeFolderList: FolderListView!
     private var scanNowButton: NSButton!
+    private var resetScanButton: NSButton!
     private var scanResultLabel: NSTextField!
     private var readyForLibraryFolderField: NSTextField!
     private var autoWatchCheckbox: NSButton!
@@ -91,13 +92,20 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         scanNowButton.toolTip = NSLocalizedString("Look in the Incoming Folders right now and add whatever is there to the Queue (TV episodes go to the TV Show Queue), even if automatic watching is off.", comment: "")
         scanNowButton.translatesAutoresizingMaskIntoConstraints = false
 
+        resetScanButton = NSButton(title: NSLocalizedString("Reset Scan\u{2026}", comment: ""), target: self, action: #selector(resetScan(_:)))
+        resetScanButton.bezelStyle = .rounded
+        resetScanButton.controlSize = .small
+        resetScanButton.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        resetScanButton.toolTip = NSLocalizedString("Forget which files the scan has already taken in, then scan again. Use this when a file or folder in an Incoming Folder is not being picked up.", comment: "")
+        resetScanButton.translatesAutoresizingMaskIntoConstraints = false
+
         scanResultLabel = NSTextField(labelWithString: "")
         scanResultLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         scanResultLabel.textColor = .secondaryLabelColor
         scanResultLabel.translatesAutoresizingMaskIntoConstraints = false
 
         let intakeSection = makeFolderListSection(title: NSLocalizedString("Incoming Folders", comment: ""), list: intakeList,
-                                                  accessories: [scanNowButton, scanResultLabel])
+                                                  accessories: [scanNowButton, resetScanButton, scanResultLabel])
 
         autoWatchCheckbox = NSButton(checkboxWithTitle: NSLocalizedString("Automatically watch these folders for new files", comment: ""),
                                       target: self, action: #selector(toggleAutoWatch(_:)))
@@ -285,6 +293,25 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
                 ? NSLocalizedString("Nothing new found.", comment: "")
                 : String.localizedStringWithFormat(NSLocalizedString("Added %lu new item(s).", comment: ""), added)
         }
+    }
+
+    @objc private func resetScan(_ sender: NSButton) {
+        guard MediaIntakePrefs.intakeFolders.isEmpty == false else {
+            scanResultLabel.stringValue = NSLocalizedString("Add an Incoming Folder first.", comment: "")
+            return
+        }
+
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = NSLocalizedString("Reset the scan?", comment: "")
+        alert.informativeText = NSLocalizedString("M3 will forget which files it has already taken in from the Incoming Folders, then scan them again. Anything still in an Incoming Folder that is not already in a Queue will be added. Items already in a Queue are not duplicated.", comment: "")
+        alert.addButton(withTitle: NSLocalizedString("Reset and Scan", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
+
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        QueueController.resetIntakeMemory()
+        scanNow(sender)
     }
 
     /// A folder list gained or lost a row: let the shared Sources window

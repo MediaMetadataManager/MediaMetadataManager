@@ -12,6 +12,11 @@ next round of work.
 
 ## Unreleased
 
+## 1.0.4 (2026-10-10)
+
+- Improved: the Library scan reads only each file's tags instead of loading the whole file, which is far lighter on a large or external drive. The status line names the file being read, a file that cannot be read within 20 seconds is listed as unreadable and skipped, and the scan stops with a message if three in a row fail. Slow reads go to the message log.
+- Added: a gear button in the Library scan window. It shows the four tags that are always checked (Title, Release Date, Rating, Studio) and lets you tick any other Metadata tag to look for as well; the choice is remembered.
+- Added: **Reset Scan…** next to Scan Now (Preferences > Sources > Media Locations). It forgets which files the Incoming Folder scan has already taken in and scans again, so a file or folder you removed from the Queue (or that was skipped) is picked up again. Items already in a Queue are not duplicated.
 ## 1.0.3 (2026-10-10)
 
 - Fixed: Queue options (search provider, language, artwork, and the other checkboxes) were not remembered after quitting. The Movies and TV Shows queues each saved their own launch-time copy over the other's changes. Only settings you actually changed are saved now.

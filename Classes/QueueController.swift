@@ -782,6 +782,16 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         }
     }
 
+    /// Forgets every path the Incoming Folder scan has already taken in
+    /// (both queues share the one list), so whatever still sits in an
+    /// Incoming Folder and isn't in a Queue is picked up again by the next
+    /// scan. Rows already in a Queue are never duplicated.
+    static func resetIntakeMemory() {
+        UserDefaults.standard.removeObject(forKey: ingestedPathsKey)
+        shared.intakeObservations.removeAll()
+        tvShows.intakeObservations.removeAll()
+    }
+
     private var ingestedIntakePaths: Set<String> {
         return Set(UserDefaults.standard.stringArray(forKey: QueueController.ingestedPathsKey) ?? [])
     }

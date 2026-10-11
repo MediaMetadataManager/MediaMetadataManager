@@ -40,6 +40,15 @@ typedef void (^MP42FileProgressHandler)(double progress);
 + (void)setGlobalLogger:(id <MP42Logging>)logger;
 
 /**
+ *  Reads only the metadata (tags and artwork) of the mp4/m4v file at the given URL,
+ *  without loading its tracks, chapters or chapter preview images. Much lighter than
+ *  initWithURL:error: for callers that only need the tags, such as a library scan.
+ *  Returns nil when the file cannot be opened or is a QuickTime movie or a fragmented mp4
+ *  (the same files initWithURL:error: refuses).
+ */
++ (nullable MP42Metadata *)readMetadataOfFileAtURL:(NSURL *)URL NS_SWIFT_NAME(readMetadata(ofFileAt:));
+
+/**
  * indicates the URL with which the instance of MP42File was initialized.
  */
 @property(nonatomic, readonly, nullable) NSURL *URL;

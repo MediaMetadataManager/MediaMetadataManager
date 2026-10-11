@@ -150,6 +150,8 @@ If **Automatically approve high-confidence naming matches** is on and the online
 
 Choose **Scan Library for Missing Metadata** on the Welcome window. Pick a folder and click **Scan**. M3 walks the folder for finished `.mp4`, `.m4v` and `.mov` files and lists those missing a Title, Release Date, Rating or Studio. Double-click a file to open it in the editor. The scan only reports; it never changes a file.
 
+The scan reads only each file's tags, not its tracks or chapters, so it is light on the drive, and the status line names the file it is reading. The **gear button** next to Scan shows the four tags that are always checked and a list of every other tag from Metadata; tick any of them to have the scan look for those too. Your choice is remembered. A file that cannot be read within 20 seconds is listed as *Unreadable (timed out)* and the scan carries on; if three files in a row cannot be read, the scan stops and tells you to check the drive. Slow reads are written to the message log.
+
 ## 3.6 Message log
 
 **Window → Show Message Log** shows what M3 has been doing. It is the first place to look, and the thing to attach, when reporting a problem.
@@ -212,6 +214,7 @@ All of these are in **Preferences → Sources → Media Intake**. Hover over any
 |---|---|---|
 | **Incoming Folders** (+ / −, **Choose…**) | none | The folders M3 looks in. Loose files are wrapped in a folder of their own; folders holding media (up to three levels down) become releases. |
 | **Scan Now** | — | Looks in the Incoming Folders immediately and adds what it finds, even when watching is off, without waiting for files to settle. TV episodes go to the TV Shows Queue. |
+| **Reset Scan…** | — | Forgets which files the scan has already taken in, then scans again. Use it when something sitting in an Incoming Folder is not being picked up, for example after you removed its row from the Queue. Anything already in a Queue is not duplicated. |
 | **Automatically watch these folders for new files** | off | Watches the folders and also re-checks every 20 seconds. A new item is added once its files have stopped changing for about 10 seconds. |
 | **Automatically approve high-confidence naming matches** | off | Approves the suggested name without a click when the online title matches exactly. |
 | **Rename the source folder after merging, when a correct name is found** | off | After a manual Queue merge, renames the download folder to a correct release name found nearby (a cover image, the folder name, or a well-named video). Never overwrites an existing folder. |
@@ -285,7 +288,7 @@ The same choice applies everywhere a finished file is moved: Queue items, whole 
 
 **Undo a mistake.** Before you save, use **Edit → Undo** in the editor. After **Save** or **Save & Close** a single file cannot be restored by M3, because it was edited in place; use your own backup. For files moved by the Queue's cleanup options, open the Trash and choose **Put Back**.
 
-**Start over with a stuck download.** Remove its row, make sure the file is in the Incoming Folder, and click **Scan Now**.
+**Start over with a stuck download.** Remove its row, make sure the file is in the Incoming Folder, and click **Reset Scan…**.
 
 # 7. Metadata sources
 

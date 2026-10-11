@@ -6,7 +6,8 @@
 //  .mov -- the formats a finished, tagged file in a library actually
 //  sits in, as opposed to a raw download still awaiting Media Intake)
 //  and flags any whose core metadata -- Title, Release Date, Rating,
-//  Studio -- is still missing, so a library built up over time can be
+//  Studio, plus any extra tags chosen with the gear button -- is still
+//  missing, so a library built up over time can be
 //  swept for gaps without re-checking every file by hand. Reached from
 //  WelcomeWindowController's "Scan Library for Missing Metadata" action,
 //  or any other future entry point via LibraryScanWindowController.shared.
@@ -45,6 +46,37 @@ final class LibraryScanWindowController: NSWindowController {
 
     private static let scannableExtensions: Set<String> = ["mp4", "m4v", "mov"]
 
+    // MARK: Fields to check
+
+    private static let extraFieldsKey = "SBLibraryScanExtraFields"
+
+    /// Extra tags (MP42 metadata identifiers) chosen in the gear panel,
+    /// checked in addition to requiredFields. Kept between scans.
+    private static var extraFieldKeys: [String] {
+        get { UserDefaults.standard.stringArray(forKey: extraFieldsKey) ?? [] }
+        set { UserDefaults.standard.set(newValue, forKey: extraFieldsKey) }
+    }
+
+    private static func fieldsToCheck() -> [(key: String, label: String)] {
+        let requiredKeys = Set(requiredFields.map { $0.key })
+        let extras = extraFieldKeys
+            .filter { requiredKeys.contains($0) == false }
+            .map { (key: $0, label: localizedMetadataKeyName($0) ?? $0) }
+        return requiredFields + extras
+    }
+
+    /// A file that takes longer than this to read is listed as unreadable
+    /// and the scan moves on (a stalled drive or share otherwise blocks it
+    /// for good).
+    private static let readTimeout: TimeInterval = 20
+    /// After this many unreadable files in a row the scan stops: the
+    /// drive itself has most likely stopped responding.
+    private static let maximumConsecutiveTimeouts = 3
+    /// Reads slower than this are written to the message log.
+    private static let slowReadSeconds: TimeInterval = 5
+
+    private static let unreadableLabel = NSLocalizedString("Unreadable (timed out)", comment: "Library scan -> missing column for a file that could not be read in time")
+
     private struct ScanResult {
         let url: URL
         let missingFields: [String]
@@ -75,6 +107,14 @@ final class LibraryScanWindowController: NSWindowController {
     private var tagButton: NSButton!
 
     private var scannedFolderURL: URL?
+
+    private var optionsButton: NSButton!
+    private var optionsPopover: NSPopover?
+    /// The identifiers behind the checkboxes in the gear panel (a
+    /// checkbox's tag is its index here).
+    private var optionKeys: [String] = []
+    /// The file the scan is reading right now (main thread only).
+    private var currentFileName = ""
 
     private init() {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 620, height: 440),
@@ -160,6 +200,13 @@ final class LibraryScanWindowController: NSWindowController {
         tagButton.bezelStyle = .rounded
         tagButton.isEnabled = false
 
+        optionsButton = NSButton(title: "", target: self, action: #selector(showOptions(_:)))
+        optionsButton.translatesAutoresizingMaskIntoConstraints = false
+        optionsButton.bezelStyle = .rounded
+        optionsButton.image = NSImage(named: NSImage.actionTemplateName)
+        optionsButton.imagePosition = .imageOnly
+        optionsButton.toolTip = NSLocalizedString("Choose which tags the scan looks for.", comment: "Library scan -> gear button tooltip")
+
         let doneButton = NSButton(title: NSLocalizedString("Done", comment: "Library scan -> button"), target: self, action: #selector(done(_:)))
         doneButton.translatesAutoresizingMaskIntoConstraints = false
         doneButton.bezelStyle = .rounded
@@ -168,6 +215,7 @@ final class LibraryScanWindowController: NSWindowController {
         view.addSubview(folderField)
         view.addSubview(chooseFolderButton)
         view.addSubview(scanButton)
+        view.addSubview(optionsButton)
         view.addSubview(scrollView)
         view.addSubview(progressIndicator)
         view.addSubview(statusLabel)
@@ -181,7 +229,10 @@ final class LibraryScanWindowController: NSWindowController {
 
             folderField.centerYAnchor.constraint(equalTo: chooseFolderButton.centerYAnchor),
             folderField.leadingAnchor.constraint(equalTo: chooseFolderButton.trailingAnchor, constant: 10),
-            folderField.trailingAnchor.constraint(lessThanOrEqualTo: scanButton.leadingAnchor, constant: -10),
+            folderField.trailingAnchor.constraint(lessThanOrEqualTo: optionsButton.leadingAnchor, constant: -10),
+
+            optionsButton.centerYAnchor.constraint(equalTo: chooseFolderButton.centerYAnchor),
+            optionsButton.trailingAnchor.constraint(equalTo: scanButton.leadingAnchor, constant: -8),
 
             scanButton.centerYAnchor.constraint(equalTo: chooseFolderButton.centerYAnchor),
             scanButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
@@ -245,6 +296,137 @@ final class LibraryScanWindowController: NSWindowController {
         }
     }
 
+    // MARK: Options (gear) panel
+
+    private final class FlippedView: NSView {
+        override var isFlipped: Bool { true }
+    }
+
+    @objc private func showOptions(_ sender: NSButton) {
+        if let popover = optionsPopover, popover.isShown {
+            popover.close()
+            return
+        }
+
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.contentViewController = makeOptionsViewController()
+        popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .maxY)
+        optionsPopover = popover
+    }
+
+    private func makeOptionsViewController() -> NSViewController {
+        let controller = NSViewController()
+        let view = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 420))
+        controller.view = view
+        controller.preferredContentSize = view.frame.size
+
+        func sectionTitle(_ text: String) -> NSTextField {
+            let label = NSTextField(labelWithString: text)
+            label.font = NSFont.boldSystemFont(ofSize: NSFont.smallSystemFontSize)
+            label.translatesAutoresizingMaskIntoConstraints = false
+            return label
+        }
+
+        let requiredTitle = sectionTitle(NSLocalizedString("Always checked", comment: "Library scan -> options section"))
+
+        let requiredStack = NSStackView()
+        requiredStack.orientation = .vertical
+        requiredStack.alignment = .leading
+        requiredStack.spacing = 4
+        requiredStack.translatesAutoresizingMaskIntoConstraints = false
+        for field in LibraryScanWindowController.requiredFields {
+            let box = NSButton(checkboxWithTitle: field.label, target: nil, action: nil)
+            box.state = .on
+            box.isEnabled = false
+            requiredStack.addArrangedSubview(box)
+        }
+
+        let extraTitle = sectionTitle(NSLocalizedString("Also look for", comment: "Library scan -> options section"))
+
+        let requiredKeys = Set(LibraryScanWindowController.requiredFields.map { $0.key })
+        let chosen = Set(LibraryScanWindowController.extraFieldKeys)
+        optionKeys = MP42Metadata.writableMetadata.filter { requiredKeys.contains($0) == false }
+
+        let extraStack = NSStackView()
+        extraStack.orientation = .vertical
+        extraStack.alignment = .leading
+        extraStack.spacing = 4
+        extraStack.translatesAutoresizingMaskIntoConstraints = false
+        for (index, key) in optionKeys.enumerated() {
+            let box = NSButton(checkboxWithTitle: localizedMetadataKeyName(key) ?? key, target: self, action: #selector(toggleExtraField(_:)))
+            box.tag = index
+            box.state = chosen.contains(key) ? .on : .off
+            extraStack.addArrangedSubview(box)
+        }
+
+        let scrollView = NSScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = true
+        scrollView.borderType = .bezelBorder
+        scrollView.drawsBackground = false
+
+        let container = FlippedView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(extraStack)
+        scrollView.documentView = container
+
+        let note = NSTextField(wrappingLabelWithString: NSLocalizedString("A file is listed when any checked tag is empty or missing. Changes apply to the next scan.", comment: "Library scan -> options footnote"))
+        note.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        note.textColor = .secondaryLabelColor
+        note.translatesAutoresizingMaskIntoConstraints = false
+
+        view.addSubview(requiredTitle)
+        view.addSubview(requiredStack)
+        view.addSubview(extraTitle)
+        view.addSubview(scrollView)
+        view.addSubview(note)
+
+        NSLayoutConstraint.activate([
+            requiredTitle.topAnchor.constraint(equalTo: view.topAnchor, constant: 14),
+            requiredTitle.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+
+            requiredStack.topAnchor.constraint(equalTo: requiredTitle.bottomAnchor, constant: 6),
+            requiredStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+
+            extraTitle.topAnchor.constraint(equalTo: requiredStack.bottomAnchor, constant: 14),
+            extraTitle.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+
+            scrollView.topAnchor.constraint(equalTo: extraTitle.bottomAnchor, constant: 6),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            scrollView.bottomAnchor.constraint(equalTo: note.topAnchor, constant: -10),
+
+            note.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            note.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            note.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -12),
+
+            container.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
+            container.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: scrollView.contentView.trailingAnchor),
+
+            extraStack.topAnchor.constraint(equalTo: container.topAnchor, constant: 8),
+            extraStack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 8),
+            extraStack.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -8),
+            extraStack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -8)
+        ])
+
+        return controller
+    }
+
+    @objc private func toggleExtraField(_ sender: NSButton) {
+        guard optionKeys.indices.contains(sender.tag) else { return }
+        let key = optionKeys[sender.tag]
+        var keys = LibraryScanWindowController.extraFieldKeys
+        if sender.state == .on {
+            if keys.contains(key) == false { keys.append(key) }
+        } else {
+            keys.removeAll { $0 == key }
+        }
+        LibraryScanWindowController.extraFieldKeys = keys
+    }
+
     @objc private func scanOrCancel(_ sender: Any?) {
         if isScanning {
             cancelRequested = true
@@ -281,6 +463,46 @@ final class LibraryScanWindowController: NSWindowController {
 
     // MARK: Scanning
 
+    private enum TagReadOutcome {
+        case tags(MP42Metadata)
+        case notScannable
+        case timedOut
+    }
+
+    private final class TagReadBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var stored: MP42Metadata?
+        func set(_ metadata: MP42Metadata?) { lock.lock(); stored = metadata; lock.unlock() }
+        func get() -> MP42Metadata? { lock.lock(); defer { lock.unlock() }; return stored }
+    }
+
+    /// Reads only the tags of one file (no tracks, chapters or preview
+    /// images -- see MP42File.readMetadata(ofFileAt:)), on its own thread
+    /// so a stalled drive can't hold the whole scan: after `timeout`
+    /// seconds the file is given up on (the read thread is simply left to
+    /// finish or hang by itself and its result discarded).
+    private static func readTags(of url: URL, timeout: TimeInterval) -> TagReadOutcome {
+        let box = TagReadBox()
+        let finished = DispatchSemaphore(value: 0)
+
+        DispatchQueue.global(qos: .utility).async {
+            box.set(MP42File.readMetadata(ofFileAt: url))
+            finished.signal()
+        }
+
+        if finished.wait(timeout: .now() + timeout) == .timedOut {
+            return .timedOut
+        }
+        if let metadata = box.get() {
+            return .tags(metadata)
+        }
+        return .notScannable
+    }
+
+    private static func log(_ message: String) {
+        DispatchQueue.main.async { Logger.shared.write(toLog: message) }
+    }
+
     private func beginScan() {
         guard let folderURL = scannedFolderURL else { return }
 
@@ -291,7 +513,10 @@ final class LibraryScanWindowController: NSWindowController {
         cancelRequested = false
         isScanning = true
         progressIndicator.startAnimation(nil)
+        currentFileName = ""
         statusLabel.stringValue = NSLocalizedString("Scanning\u{2026}", comment: "Library scan -> status")
+
+        let fields = LibraryScanWindowController.fieldsToCheck()
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
@@ -306,6 +531,8 @@ final class LibraryScanWindowController: NSWindowController {
             }
 
             var scannedCount = 0
+            var consecutiveTimeouts = 0
+            var stoppedEarly = false
             var pendingResults: [ScanResult] = []
             var lastFlush = Date()
 
@@ -316,11 +543,34 @@ final class LibraryScanWindowController: NSWindowController {
 
                 scannedCount += 1
 
-                if let mp4 = try? MP42File(url: url) {
-                    let missing = LibraryScanWindowController.missingFields(for: mp4)
+                // Show which file is being read before reading it, so a
+                // slow or stuck one is named on screen.
+                let name = url.lastPathComponent
+                let countSoFar = scannedCount
+                DispatchQueue.main.async {
+                    self.currentFileName = name
+                    self.refreshStatus(scannedCount: countSoFar)
+                }
+
+                let started = Date()
+                switch LibraryScanWindowController.readTags(of: url, timeout: LibraryScanWindowController.readTimeout) {
+                case .tags(let metadata):
+                    consecutiveTimeouts = 0
+                    let missing = LibraryScanWindowController.missingFields(in: metadata, fields: fields)
                     if missing.isEmpty == false {
                         pendingResults.append(ScanResult(url: url, missingFields: missing))
                     }
+                case .notScannable:
+                    consecutiveTimeouts = 0
+                case .timedOut:
+                    consecutiveTimeouts += 1
+                    pendingResults.append(ScanResult(url: url, missingFields: [LibraryScanWindowController.unreadableLabel]))
+                    LibraryScanWindowController.log("Library scan: gave up reading \(url.path) after \(Int(LibraryScanWindowController.readTimeout)) seconds")
+                }
+
+                let elapsed = Date().timeIntervalSince(started)
+                if elapsed > LibraryScanWindowController.slowReadSeconds, elapsed < LibraryScanWindowController.readTimeout {
+                    LibraryScanWindowController.log("Library scan: \(url.path) took \(Int(elapsed)) seconds to read")
                 }
 
                 // Flush to the table every few files (or every half
@@ -331,45 +581,71 @@ final class LibraryScanWindowController: NSWindowController {
                     let batch = pendingResults
                     pendingResults = []
                     lastFlush = Date()
-                    let countSoFar = scannedCount
                     DispatchQueue.main.async { self.appendResults(batch, scannedCount: countSoFar) }
+                }
+
+                if consecutiveTimeouts >= LibraryScanWindowController.maximumConsecutiveTimeouts {
+                    stoppedEarly = true
+                    LibraryScanWindowController.log("Library scan stopped: \(consecutiveTimeouts) files in a row could not be read. The drive may have stopped responding.")
+                    break
                 }
             }
 
             let finalBatch = pendingResults
             let finalCount = scannedCount
+            let aborted = stoppedEarly
             DispatchQueue.main.async {
                 if finalBatch.isEmpty == false {
                     self.appendResults(finalBatch, scannedCount: finalCount)
                 }
-                self.finishScan(scannedCount: finalCount)
+                self.finishScan(scannedCount: finalCount, stoppedEarly: aborted)
             }
         }
+    }
+
+    private func refreshStatus(scannedCount: Int) {
+        guard isScanning else { return }
+        statusLabel.stringValue = String(format: NSLocalizedString("Scanned %d files \u{2014} %d listed \u{2014} reading \u{201C}%@\u{201D}\u{2026}", comment: "Library scan -> progress status with the current file"), scannedCount - 1, results.count, currentFileName)
     }
 
     private func appendResults(_ batch: [ScanResult], scannedCount: Int) {
         results.append(contentsOf: batch)
         tableView.reloadData()
-        statusLabel.stringValue = String(format: NSLocalizedString("Scanned %d files \u{2014} %d missing metadata\u{2026}", comment: "Library scan -> progress status"), scannedCount, results.count)
+        refreshStatus(scannedCount: scannedCount)
     }
 
-    private func finishScan(scannedCount: Int) {
+    private func finishScan(scannedCount: Int, stoppedEarly: Bool = false) {
         isScanning = false
         progressIndicator.stopAnimation(nil)
-        statusLabel.stringValue = results.isEmpty
-            ? String(format: NSLocalizedString("Scanned %d files \u{2014} nothing missing.", comment: "Library scan -> done status, none missing"), scannedCount)
-            : String(format: NSLocalizedString("Scanned %d files \u{2014} %d missing metadata.", comment: "Library scan -> done status"), scannedCount, results.count)
+        currentFileName = ""
+        if stoppedEarly {
+            statusLabel.stringValue = String(format: NSLocalizedString("Stopped after %d files \u{2014} several files in a row could not be read. Check that the drive is responding.", comment: "Library scan -> stopped because reads timed out"), scannedCount)
+        } else {
+            statusLabel.stringValue = results.isEmpty
+                ? String(format: NSLocalizedString("Scanned %d files \u{2014} nothing missing.", comment: "Library scan -> done status, none missing"), scannedCount)
+                : String(format: NSLocalizedString("Scanned %d files \u{2014} %d missing metadata.", comment: "Library scan -> done status"), scannedCount, results.count)
+        }
     }
 
-    /// Which of LibraryScanWindowController.requiredFields are empty or
-    /// untagged on `mp4` -- see that property's own doc comment for why
-    /// these four and not every writable key.
-    private static func missingFields(for mp4: MP42File) -> [String] {
-        requiredFields.compactMap { field in
-            let value = mp4.metadata.metadataItemsFiltered(byIdentifier: field.key).first?.stringValue
-            let isMissing = value?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
-            return isMissing ? field.label : nil
+    /// Which of `fields` are empty or untagged in `metadata` -- see
+    /// requiredFields for the always-checked set and fieldsToCheck() for
+    /// the user's extras.
+    private static func missingFields(in metadata: MP42Metadata, fields: [(key: String, label: String)]) -> [String] {
+        fields.compactMap { field in
+            let items = metadata.metadataItemsFiltered(byIdentifier: field.key)
+            return items.contains(where: { isFilled($0) }) ? nil : field.label
         }
+    }
+
+    /// A tag counts as filled when it holds some value: non-blank text,
+    /// a number, a date, a list entry or an image.
+    private static func isFilled(_ item: MP42MetadataItem) -> Bool {
+        if let text = item.stringValue {
+            return text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+        }
+        if item.numberValue != nil || item.dateValue != nil || item.imageValue != nil { return true }
+        if let list = item.arrayValue { return list.isEmpty == false }
+        return false
     }
 }
 

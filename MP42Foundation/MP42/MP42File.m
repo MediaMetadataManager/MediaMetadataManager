@@ -112,6 +112,26 @@ static void logCallback(MP4LogLevel loglevel, const char *fmt, va_list ap) {
     _logger = logger;
 }
 
++ (nullable MP42Metadata *)readMetadataOfFileAtURL:(NSURL *)URL
+{
+    MP4FileHandle handle = MP4Read(URL.fileSystemRepresentation);
+    if (handle == MP4_INVALID_FILE_HANDLE) {
+        return nil;
+    }
+
+    // Same refusals as initWithURL:error:
+    const char *brand = NULL;
+    MP4GetStringProperty(handle, "ftyp.majorBrand", &brand);
+    if ((brand != NULL && !strcmp(brand, "qt  ")) || MP4HaveAtom(handle, "moof")) {
+        MP4Close(handle, 0);
+        return nil;
+    }
+
+    MP42Metadata *metadata = [[MP42Metadata alloc] initWithFileHandle:handle];
+    MP4Close(handle, 0);
+    return metadata;
+}
+
 - (BOOL)startReading {
     NSAssert(self.fileHandle == MP4_INVALID_FILE_HANDLE, @"File Handle already open");
     _fileHandle = MP4Read(self.URL.fileSystemRepresentation);
