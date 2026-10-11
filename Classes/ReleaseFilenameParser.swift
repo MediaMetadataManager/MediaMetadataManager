@@ -639,6 +639,48 @@ enum ReleaseFilenameParser {
         return (result, studio)
     }
 
+    /// Fallback title for a name parse(_:) gave up on because it has no
+    /// year, episode or quality marker, but does carry a "[Studio]" group
+    /// -- typically one of this app's own "Title [Studio] (Year)" names
+    /// after the year was removed ("A Sample Title [Example Studio] ()").
+    /// Returns just the title with every bracket group, any empty "()" and
+    /// any bare "(Year)" taken out and its original capitalisation kept,
+    /// or nil when the name has no bracket group at all (callers then use
+    /// their existing fallback). Without this such a name went to the
+    /// bundled Perl filename parser, which mangled it (dropped the leading
+    /// "A", folded the studio into the title).
+    static func titleWithoutBrackets(_ filename: String) -> String? {
+        let ext = (filename as NSString).pathExtension
+        let baseName = ext.isEmpty ? filename : (filename as NSString).deletingPathExtension
+
+        let fullRange = NSRange(baseName.startIndex..., in: baseName)
+        guard bracketedRegex.firstMatch(in: baseName, range: fullRange) != nil else { return nil }
+
+        var working = replaceMatches(bracketedRegex, in: baseName, with: " ")
+
+        // Parenthesis groups that are empty or hold only a year are noise
+        // here; any other parenthesised text stays (it may be part of the
+        // title).
+        let parens = parenthesizedRegex.matches(in: working, range: NSRange(working.startIndex..., in: working))
+        for match in parens.reversed() {
+            guard let range = Range(match.range, in: working) else { continue }
+            let inner = working[range].dropFirst().dropLast().trimmingCharacters(in: .whitespaces)
+            if inner.isEmpty || inner.range(of: "^(?:19|20)\\d{2}$", options: .regularExpression) != nil {
+                working.replaceSubrange(range, with: " ")
+            }
+        }
+
+        if working.contains(" ") == false {
+            working = normalizedDelimiters(working)
+        }
+        let title = working
+            .replacingOccurrences(of: "_", with: " ")
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { $0.isEmpty == false }
+            .joined(separator: " ")
+        return title.isEmpty ? nil : title
+    }
+
     /// Runs a regex substitution over a string, replacing every match with
     /// `template`.
     private static func replaceMatches(_ regex: NSRegularExpression, in string: String, with template: String) -> String {

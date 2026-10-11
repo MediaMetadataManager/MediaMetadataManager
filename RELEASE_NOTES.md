@@ -12,6 +12,13 @@ next round of work.
 
 ## Unreleased
 
+## 1.0.3 (2026-10-10)
+
+- Fixed: Queue options (search provider, language, artwork, and the other checkboxes) were not remembered after quitting. The Movies and TV Shows queues each saved their own launch-time copy over the other's changes. Only settings you actually changed are saved now.
+- Fixed: a file named like "Sample Title [Example Studio] ()" (studio in brackets, year missing) searched for a mangled title (the leading "A" dropped and the studio added to the end) and found nothing. The search now uses just the title in front of the brackets ("Sample Title").
+- Fixed: dragging a folder from Finder into the Queue now behaves exactly like the Add button: the folder appears as a group (a folder row followed by its files). Dropping a single file still adds just that file.
+- Fixed: adding files or folders that already sit in the staging folder (Ready for Media Library) to the Queue no longer makes a second copy. They are scanned, tagged and renamed where they are; for a movie, its folder is renamed to match. The same applies to any other delivery destination.
+- Added: a new install gets a staging folder automatically: "Ready for Media Library" in your Movies folder (change it under Preferences > Sources > Media Locations). An existing choice is never replaced.
 ## 1.0.2 (2026-10-10)
 
 - Changed: a new Custom Source that is closed without entering anything is discarded instead of staying in the list as "New Source", and clicking **+** again while an empty one exists reopens it rather than adding another. Empty ones left by earlier versions are cleaned up at launch.

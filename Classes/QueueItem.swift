@@ -524,6 +524,7 @@ import MP42Foundation
                                                      QueueSetOutputFilenameAction.classForCoder(), QueueClearExistingMetadataAction.classForCoder(),
                                                      QueueOptimizeAction.classForCoder(), QueueSendToiTunesAction.classForCoder(),
                                                      QueueMoveToLibraryAction.classForCoder(), QueueMoveFileToLibraryAction.classForCoder(),
+                                                     QueueRenameInPlaceAction.classForCoder(),
                                                      QueueChangeAudioLanguageAction.classForCoder(), QueueChangeSubtitleLanguageAction.classForCoder()], forKey: "SBQueueItemActions") as? [QueueActionProtocol] ?? []
     }
 }

@@ -120,7 +120,7 @@ Closing an editor window does not remove its row.
 | Ready | A single file is ready to be written. | Click **Start**. |
 | Done | The release has been delivered: to the staging folder, or with automatic delivery on, to its final destination. | Remove it with **Remove completed items**, or turn on **Remove finished items from the Queue automatically**. |
 
-**Context menu.** Right-click a row for **Reveal in Finder**, **Edit…**, **Remove from queue** and **Remove completed items**. You can also drag rows to change their order, and drop files or folders from Finder into the window.
+**Context menu.** Right-click a row for **Reveal in Finder**, **Edit…**, **Remove from queue** and **Remove completed items**. You can also drag rows to change their order, and drop files or folders from Finder into the window. A dropped folder is grouped under its own folder row, exactly as with the **Add** button; a dropped file is added as a single row.
 
 ## 3.3 Queue Options
 
@@ -265,6 +265,8 @@ You can also merge by hand: select two or more items in the Queue and click **Me
 
 - **Deliver automatically** is **off** by default. While it is off, every finished file goes to the staging folder, whatever the rules say, and you move it on yourself. This is the way to work while you are building trust in the system.
 - Turn it **on** and finished files skip staging: they go from the watched folder straight to the first matching rule's folder, or to the default destination. Folders that are Automatically Add folders receive the finished file alone; the originals stay behind (and go to the Trash if **Clean up processed files** is on).
+- A new install creates the staging folder for you: **Ready for Media Library** inside your Movies folder. Change it here at any time; a folder you chose is never replaced, and one you clear is not put back.
+- Files and folders that are already in the staging folder (or in another delivery destination) can be added to the Queue to be scanned and tagged again. They are updated **in place**: no second copy is made, the file is renamed by your Filename rules, and a movie's folder is renamed to match.
 - With it off and no staging folder set, finished files stay where they are.
 
 The same choice applies everywhere a finished file is moved: Queue items, whole releases from Intake, and files saved from the editor.

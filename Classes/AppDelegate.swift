@@ -145,7 +145,7 @@ final class DocumentController : NSDocumentController {
         let insertionIndex = queueController.count
 
         queueController.showWindow(self)
-        queueController.insert(contentOf: urls, at: insertionIndex)
+        queueController.insertGrouped(urls, at: insertionIndex)
 
         guard offerMerge else { return }
 
@@ -328,6 +328,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         Prefs.register()
         MetadataPrefs.register()
         MediaIntakePrefs.register()
+        MediaIntakePrefs.applyDefaultStagingFolderIfNeeded()
 
         _ = documentController
         _ = activityWindowController

@@ -527,6 +527,32 @@ enum MediaIntakePrefs {
         set { ud.set(newValue, forKey: SBMediaIntakeReadyForLibraryFolder) }
     }
 
+    private static let SBMediaIntakeStagingDefaultApplied = "SBMediaIntakeStagingDefaultApplied"
+
+    /// The staging folder suggested on a fresh install: "Ready for Media
+    /// Library" in the user's Movies folder.
+    static var defaultStagingFolder: URL? {
+        return FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("Ready for Media Library", isDirectory: true)
+    }
+
+    /// On the first launch that knows about this, gives a new install its
+    /// staging folder (and creates it) so finished files always have
+    /// somewhere to wait. Runs once: a folder the person already chose is
+    /// never replaced, and one they later clear is not put back.
+    static func applyDefaultStagingFolderIfNeeded() {
+        guard ud.bool(forKey: SBMediaIntakeStagingDefaultApplied) == false else { return }
+        ud.set(true, forKey: SBMediaIntakeStagingDefaultApplied)
+
+        guard readyForLibraryFolder == nil, let folder = defaultStagingFolder else { return }
+        do {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            readyForLibraryFolder = folder
+        } catch {
+            NSLog("[MediaIntakePrefs] Couldn't create the default staging folder %@: %@", folder.path, error.localizedDescription)
+        }
+    }
+
     /// Delivery rules (see DeliveryRules.swift), one ordered list for
     /// movies and one for TV shows. Stored as JSON, like the naming rules.
     static var movieDeliveryRules: [DeliveryRule] {

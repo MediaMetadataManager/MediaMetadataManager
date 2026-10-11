@@ -994,7 +994,10 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     /// comment -- for items created via insertFolder(_:at:) below.
     private func createItem(url: URL, sourceFolderURL: URL? = nil) -> QueueItem {
 
-        let destURL = destination(for: url)
+        // A file already sitting in the staging folder (or another delivery
+        // destination) is scanned and tagged where it is -- no second copy.
+        let editInPlace = MediaIntakePrefs.shouldEditInPlace(url)
+        let destURL = editInPlace ? url : destination(for: url)
         let item = QueueItem(fileURL: url, destination: destURL, sourceFolderURL: sourceFolderURL)
 
         if prefs.clearExistingMetadata {
@@ -1050,7 +1053,11 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         // output is written, a file sitting anywhere outside Ready for
         // Media Library gets a folder of its own there, whether or not it
         // had a parent folder to begin with.
-        if let readyForLibraryFolder = MediaIntakePrefs.fallbackDeliveryFolder {
+        if editInPlace {
+            if prefs.setOutputFilename {
+                item.addAction(QueueRenameInPlaceAction())
+            }
+        } else if let readyForLibraryFolder = MediaIntakePrefs.fallbackDeliveryFolder {
             item.addAction(QueueMoveFileToLibraryAction(destinationRoot: readyForLibraryFolder))
         }
         return item
@@ -1097,6 +1104,11 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         }
         if prefs.optimize {
             item.addAction(QueueOptimizeAction())
+        }
+        // A file already in the staging folder is tagged and renamed where it
+        // is (QueueSetOutputFilenameAction leaves its destination alone).
+        if prefs.setOutputFilename, MediaIntakePrefs.shouldEditInPlace(item.fileURL) {
+            item.addAction(QueueRenameInPlaceAction())
         }
         add(item)
     }
@@ -1312,13 +1324,10 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         if let isDirectory = value?.isDirectory, isDirectory == true,
             let directoryEnumerator = FileManager.default.enumerator(at: url, includingPropertiesForKeys: [URLResourceKey.nameKey, URLResourceKey.isDirectoryKey], options: [.skipsSubdirectoryDescendants, .skipsHiddenFiles], errorHandler: nil) {
 
-            for fileURL in directoryEnumerator {
-
-                let fileValue = try? url.resourceValues(forKeys: [URLResourceKey.isDirectoryKey])
-                if fileValue?.isDirectory ?? false {
-                    if let fileURL = fileURL as? URL, supportedFileFormats.contains(fileURL.pathExtension.lowercased()) {
-                        items.append(createItem(url: fileURL))
-                    }
+            for case let fileURL as URL in directoryEnumerator {
+                let fileValue = try? fileURL.resourceValues(forKeys: [URLResourceKey.isDirectoryKey])
+                if fileValue?.isDirectory != true, supportedFileFormats.contains(fileURL.pathExtension.lowercased()) {
+                    items.append(createItem(url: fileURL))
                 }
             }
             items.sort { return $0.fileURL.lastPathComponent.localizedStandardCompare($1.fileURL.lastPathComponent) == ComparisonResult.orderedAscending }
@@ -1333,6 +1342,27 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         let sorted = urls.sorted(by: { return $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == ComparisonResult.orderedAscending })
         let result = sorted.flatMap { items(contentOf: $0) }
         add(result, at: index)
+    }
+
+    /// Adds files and folders the way the Add button does: each folder
+    /// becomes its own grouped section (header row + its files, see
+    /// insertFolder(_:at:)), and a plain file becomes a single ungrouped
+    /// row. Used by the Add panel, Finder drag-and-drop, and File > Open
+    /// of a folder so all of them behave identically.
+    func insertGrouped(_ urls: [URL], at index: Int) {
+        let sortedURLs = urls.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == ComparisonResult.orderedAscending }
+        var insertionIndex = min(max(index, 0), queue.count)
+
+        for url in sortedURLs {
+            let isDirectory = (try? url.resourceValues(forKeys: [URLResourceKey.isDirectoryKey]))?.isDirectory ?? false
+            let countBefore = queue.count
+            if isDirectory {
+                insertFolder(url, at: insertionIndex)
+            } else {
+                insert(contentOf: [url], at: insertionIndex)
+            }
+            insertionIndex += queue.count - countBefore
+        }
     }
 
     /// Direct children of folderURL (same non-recursive convention as
@@ -1514,6 +1544,9 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
 
         if popover == closedPopover {
             popover = nil
+            // Save the options as soon as they're closed rather than only
+            // at quit (a force-quit or a stop from Xcode never gets there).
+            prefs.saveUserDefaults()
         }
         if itemPopover == closedPopover {
             itemPopover = nil
@@ -1644,27 +1677,9 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         panel.beginSheetModal(for: windowForSheet) { (response) in
             guard response == NSApplication.ModalResponse.OK else { return }
 
-            // A folder picked here becomes its own grouped section
-            // (insertFolder(_:at:)) rather than being flattened into the
-            // queue indistinguishably from everything else, the way
-            // insert(contentOf:at:) still does for every other caller
-            // (drag-and-drop, AppleScript) -- a plain file picked
-            // alongside one or more folders still just becomes an
-            // ordinary ungrouped row.
-            let sortedURLs = panel.urls.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == ComparisonResult.orderedAscending }
-            var insertionIndex = self.queue.count
-
-            for url in sortedURLs {
-                let isDirectory = (try? url.resourceValues(forKeys: [URLResourceKey.isDirectoryKey]))?.isDirectory ?? false
-                if isDirectory {
-                    let countBefore = self.queue.count
-                    self.insertFolder(url, at: insertionIndex)
-                    insertionIndex += self.queue.count - countBefore
-                } else {
-                    self.insert(contentOf: [url], at: insertionIndex)
-                    insertionIndex += 1
-                }
-            }
+            // Folders become grouped sections, plain files single rows --
+            // the same handling as a Finder drop (insertGrouped).
+            self.insertGrouped(panel.urls, at: self.queue.count)
         }
     }
 
@@ -2569,7 +2584,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             return true
         } else if info.draggingPasteboard.types?.contains(NSPasteboard.PasteboardType.fileURL) ?? false {
             if let items = info.draggingPasteboard.readObjects(forClasses: [NSURL.classForCoder()], options: [:]) as? [URL] {
-                insert(contentOf: items, at: row)
+                insertGrouped(items, at: row)
             }
             return true
         }

@@ -111,6 +111,32 @@ extension MediaIntakePrefs {
         return folders
     }
 
+    /// Folders that already hold finished library files: the staging folder
+    /// and every rule/default destination, except Automatically Add folders
+    /// (the TV/Music app takes files out of those the moment they land).
+    static var libraryRoots: [URL] {
+        let roots = allDeliveryFolders
+            .map { $0.standardizedFileURL }
+            .filter { $0.path.isEmpty == false && $0.isAutomaticMediaIngestFolder == false }
+        // Longest path first so the most specific root wins.
+        return roots.sorted { $0.path.count > $1.path.count }
+    }
+
+    /// The library root a file or folder sits inside, if any.
+    static func libraryRoot(containing url: URL) -> URL? {
+        let path = url.standardizedFileURL.path
+        return libraryRoots.first { path.hasPrefix($0.path + "/") }
+    }
+
+    /// True for an MP4-family file that already lives in the staging folder
+    /// or another delivery destination. Adding such a file to the Queue
+    /// scans and tags it where it is, instead of writing a second copy
+    /// into a new folder.
+    static func shouldEditInPlace(_ url: URL) -> Bool {
+        guard ["mp4", "m4v", "mov"].contains(url.pathExtension.lowercased()) else { return false }
+        return libraryRoot(containing: url) != nil
+    }
+
     /// True when there is anywhere at all to deliver to.
     static var hasDeliveryDestination: Bool {
         return fallbackDeliveryFolder != nil

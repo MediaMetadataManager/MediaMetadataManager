@@ -65,6 +65,15 @@ class QueueSetOutputFilenameAction: NSObject, QueueActionProtocol {
         // back-to-back placeholder tokens with nothing else between them,
         // so a Movie template like {Name}{Studio}{Release Date} no longer
         // glues its values together with no space at all.
+        // A file that already sits in the staging folder (or another delivery
+        // destination) is tagged where it is: its destination stays its own
+        // path and QueueRenameInPlaceAction renames it afterwards. Writing it
+        // to a new folder here is what used to leave a second copy behind.
+        if MediaIntakePrefs.shouldEditInPlace(item.fileURL),
+           item.destURL.standardizedFileURL == item.fileURL.standardizedFileURL {
+            return true
+        }
+
         guard let mp4File = item.mp4File, let formattedName = mp4File.formattedFileName() else { return false }
 
         let pathExtension = item.destURL.pathExtension
@@ -141,6 +150,68 @@ class QueueSetOutputFilenameAction: NSObject, QueueActionProtocol {
         }
 
         item.destURL = destDirectory.appendingPathComponent(formattedName).appendingPathExtension(pathExtension)
+        return true
+    }
+
+    func encode(with aCoder: NSCoder) {}
+    required init?(coder aDecoder: NSCoder) {}
+    static var supportsSecureCoding: Bool { return true }
+}
+
+/// Post action for a file that was edited in place inside the staging folder
+/// (or another delivery destination) -- see
+/// MediaIntakePrefs.shouldEditInPlace(_:). Once the tags are written, the file
+/// is renamed to the name the Filename rules give it, and for a movie its
+/// folder (when it sits directly inside a library root) is renamed to match.
+/// Nothing is copied; a name that is already taken gets the Finder-style
+/// " 2" suffix instead of overwriting.
+class QueueRenameInPlaceAction: NSObject, QueueActionProtocol {
+
+    var type: QueueActionType { return .post }
+    var localizedDescription: String { return NSLocalizedString("Renaming in place", comment: "Action localized description.") }
+    override var description: String { return NSLocalizedString("Rename in Place", comment: "Action description.") }
+
+    override init() {}
+
+    func runAction(_ item: QueueItem) -> Bool {
+        let fileManager = FileManager.default
+        guard let mp4 = item.mp4File, let newName = mp4.formattedFileName(), newName.isEmpty == false else { return true }
+
+        var file = item.destURL
+        guard fileManager.fileExists(atPath: file.path) else { return false }
+
+        // 1. The file itself.
+        let target = file.deletingLastPathComponent()
+            .appendingPathComponent(newName)
+            .appendingPathExtension(file.pathExtension)
+        if target.path.lowercased() != file.path.lowercased() {
+            let unique = QueueController.uniqueFileDestination(for: target)
+            do {
+                try fileManager.moveItem(at: file, to: unique)
+                file = unique
+                item.destURL = unique
+            } catch {
+                NSLog("[FolderSync] In-place rename of \(file.lastPathComponent) failed: \(error.localizedDescription)")
+                return false
+            }
+        }
+
+        // 2. A movie's own folder, one level inside a library root.
+        let folder = file.deletingLastPathComponent()
+        let parent = folder.deletingLastPathComponent()
+        if let subfolder = mp4.preferredOutputSubfolder(),
+           subfolder.contains("/") == false,
+           let root = MediaIntakePrefs.libraryRoot(containing: file),
+           parent.standardizedFileURL.path == root.path,
+           subfolder.lowercased() != folder.lastPathComponent.lowercased() {
+            let unique = QueueController.uniqueFolderDestination(for: parent.appendingPathComponent(subfolder))
+            do {
+                try fileManager.moveItem(at: folder, to: unique)
+                item.destURL = unique.appendingPathComponent(file.lastPathComponent)
+            } catch {
+                NSLog("[FolderSync] In-place folder rename of \(folder.lastPathComponent) failed: \(error.localizedDescription)")
+            }
+        }
         return true
     }
 

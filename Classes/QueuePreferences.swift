@@ -133,6 +133,14 @@ final class QueuePreferences: NSObject {
         self.changeAudioLanguageValue = ud.string(forKey: QueuePreferences.SBQueueChangeAudioLanguageValue) ?? ""
         self.changeSubtitleLanguage = ud.bool(forKey: QueuePreferences.SBQueueChangeSubtitleLanguage)
         self.changeSubtitleLanguageValue = ud.string(forKey: QueuePreferences.SBQueueChangeSubtitleLanguageValue) ?? ""
+
+        super.init()
+
+        // What was just loaded -- saveUserDefaults() below only writes
+        // settings that differ from this, see there.
+        recordOnly = true
+        writeValues()
+        recordOnly = false
     }
 
     convenience init(preset: QueuePreset) {
@@ -170,47 +178,72 @@ final class QueuePreferences: NSObject {
         UserDefaults.standard.register(defaults: prefs)
     }
 
+    /// The Movies and TV Shows queues each own a QueuePreferences, and both
+    /// read and write the same UserDefaults keys. Writing every key on quit
+    /// meant whichever queue saved last put its launch-time snapshot back
+    /// over what the other had changed (e.g. the chosen search provider
+    /// reverting to TheMovieDB). So only settings this instance actually
+    /// changed since it loaded (or last saved) are written.
+    private var baseline: [String: NSObject] = [:]
+    private var recordOnly = false
+
+    private func put(_ value: Any?, _ key: String) {
+        let object = (value as? NSObject) ?? NSNull()
+        if let known = baseline[key], known.isEqual(object) { return }
+        baseline[key] = object
+        guard recordOnly == false else { return }
+        if object is NSNull {
+            UserDefaults.standard.removeObject(forKey: key)
+        } else if let url = value as? URL {
+            UserDefaults.standard.set(url, forKey: key)
+        } else {
+            UserDefaults.standard.set(object, forKey: key)
+        }
+    }
+
     func saveUserDefaults() {
-        let ud = UserDefaults.standard
+        writeValues()
+    }
 
-        ud.set(clearExistingMetadata, forKey: QueuePreferences.SBQueueClearExistingMetadata)
+    private func writeValues() {
+        put(clearExistingMetadata, QueuePreferences.SBQueueClearExistingMetadata)
 
-        ud.set(searchMetadata, forKey: QueuePreferences.SBQueueMetadata)
-        ud.set(movieProvider, forKey: QueuePreferences.SBQueueMovieProvider)
-        ud.set(movieProviderLanguage, forKey: QueuePreferences.SBQueueMovieProviderLanguage)
-        ud.set(tvShowProvider, forKey: QueuePreferences.SBQueueTVShowProvider)
-        ud.set(tvShowProviderLanguage, forKey: QueuePreferences.SBQueueTVShowProviderLanguage)
-        ud.set(providerArtwork, forKey: QueuePreferences.SBQueueProviderArtwork)
-        ud.set(providerArtworkSize, forKey: QueuePreferences.SBQueueProviderArtworkSize)
+        put(searchMetadata, QueuePreferences.SBQueueMetadata)
+        put(movieProvider, QueuePreferences.SBQueueMovieProvider)
+        put(movieProviderLanguage, QueuePreferences.SBQueueMovieProviderLanguage)
+        put(tvShowProvider, QueuePreferences.SBQueueTVShowProvider)
+        put(tvShowProviderLanguage, QueuePreferences.SBQueueTVShowProviderLanguage)
+        put(providerArtwork, QueuePreferences.SBQueueProviderArtwork)
+        put(providerArtworkSize, QueuePreferences.SBQueueProviderArtworkSize)
 
-        ud.set(organize, forKey: QueuePreferences.SBQueueOrganize)
-        ud.set(fixFallbacks, forKey: QueuePreferences.SBQueueFixFallbacks)
-        ud.set(clearTrackName, forKey: QueuePreferences.SBQueueClearTrackName)
-        ud.set(prettifyAudioTrackName, forKey: QueuePreferences.SBQueuePrettifyAudioTrackName)
-        ud.set(renameChapters, forKey: QueuePreferences.SBQueueRenameChapters)
-        ud.set(subtitles, forKey: QueuePreferences.SBQueueSubtitles)
-        ud.set(metadataSet?.title, forKey: QueuePreferences.SBQueueSet)
+        put(organize, QueuePreferences.SBQueueOrganize)
+        put(fixFallbacks, QueuePreferences.SBQueueFixFallbacks)
+        put(clearTrackName, QueuePreferences.SBQueueClearTrackName)
+        put(prettifyAudioTrackName, QueuePreferences.SBQueuePrettifyAudioTrackName)
+        put(renameChapters, QueuePreferences.SBQueueRenameChapters)
+        put(subtitles, QueuePreferences.SBQueueSubtitles)
+        put(metadataSet?.title, QueuePreferences.SBQueueSet)
 
-        ud.set(fixTrackLanguage, forKey: QueuePreferences.SBQueueFixTrackLanguage)
-        ud.set(fixTrackLanguageValue, forKey: QueuePreferences.SBQueueFixTrackLanguageValue)
+        put(fixTrackLanguage, QueuePreferences.SBQueueFixTrackLanguage)
+        put(fixTrackLanguageValue, QueuePreferences.SBQueueFixTrackLanguageValue)
 
-        ud.set(applyColorSpace, forKey: QueuePreferences.SBQueueApplyColorSpace)
-        ud.set(applyColorSpaceValue, forKey: QueuePreferences.SBQueueApplyColorSpaceValue)
+        put(applyColorSpace, QueuePreferences.SBQueueApplyColorSpace)
+        put(applyColorSpaceValue, QueuePreferences.SBQueueApplyColorSpaceValue)
 
-        ud.set(setOutputFilename, forKey: QueuePreferences.SBQueueSetOutputFilename)
-        ud.set(fileType, forKey: QueuePreferences.SBQueueFileType)
-        ud.set(destination, forKey: QueuePreferences.SBQueueDestination)
+        put(setOutputFilename, QueuePreferences.SBQueueSetOutputFilename)
+        put(fileType, QueuePreferences.SBQueueFileType)
+        put(destination, QueuePreferences.SBQueueDestination)
 
-        ud.set(optimize, forKey: QueuePreferences.SBQueueOptimize)
-        ud.set(sendToiTunes, forKey: QueuePreferences.SBQueueSendToiTunes)
+        put(optimize, QueuePreferences.SBQueueOptimize)
+        put(sendToiTunes, QueuePreferences.SBQueueSendToiTunes)
 
-        ud.set(autoStart, forKey: QueuePreferences.SBQueueAutoStart)
-        ud.set(showDoneNotification, forKey: QueuePreferences.SBQueueShowDoneNotification)
+        put(autoStart, QueuePreferences.SBQueueAutoStart)
+        put(showDoneNotification, QueuePreferences.SBQueueShowDoneNotification)
 
-        ud.set(changeAudioLanguage, forKey: QueuePreferences.SBQueueChangeAudioLanguage)
-        ud.set(changeAudioLanguageValue, forKey: QueuePreferences.SBQueueChangeAudioLanguageValue)
-        ud.set(changeSubtitleLanguage, forKey: QueuePreferences.SBQueueChangeSubtitleLanguage)
-        ud.set(changeSubtitleLanguageValue, forKey: QueuePreferences.SBQueueChangeSubtitleLanguageValue)
+        put(changeAudioLanguage, QueuePreferences.SBQueueChangeAudioLanguage)
+        put(changeAudioLanguageValue, QueuePreferences.SBQueueChangeAudioLanguageValue)
+        put(changeSubtitleLanguage, QueuePreferences.SBQueueChangeSubtitleLanguage)
+        put(changeSubtitleLanguageValue, QueuePreferences.SBQueueChangeSubtitleLanguageValue)
     }
 
     var queueURL: URL? {

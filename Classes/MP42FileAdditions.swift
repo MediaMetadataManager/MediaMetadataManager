@@ -26,6 +26,9 @@ extension MetadataSearchTerms {
             }
             return .movie(title: parsed.title)
         }
+        if let title = ReleaseFilenameParser.titleWithoutBrackets(name) {
+            return .movie(title: title)
+        }
         return .movie(title: ReleaseFilenameParser.normalizedDelimiters(name))
     }
 }
@@ -99,6 +102,12 @@ extension MP42File {
                     return MetadataSearchTerms.tvShow(seriesName: releaseParsed.title, season: season, episode: episode)
                 }
                 return MetadataSearchTerms.movie(title: releaseParsed.title)
+            }
+
+            // No year/episode/quality marker, but a "[Studio]" group: use
+            // just the title in front of it (see titleWithoutBrackets).
+            if let bracketTitle = ReleaseFilenameParser.titleWithoutBrackets(url.lastPathComponent) {
+                return MetadataSearchTerms.movie(title: bracketTitle)
             }
 
             let parsed = url.deletingPathExtension().lastPathComponent.parsedAsFilename()
