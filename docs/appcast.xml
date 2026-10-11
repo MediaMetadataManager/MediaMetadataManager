@@ -3,8 +3,22 @@
     <channel>
         <title>M3</title>
         <item>
+            <title>1.0.2</title>
+            <pubDate>Sat, 10 Oct 2026 17:32:34 -0700</pubDate>
+            <sparkle:version>1.0.2</sparkle:version>
+            <sparkle:shortVersionString>1.0.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
+            <description><![CDATA[<html><body style="font-family:-apple-system;font-size:13px">
+<h3>Media Metadata Manager 1.0.2</h3><ul>
+<li>Changed: a new Custom Source that is closed without entering anything is discarded instead of staying in the list as "New Source", and clicking + again while an empty one exists reopens it rather than adding another. Empty ones left by earlier versions are cleaned up at launch.</li>
+<li>Added: after installing or removing a plugin, Media Metadata Manager offers Restart Now or Later. If the Queue is processing, a merge is running or a scan is in progress, it lists what is still running and offers Restart When Finished: it restarts by itself as soon as that work is done and never interrupts it.</li>
+</ul></body></html>
+]]></description>
+            <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.0.2/MediaMetadataManager-1.0.2.zip" length="13351261" type="application/octet-stream" sparkle:edSignature="vlkvHIv/rE+XoABLBJW+xqVueA/7R80WTlkCHG5X1f3C87nztP/zNepQKzRYBBxN+eRBs5peUKqT1nmOSbDDDw=="/>
+        </item>
+        <item>
             <title>1.0.1</title>
-            <pubDate>Sat, 10 Oct 2026 16:30:25 -0700</pubDate>
+            <pubDate>Sat, 10 Oct 2026 17:32:38 -0700</pubDate>
             <sparkle:version>1.0.1</sparkle:version>
             <sparkle:shortVersionString>1.0.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
@@ -14,13 +28,10 @@
 </ul></body></html>
 ]]></description>
             <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.0.1/MediaMetadataManager-1.0.1.zip" length="13344193" type="application/octet-stream" sparkle:edSignature="kCnfKLXSMcP0SKO7RDvMLTnLEKlvcsDeDsREz/CO0iO0p/QRroiU2R9gpSRrTZpw8iYVMm9hXU/gUkQEsrClCw=="/>
-            <sparkle:deltas>
-                <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.0.1/M31.0.1-1.0.0.delta" sparkle:deltaFrom="1.0.0" length="2210" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980240" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="LGWR0/nuSX1F/kgUYbbVNC0kuFJx0zEUwYLP0z/pkmUxJud2iQk+Nv87RJwN9BFs6OjAhlelTH4+jZGioa7rDw=="/>
-            </sparkle:deltas>
         </item>
         <item>
             <title>1.0.0</title>
-            <pubDate>Sat, 10 Oct 2026 16:30:27 -0700</pubDate>
+            <pubDate>Sat, 10 Oct 2026 17:32:37 -0700</pubDate>
             <sparkle:version>1.0.0</sparkle:version>
             <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
