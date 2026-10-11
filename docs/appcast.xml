@@ -3,8 +3,23 @@
     <channel>
         <title>M3</title>
         <item>
+            <title>1.0.4</title>
+            <pubDate>Sat, 10 Oct 2026 21:41:17 -0700</pubDate>
+            <sparkle:version>1.0.4</sparkle:version>
+            <sparkle:shortVersionString>1.0.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
+            <description><![CDATA[<html><body style="font-family:-apple-system;font-size:13px">
+<h3>Media Metadata Manager 1.0.4</h3><ul>
+<li>Improved: the Library scan reads only each file's tags instead of loading the whole file, which is far lighter on a large or external drive. The status line names the file being read, a file that cannot be read within 20 seconds is listed as unreadable and skipped, and the scan stops with a message if three in a row fail. Slow reads go to the message log.</li>
+<li>Added: a gear button in the Library scan window. It shows the four tags that are always checked (Title, Release Date, Rating, Studio) and lets you tick any other Metadata tag to look for as well; the choice is remembered.</li>
+<li>Added: Reset Scan… next to Scan Now (Preferences > Sources > Media Locations). It forgets which files the Incoming Folder scan has already taken in and scans again, so a file or folder you removed from the Queue (or that was skipped) is picked up again. Items already in a Queue are not duplicated.</li>
+</ul></body></html>
+]]></description>
+            <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.0.4/MediaMetadataManager-1.0.4.zip" length="13373392" type="application/octet-stream" sparkle:edSignature="LTlDpGp4fSYxY8dy2EcDR/gg1iUYCLR7j/szzLccwvgfEglPERgvypXtm3WaXn3hvU0gmFiBxmPCdGu8tKFnCA=="/>
+        </item>
+        <item>
             <title>1.0.3</title>
-            <pubDate>Sat, 10 Oct 2026 18:51:02 -0700</pubDate>
+            <pubDate>Sat, 10 Oct 2026 21:41:20 -0700</pubDate>
             <sparkle:version>1.0.3</sparkle:version>
             <sparkle:shortVersionString>1.0.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
@@ -21,7 +36,7 @@
         </item>
         <item>
             <title>1.0.2</title>
-            <pubDate>Sat, 10 Oct 2026 18:51:08 -0700</pubDate>
+            <pubDate>Sat, 10 Oct 2026 21:41:20 -0700</pubDate>
             <sparkle:version>1.0.2</sparkle:version>
             <sparkle:shortVersionString>1.0.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
@@ -32,19 +47,6 @@
 </ul></body></html>
 ]]></description>
             <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.0.2/MediaMetadataManager-1.0.2.zip" length="13351261" type="application/octet-stream" sparkle:edSignature="vlkvHIv/rE+XoABLBJW+xqVueA/7R80WTlkCHG5X1f3C87nztP/zNepQKzRYBBxN+eRBs5peUKqT1nmOSbDDDw=="/>
-        </item>
-        <item>
-            <title>1.0.1</title>
-            <pubDate>Sat, 10 Oct 2026 18:51:07 -0700</pubDate>
-            <sparkle:version>1.0.1</sparkle:version>
-            <sparkle:shortVersionString>1.0.1</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
-            <description><![CDATA[<html><body style="font-family:-apple-system;font-size:13px">
-<h3>Media Metadata Manager 1.0.1</h3><ul>
-<li>Fixed: the release notes shown in the update window no longer cut long entries off after their first line.</li>
-</ul></body></html>
-]]></description>
-            <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.0.1/MediaMetadataManager-1.0.1.zip" length="13344193" type="application/octet-stream" sparkle:edSignature="kCnfKLXSMcP0SKO7RDvMLTnLEKlvcsDeDsREz/CO0iO0p/QRroiU2R9gpSRrTZpw8iYVMm9hXU/gUkQEsrClCw=="/>
         </item>
     </channel>
 </rss>
