@@ -16,6 +16,20 @@ private extension String {
     }
 }
 
+extension String {
+    /// Drops a pair of brackets or parentheses with nothing inside, and
+    /// the space before it, so a name built from a template whose Studio
+    /// or Release Date is not known reads "Title (2020)" or "Title", not
+    /// "Title [] (2020)" or "Title [] ()".
+    func removingEmptyBrackets() -> String {
+        var result = self
+        while let range = result.range(of: #"\s*(\[\s*\]|\(\s*\))"#, options: .regularExpression) {
+            result.replaceSubrange(range, with: "")
+        }
+        return result.trimmingCharacters(in: .whitespaces)
+    }
+}
+
 extension MetadataSearchTerms {
     /// Search terms for an approved release name ("Title Vol N [Studio] (Year)"
     /// or a scene-style name): just the bare title, or series/season/episode.
@@ -287,7 +301,7 @@ extension MP42File {
             }
         }
 
-        name = name.replacingOccurrences(of: ":", with: "").replacingOccurrences(of: "/", with: "-").condensingWhitespace()
+        name = name.replacingOccurrences(of: ":", with: "").replacingOccurrences(of: "/", with: "-").condensingWhitespace().removingEmptyBrackets()
 
         return name.isEmpty ? nil : name
     }

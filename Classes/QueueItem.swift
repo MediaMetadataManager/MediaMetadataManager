@@ -433,6 +433,13 @@ import MP42Foundation
                 safetyCopy = QueueItem.makeSafetyCopy(of: filePathURL)
                 do {
                     try mp4.update(options: attributes)
+                    // The edit worked, so the copy has done its job. It has to
+                    // go now: the steps after this can rename the file's
+                    // folder, and the copy would be left behind in it.
+                    if let copy = safetyCopy {
+                        QueueItem.discardSafetyCopy(copy)
+                        safetyCopy = nil
+                    }
                 } catch {
                     if let copy = safetyCopy {
                         QueueItem.restoreSafetyCopy(copy, over: filePathURL)

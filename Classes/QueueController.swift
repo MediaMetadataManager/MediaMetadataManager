@@ -689,8 +689,12 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     /// straight away when auto-approve is on and the match is confident.
     /// Re-reads the settings whenever they change.
     private func startIntakeWatching() {
+        // Saving a setting posts this notification on the same stack, while the
+        // setting is still being written. Reading it back right then (the
+        // "Automatically watch" switch) is a simultaneous access and aborts the
+        // app, so wait until the save has finished.
         intakeDefaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.reconfigureIntakeWatching()
+            DispatchQueue.main.async { self?.reconfigureIntakeWatching() }
         }
         reconfigureIntakeWatching()
     }

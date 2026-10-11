@@ -12,6 +12,12 @@ next round of work.
 
 ## Unreleased
 
+## 1.0.6 (2026-10-11)
+
+- Fixed: turning off **Automatically watch these folders for new files** (Media Intake) made M3 quit. Saving the setting and the Queue reading it back happened at the same moment, which macOS treats as a fatal error; the Queue now waits for the save to finish.
+- Fixed: a name made from the Filename rules no longer keeps empty "[]" or "()" when the Studio or Release Date isn't known (it was "Title [] ()", now "Title").
+- Fixed: after a file was edited in place and its folder renamed, a hidden backup copy (".name.m3-backup") was left in the renamed folder. The backup is now removed as soon as the edit succeeds.
+
 ## 1.0.5 (2026-10-11)
 
 - Fixed: in a Media Locations or Filename rule, the value list for **Media Kind** was empty, and a typed value such as "Movie" never matched because the file stores Media Kind as a number. The list now offers the same names as the Metadata tab (Movie, TV Show and so on), and they match. **Content Rating** gets its list too.
