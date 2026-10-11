@@ -3,8 +3,25 @@
     <channel>
         <title>M3</title>
         <item>
+            <title>1.0.3</title>
+            <pubDate>Sat, 10 Oct 2026 18:51:02 -0700</pubDate>
+            <sparkle:version>1.0.3</sparkle:version>
+            <sparkle:shortVersionString>1.0.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
+            <description><![CDATA[<html><body style="font-family:-apple-system;font-size:13px">
+<h3>Media Metadata Manager 1.0.3</h3><ul>
+<li>Fixed: Queue options (search provider, language, artwork, and the other checkboxes) were not remembered after quitting. The Movies and TV Shows queues each saved their own launch-time copy over the other's changes. Only settings you actually changed are saved now.</li>
+<li>Fixed: a file named like "Sample Title [Example Studio] ()" (studio in brackets, year missing) searched for a mangled title (the leading "A" dropped and the studio added to the end) and found nothing. The search now uses just the title in front of the brackets ("Sample Title").</li>
+<li>Fixed: dragging a folder from Finder into the Queue now behaves exactly like the Add button: the folder appears as a group (a folder row followed by its files). Dropping a single file still adds just that file.</li>
+<li>Fixed: adding files or folders that already sit in the staging folder (Ready for Media Library) to the Queue no longer makes a second copy. They are scanned, tagged and renamed where they are; for a movie, its folder is renamed to match. The same applies to any other delivery destination.</li>
+<li>Added: a new install gets a staging folder automatically: "Ready for Media Library" in your Movies folder (change it under Preferences > Sources > Media Locations). An existing choice is never replaced.</li>
+</ul></body></html>
+]]></description>
+            <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.0.3/MediaMetadataManager-1.0.3.zip" length="13361905" type="application/octet-stream" sparkle:edSignature="et0NBOD7pOF7Jp1K0i0kdryv7mcx9cW5jkksc9lUGS8LFHOg/x4Ftdu5aSLufBii2sA41ui2cybXh0BkOP0LDw=="/>
+        </item>
+        <item>
             <title>1.0.2</title>
-            <pubDate>Sat, 10 Oct 2026 17:32:34 -0700</pubDate>
+            <pubDate>Sat, 10 Oct 2026 18:51:08 -0700</pubDate>
             <sparkle:version>1.0.2</sparkle:version>
             <sparkle:shortVersionString>1.0.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
@@ -18,7 +35,7 @@
         </item>
         <item>
             <title>1.0.1</title>
-            <pubDate>Sat, 10 Oct 2026 17:32:38 -0700</pubDate>
+            <pubDate>Sat, 10 Oct 2026 18:51:07 -0700</pubDate>
             <sparkle:version>1.0.1</sparkle:version>
             <sparkle:shortVersionString>1.0.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
@@ -28,47 +45,6 @@
 </ul></body></html>
 ]]></description>
             <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.0.1/MediaMetadataManager-1.0.1.zip" length="13344193" type="application/octet-stream" sparkle:edSignature="kCnfKLXSMcP0SKO7RDvMLTnLEKlvcsDeDsREz/CO0iO0p/QRroiU2R9gpSRrTZpw8iYVMm9hXU/gUkQEsrClCw=="/>
-        </item>
-        <item>
-            <title>1.0.0</title>
-            <pubDate>Sat, 10 Oct 2026 17:32:37 -0700</pubDate>
-            <sparkle:version>1.0.0</sparkle:version>
-            <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
-            <description><![CDATA[<html><body style="font-family:-apple-system;font-size:13px">
-<h3>Media Metadata Manager 1.0.0</h3><ul>
-<li>Added: Media Intake now actually watches the Incoming Folders (file-system events plus a 20-second sweep) and feeds the Queue; Scan Now forces a pass. TV episodes go to a separate TV Shows Queue window; the movie window is titled Movies Queue.</li>
-<li>Added: several Incoming and Automatically-Add folders, with + / - buttons.</li>
-<li>Added: opt-in Clean up processed files moves the original parts to the Trash after a successful merge or conversion and logs them in `Cleaned Up Processed Files.txt`.</li>
-<li>Added: the filename parser understands `&lt;date or year>_&lt;uploader>_&lt;Title>_&lt;Studio>_&lt;quality>` uploads.</li>
-<li>Added: Queue rows have labelled Edit / Save buttons; Save &amp; Close; default toolbar order Add, Merge, Start, Settings.</li>
-<li>Added: Support replaces the dead Donate… menu item. A small dialog and a new Preferences > Support tab link to GitHub Sponsors for Media Metadata Manager and to the original Subler project, crediting Damiano Galassi. Nothing is shown automatically, and the old subler.org donate page is no longer used. Links live in one place (`SupportLinks` in `PrefsWindowController.swift`). Added `.github/FUNDING.yml`. The new text is English-only for now.</li>
-<li>Added: plugins declare their own settings (an optional `settingsFields` selector). The app builds the Configure… form from that, so it contains no plugin-specific code or keys. Plugins are still loaded at launch; after adding one, restart and it appears in Preferences > Sources > Providers.</li>
-<li>Added: tooling for public releases in `Tools/` (clean public export with a safety scan, Sparkle key setup, release build and appcast, and a backup/restore script for your own settings). The app itself ships without plugins or personal configuration.</li>
-<li>Fixed: on the Media Intake tab the Incoming Folders minus button is disabled while only one folder row is left; the plus button on the Automatically Add to Apple TV Folders list works on the blank first row (the default folder is then kept as the first entry).</li>
-<li>Fixed: an automatic merge is written under a hidden temporary name and renamed when complete, so a half-written merged file can no longer be opened or tagged. After a merge, the release goes through the same metadata match as a single file (confident match continues, anything else stops at Metadata Review).</li>
-<li>Added: Media Locations tab (Preferences > Sources). The default destination is the Apple TV Automatically Add folder (followed live from the Apple TV app's own Media folder setting when the first row is blank); below it, separate Movies and TV Shows lists of delivery rules: each rule has an enable checkbox, a folder and conditions on the file's tagged metadata (same fields as the Filename rules), and the first matching rule picks the folder. The Ready for Media Library folder is now the staging folder. A new Deliver automatically switch (off by default) chooses between staging every finished file for your review and sending it straight to its rule's folder or the default destination. Files delivered to an Automatically Add folder go in alone, without a folder of their own.</li>
-<li>Fixed: when the online search finds no match at all, a single-file or merged release now waits at Metadata Review instead of silently continuing with empty tags. Metadata Review now has its own Search for box, a Search button and a list of results, so you can search with other words and choose the right title; Continue Without Metadata is offered when nothing is found.</li>
-<li>Fixed: the Rating value list in Filename and Destinations rules now follows the General tab's "Show ratings for" setting (previously only USA or Germany by system region, missing the "Movie &amp; TV" ratings of other countries) and offers the exact rating codes that tagged files carry.</li>
-<li>Changed (documentation): a complete flow chart of the whole app (`Documentation/images/app-flow.png`, editable `Documentation/diagrams/M3-app-flow.drawio`) replaces the old Intake-only chart; `pipeline.png` and `stages.png` are updated for the metadata-review, merged-file and delivery changes. Both charts are generated by `Documentation/images/src/flow.py`.</li>
-<li>Added: Remove finished items from the Queue automatically (Media Intake tab, off by default): finished rows leave the Queue list as soon as a run completes. Files are never touched.</li>
-<li>Changed: the Automatically Add to Apple TV Folders list moved from the Media Intake tab to the Media Locations tab, where it is the default destination.</li>
-<li>Fixed: a release's file is now searched by the name you approved, not by its own file name. A file called `01.mp4` inside a release used to be searched as "01" when the Queue ran, which could tag it with an unrelated title; the same name now pre-fills the Search Metadata sheet when you open the file from the Queue.</li>
-<li>Changed: comments and examples in the source use neutral sample names.</li>
-<li>Documented: tagging a single file with Edit and Save works in place and moves the folder to Ready for Media Library; no original is kept and nothing goes to the Trash (the Trash is used only by the Queue's opt-in cleanup and by empty-folder cleanup).</li>
-<li>Added: documentation set in the `Documentation` folder (Getting Started, User Guide, internal Design and Project Manual) and a draw.io Media Intake flowchart.</li>
-<li>Fixed: a movie with no title tagged is no longer renamed or put in a "[] ()" folder.</li>
-<li>Fixed: re-adding a file with the same name as one ingested earlier is no longer skipped (remembered paths are forgotten once the file is gone).</li>
-<li>Fixed: even spacing between the Media Intake checkboxes; the empty-folders tooltip now points to the Window menu.</li>
-<li>Changed: iTunes Store artwork is no longer fetched (it was broken and added nothing).</li>
-<li>Ported from upstream Subler: undo/redo for tracks, chapters, metadata and the document UI; improved TVDB series-name matching; a queue decode-crash fix; an opt-in 4K HD Video flag.</li>
-<li>Fixed: MediaMetadataManager could be silently overwritten by a real</li>
-<li>Fixed: the Custom Source detail window's Field Mapping section (the</li>
-<li>Fixed: creating a new Set (Preferences > Sets > +) could lock up the</li>
-<li>Added: a Settings toolbar button to the main document window, so</li>
-</ul></body></html>
-]]></description>
-            <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.0.0/MediaMetadataManager-1.0.0.zip" length="13344078" type="application/octet-stream" sparkle:edSignature="N+oZpCcchHwXbzquVQrFunJXG3pfhQdQKQr3q7btlqrYUIMJsX8+9XUdMZb5fitY/w7l0VHYgxjyvoCDlxiSCA=="/>
         </item>
     </channel>
 </rss>
