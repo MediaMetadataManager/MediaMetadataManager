@@ -118,8 +118,28 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
     private var detailWindowController: CustomSourceDetailWindowController?
 
     init() {
-        self.sources = MetadataPrefs.customMetadataSources
+        // A source that was added with "+" and never filled in is not kept
+        // (see isUntouched(_:)); this also cleans up any left behind by an
+        // earlier version.
+        let saved = MetadataPrefs.customMetadataSources
+        let kept = saved.filter { CustomSourcesListViewController.isUntouched($0) == false }
+        if kept.count != saved.count {
+            MetadataPrefs.customMetadataSources = kept
+        }
+        self.sources = kept
         super.init(nibName: nil, bundle: nil)
+    }
+
+    /// True for a source that is still exactly what "+" created: the default
+    /// "New Source" name (or a blank one) and every other setting at its
+    /// default. Such a source is clutter, not a configuration, so it is
+    /// dropped when its window closes, and "+" reuses an existing one
+    /// instead of adding another.
+    private static func isUntouched(_ source: CustomMetadataSource) -> Bool {
+        let trimmed = source.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let defaultName = NSLocalizedString("New Source", comment: "")
+        guard trimmed.isEmpty || trimmed == defaultName else { return false }
+        return source == CustomMetadataSource(name: source.name)
     }
 
     required init?(coder: NSCoder) {
@@ -376,7 +396,7 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
         showRestartNotice(messageText: installedNames.count == 1
             ? String(format: NSLocalizedString("\u{201c}%@\u{201d} installed", comment: ""), installedNames[0])
             : NSLocalizedString("Plugins installed", comment: ""),
-            informativeText: NSLocalizedString("Restart Media Metadata Manager to finish installing this plugin and make it available for searching.", comment: ""))
+            informativeText: NSLocalizedString("The plugin is available for searching after Media Metadata Manager restarts.", comment: ""))
     }
 
     private func removePlugin(at index: Int) {
@@ -418,16 +438,14 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
         selectedRow = nil
         updateRemoveButtonState()
         showRestartNotice(messageText: String(format: NSLocalizedString("\u{201c}%@\u{201d} removed", comment: ""), plugin.name),
-                           informativeText: NSLocalizedString("Restart Media Metadata Manager to finish removing this plugin.", comment: ""))
+                           informativeText: NSLocalizedString("The plugin is fully removed after Media Metadata Manager restarts.", comment: ""))
     }
 
+    /// A plugin is only picked up (or dropped) on the next launch, so offer a
+    /// restart now or later -- see AppRestarter for how running work is
+    /// protected.
     private func showRestartNotice(messageText: String, informativeText: String) {
-        let alert = NSAlert()
-        alert.alertStyle = .informational
-        alert.messageText = messageText
-        alert.informativeText = informativeText
-        NSApp.activate(ignoringOtherApps: true)
-        alert.runModal()
+        AppRestarter.offerRestart(messageText: messageText, informativeText: informativeText)
     }
 
     private func presentPluginOperationError(_ error: Error) {
@@ -441,6 +459,13 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
 
     @objc private func addSource(_ sender: Any) {
         NSLog("[CustomSources] \"+\" clicked")
+        // Already have a new source that hasn't been filled in? Go back to it
+        // instead of piling up more empty ones.
+        if let existing = sources.firstIndex(where: { CustomSourcesListViewController.isUntouched($0) }) {
+            tableView.selectRowIndexes(IndexSet(integer: existing), byExtendingSelection: false)
+            openDetailWindow(for: existing)
+            return
+        }
         sources.append(CustomMetadataSource(name: NSLocalizedString("New Source", comment: "")))
         save()
         tableView.reloadData()
@@ -551,6 +576,18 @@ extension CustomSourcesListViewController: CustomSourceDetailWindowDelegate {
     func customSourceDetailWindowWillClose(_ controller: CustomSourceDetailWindowController) {
         if detailWindowController === controller {
             detailWindowController = nil
+        }
+
+        // Closing the window of a source nothing was ever entered into
+        // discards it, so repeated "+" clicks can't leave a trail of empty
+        // "New Source" rows.
+        let index = controller.editingIndex
+        if sources.indices.contains(index), CustomSourcesListViewController.isUntouched(sources[index]) {
+            sources.remove(at: index)
+            save()
+            selectedRow = nil
+            tableView.reloadData()
+            updateRemoveButtonState()
         }
     }
 }

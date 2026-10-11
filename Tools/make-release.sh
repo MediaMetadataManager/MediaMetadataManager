@@ -21,6 +21,7 @@ set -euo pipefail
 DEV="$(cd "$(dirname "$0")/.." && pwd)"
 VERSION="${1:-}"
 PUB="${2:-}"
+TAG="v$VERSION"
 [ -n "$VERSION" ] || { echo "usage: Tools/make-release.sh <version> [public-repo-clone]"; exit 2; }
 [[ "$VERSION" =~ ^[0-9]+(\.[0-9]+){1,2}$ ]] || { echo "version must look like 1.0.1"; exit 2; }
 
@@ -93,20 +94,9 @@ ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
   echo "</ul></body></html>"
 } > "${ZIP%.zip}.html"
 
-# 5b. bring earlier releases back so the appcast keeps their entries
+# 6. appcast (also restores earlier releases from release-archive/)
 mkdir -p "$ARCHIVE"
-for f in "$ARCHIVE"/MediaMetadataManager-*.zip "$ARCHIVE"/MediaMetadataManager-*.html; do
-    [ -e "$f" ] || continue
-    [ "$(basename "$f")" = "$(basename "$ZIP")" ] && continue
-    [ "$(basename "$f")" = "$(basename "${ZIP%.zip}.html")" ] && continue
-    cp "$f" "$OUT/updates/"
-done
-
-# 6. appcast
-TAG="v$VERSION"
-PREFIX="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/$TAG/"
-"$BIN/generate_appcast" --download-url-prefix "$PREFIX" \
-    --embed-release-notes "$OUT/updates"
+bash "$DEV/Tools/make-appcast.sh" "$VERSION"
 # (The appcast is NOT copied into the public clone here: export-public.sh would
 # commit it with the next snapshot and it could go live before the release zip.
 # Tools/publish-appcast.sh does it after checking the zip downloads.)

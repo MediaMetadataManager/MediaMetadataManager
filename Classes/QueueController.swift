@@ -664,6 +664,19 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     private var intakeConfiguration = ""
     private var intakeScanWorkItem: DispatchWorkItem?
     private var intakeScanInProgress = false
+
+    /// For AppRestarter: a Media Intake scan is walking the Incoming folders.
+    var isIntakeScanRunning: Bool { intakeScanInProgress }
+
+    /// Manual merges started with the Merge toolbar button (not tied to a
+    /// release row, so they are counted here instead).
+    private var manualMergesRunning = 0
+
+    /// For AppRestarter: merges currently writing a file -- releases in the
+    /// .merging stage plus manual merges.
+    var mergesInProgress: Int {
+        return queue.indexesOfRows(where: { $0.release?.stage == .merging }).count + manualMergesRunning
+    }
     private var intakeObservations: [String: (signature: String, since: Date)] = [:]
     private var intakeDefaultsObserver: NSObjectProtocol?
 
@@ -2450,6 +2463,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             // against the Queue's own mux lane instead of an independent
             // DispatchQueue, so this manual merge can't run concurrently
             // with the Queue actively processing a ready item.
+            self.manualMergesRunning += 1
             self.queue.performSerialized {
                 do {
                     try FileMerger.merge(files: files, destination: destination, progressHandler: { progress in
@@ -2458,11 +2472,13 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
                         }
                     })
                     DispatchQueue.main.async {
+                        self.manualMergesRunning -= 1
                         progressWindow.close()
                         self.replaceRows(rows, withMergedFileAt: self.renamedDestination(after: files, mergedFileAt: destination))
                     }
                 } catch {
                     DispatchQueue.main.async {
+                        self.manualMergesRunning -= 1
                         progressWindow.close()
                         let alert = NSAlert()
                         alert.addButton(withTitle: NSLocalizedString("OK", comment: "Merge alert -> button"))

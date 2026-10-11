@@ -382,6 +382,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             alert.alertStyle = .critical
 
             let result = alert.runModal()
+            if result != .alertFirstButtonReturn {
+                AppRestarter.quitWasCancelled()
+            }
             return result == .alertFirstButtonReturn ? .terminateNow : .terminateCancel
 
         }
@@ -396,6 +399,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         } catch {
             logger.write(toLog: "Failed to save queue to disk!")
         }
+        AppRestarter.relaunchIfRequested()
     }
 
     /// What happens with no file to reopen from the last session -- see

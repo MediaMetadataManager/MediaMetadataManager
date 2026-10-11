@@ -169,6 +169,7 @@
 		E79E91133052337A00E6790F /* CustomMetadataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = E79E910D3052337A00E6790F /* CustomMetadataSource.swift */; };
 		E79E91143052337A00E6790F /* CustomSourceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E79E910E3052337A00E6790F /* CustomSourceService.swift */; };
 		1AA25149E9104C77A83E7401 /* DeliveryRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACB701BD1EF043748B8C66EE /* DeliveryRules.swift */; };
+		4D078DC5E215F62771A45FAD /* AppRestarter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBD55AD3849868ABFC557687 /* AppRestarter.swift */; };
 		D4EFD689A1F24C259984C5C3 /* DestinationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2192B775CE1476DA1DF2E00 /* DestinationsViewController.swift */; };
 /* End PBXBuildFile section */
 
@@ -506,6 +507,7 @@
 		F2D41964ACF4C1D604153CE3 /* FileMerger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FileMerger.swift; path = Classes/FileMerge/FileMerger.swift; sourceTree = "<group>"; };
 		F695DD5A03A57793AC404052 /* ReleaseFilenameParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ReleaseFilenameParser.swift; path = Classes/ReleaseFilenameParser.swift; sourceTree = "<group>"; };
 		ACB701BD1EF043748B8C66EE /* DeliveryRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeliveryRules.swift; path = Classes/DeliveryRules.swift; sourceTree = "<group>"; };
+		DBD55AD3849868ABFC557687 /* AppRestarter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppRestarter.swift; path = Classes/AppRestarter.swift; sourceTree = "<group>"; };
 		E2192B775CE1476DA1DF2E00 /* DestinationsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DestinationsViewController.swift; path = Classes/DestinationsViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -804,6 +806,7 @@
 				FAC5C90B445A6903EB6FFB45 /* NamingRules.swift */,
 				E2192B775CE1476DA1DF2E00 /* DestinationsViewController.swift */,
 				ACB701BD1EF043748B8C66EE /* DeliveryRules.swift */,
+				DBD55AD3849868ABFC557687 /* AppRestarter.swift */,
 				C0C5F7D7ADC08B85CCE23553 /* MetadataPluginLoader.swift */,
 				2BF00667E410ED649678F87D /* PluginMetadataService.swift */,
 				78F1234573B59467680FB4F5 /* PluginBridge.swift */,
@@ -1025,6 +1028,7 @@
 				C239A027CD1B8044A21A5C30 /* NamingRules.swift in Sources */,
 				D4EFD689A1F24C259984C5C3 /* DestinationsViewController.swift in Sources */,
 				1AA25149E9104C77A83E7401 /* DeliveryRules.swift in Sources */,
+				4D078DC5E215F62771A45FAD /* AppRestarter.swift in Sources */,
 				09A37CF68361D710E6F82A20 /* MetadataPluginLoader.swift in Sources */,
 				6B34409BB9F7180708169C19 /* PluginMetadataService.swift in Sources */,
 				2BA508D03CD1BE6BC015FD9F /* PluginBridge.swift in Sources */,
@@ -1532,7 +1536,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				SDKROOT = macosx;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1.0.1;
+				CURRENT_PROJECT_VERSION = 1.0.2;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
@@ -1552,7 +1556,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "-Wl,-rpath,@loader_path/../Frameworks";
 				OTHER_SWIFT_FLAGS = "";
@@ -1579,7 +1583,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				SDKROOT = macosx;
-				CURRENT_PROJECT_VERSION = 1.0.1;
+				CURRENT_PROJECT_VERSION = 1.0.2;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
@@ -1598,7 +1602,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "-Wl,-rpath,@loader_path/../Frameworks";
 				OTHER_SWIFT_FLAGS = "";

@@ -12,7 +12,15 @@ next round of work.
 
 ## Unreleased
 
+## 1.0.2 (2026-10-10)
+
+- Changed: a new Custom Source that is closed without entering anything is discarded instead of staying in the list as "New Source", and clicking **+** again while an empty one exists reopens it rather than adding another. Empty ones left by earlier versions are cleaned up at launch.
+- Added: after installing or removing a plugin, Media Metadata Manager offers **Restart Now** or **Later**. If the Queue is processing, a merge is running or a scan is in progress, it lists what is still running and offers **Restart When Finished**: it restarts by itself as soon as that work is done and never interrupts it.
+
+## 1.0.1 (2026-10-10)
+
 - Fixed: the release notes shown in the update window no longer cut long entries off after their first line.
+- Added: release tooling keeps older releases in an archive so the update feed lists every version, and the feed is published only after the release download is live.
 
 ## 1.0.0 (2026-10-10)
 

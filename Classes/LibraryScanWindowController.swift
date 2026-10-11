@@ -51,8 +51,16 @@ final class LibraryScanWindowController: NSWindowController {
     }
 
     private var results: [ScanResult] = []
+    /// How many Library scans are running right now (for AppRestarter).
+    static var activeScanCount = 0
+
     private var isScanning = false {
-        didSet { updateControlsState() }
+        didSet {
+            if isScanning != oldValue {
+                LibraryScanWindowController.activeScanCount += isScanning ? 1 : -1
+            }
+            updateControlsState()
+        }
     }
 
     private let folderField = NSTextField(labelWithString: "")
