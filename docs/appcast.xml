@@ -3,8 +3,28 @@
     <channel>
         <title>M3</title>
         <item>
+            <title>1.0.5</title>
+            <pubDate>Sun, 11 Oct 2026 12:19:43 -0700</pubDate>
+            <sparkle:version>1.0.5</sparkle:version>
+            <sparkle:shortVersionString>1.0.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
+            <description><![CDATA[<html><body style="font-family:-apple-system;font-size:13px">
+<h3>Media Metadata Manager 1.0.5</h3><ul>
+<li>Fixed: in a Media Locations or Filename rule, the value list for Media Kind was empty, and a typed value such as "Movie" never matched because the file stores Media Kind as a number. The list now offers the same names as the Metadata tab (Movie, TV Show and so on), and they match. Content Rating gets its list too.</li>
+<li>Improved: when the Queue looks up a title by itself it now searches every provider enabled on the Providers tab and merges the results of those that found the same title. The provider chosen in the Queue options is the primary one; blank fields are filled from the others, cast, genre and crew lists are combined, the longest description is kept, and artwork from all of them is pooled. A provider that found a different title is ignored. Editing a single file still uses the provider you choose.</li>
+<li>Improved: a file edited where it sits (a file already in the staging folder or another delivery folder) is copied aside first, in a hidden file next to it, and put back if the edit fails or M3 is quit part-way. The copy is deleted when the edit is done. On APFS the copy is instant and takes no extra space; if there is no room for a copy the edit goes ahead without one.</li>
+<li>Removed: the Send to TV checkbox in the Queue options. Finished files are delivered by the Media Locations settings (staging folder or straight to the library), so a separate send to the TV app only caused confusion.</li>
+<li>Fixed: a release that was merging when M3 was quit came back stuck as "merging" and could not be removed or retried. It now comes back as a failed merge, and Edit reopens the merge sheet.</li>
+<li>Fixed: a Set chosen in the Queue options was not applied to releases coming through the Intake workflow (only to files added by hand). It is now applied after the online search, and its values win over what the search found: every tag the Set fills in replaces the searched value, and tags it leaves blank keep the searched value. Nothing else is erased.</li>
+<li>Fixed: the Artwork Position choice in General preferences was never saved, so the Queue ignored it. It is now saved at once and the Queue always follows it.</li>
+<li>Improved: the Media Intake, Filename and Sets tabs have a heading and short description at the top, like the other tabs. The Sets description explains what Sets are and how they fit into a workflow. Media Locations explains that Movies and TV Shows are routed by Media Kind with no rule needed. The Media Intake note at the bottom was removed and one tooltip reworded.</li>
+</ul></body></html>
+]]></description>
+            <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.0.5/MediaMetadataManager-1.0.5.zip" length="14192897" type="application/octet-stream" sparkle:edSignature="WThlUskK2YVJ9w/JnAB5y+PhSfZK21GZV3YSWI+xsnHY4muho7ogQPgCo+pl6NdMH9TtqYYhMMjqVNHIgXg0Aw=="/>
+        </item>
+        <item>
             <title>1.0.4</title>
-            <pubDate>Sat, 10 Oct 2026 21:41:17 -0700</pubDate>
+            <pubDate>Sun, 11 Oct 2026 12:19:49 -0700</pubDate>
             <sparkle:version>1.0.4</sparkle:version>
             <sparkle:shortVersionString>1.0.4</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
@@ -19,7 +39,7 @@
         </item>
         <item>
             <title>1.0.3</title>
-            <pubDate>Sat, 10 Oct 2026 21:41:20 -0700</pubDate>
+            <pubDate>Sun, 11 Oct 2026 12:19:48 -0700</pubDate>
             <sparkle:version>1.0.3</sparkle:version>
             <sparkle:shortVersionString>1.0.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
@@ -33,20 +53,6 @@
 </ul></body></html>
 ]]></description>
             <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.0.3/MediaMetadataManager-1.0.3.zip" length="13361905" type="application/octet-stream" sparkle:edSignature="et0NBOD7pOF7Jp1K0i0kdryv7mcx9cW5jkksc9lUGS8LFHOg/x4Ftdu5aSLufBii2sA41ui2cybXh0BkOP0LDw=="/>
-        </item>
-        <item>
-            <title>1.0.2</title>
-            <pubDate>Sat, 10 Oct 2026 21:41:20 -0700</pubDate>
-            <sparkle:version>1.0.2</sparkle:version>
-            <sparkle:shortVersionString>1.0.2</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
-            <description><![CDATA[<html><body style="font-family:-apple-system;font-size:13px">
-<h3>Media Metadata Manager 1.0.2</h3><ul>
-<li>Changed: a new Custom Source that is closed without entering anything is discarded instead of staying in the list as "New Source", and clicking + again while an empty one exists reopens it rather than adding another. Empty ones left by earlier versions are cleaned up at launch.</li>
-<li>Added: after installing or removing a plugin, Media Metadata Manager offers Restart Now or Later. If the Queue is processing, a merge is running or a scan is in progress, it lists what is still running and offers Restart When Finished: it restarts by itself as soon as that work is done and never interrupts it.</li>
-</ul></body></html>
-]]></description>
-            <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.0.2/MediaMetadataManager-1.0.2.zip" length="13351261" type="application/octet-stream" sparkle:edSignature="vlkvHIv/rE+XoABLBJW+xqVueA/7R80WTlkCHG5X1f3C87nztP/zNepQKzRYBBxN+eRBs5peUKqT1nmOSbDDDw=="/>
         </item>
     </channel>
 </rss>
