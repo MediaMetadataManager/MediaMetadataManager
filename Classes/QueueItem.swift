@@ -24,7 +24,7 @@ import MP42Foundation
     private let destURLInternalBookmark: Data?
     #endif
 
-    @objc dynamic let fileURL: URL
+    @objc dynamic private(set) var fileURL: URL
     #if SB_SANDBOX
     private let fileURLBookmark: Data?
     #endif
@@ -36,6 +36,18 @@ import MP42Foundation
         set (value) {
             queue.sync { destURLInternal = value }
         }
+    }
+
+    /// Points the item at the file it was renamed to outside the app. The
+    /// output keeps its folder, and takes the new name if it used to share the
+    /// old file's name.
+    func relocate(to newFileURL: URL) {
+        let oldName = fileURL.lastPathComponent
+        let output = destURL
+        if output.lastPathComponent == oldName {
+            destURL = output.deletingLastPathComponent().appendingPathComponent(newFileURL.lastPathComponent)
+        }
+        fileURL = newFileURL
     }
 
     var mp4File: MP42File?

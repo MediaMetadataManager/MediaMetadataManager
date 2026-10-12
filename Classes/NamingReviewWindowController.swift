@@ -462,8 +462,8 @@ final class NamingReviewWindowController: NSWindowController {
     }
 
     private func endSheet(with response: NSApplication.ModalResponse) {
-        guard let window = window, let sheetParent = window.sheetParent else { return }
-        sheetParent.endSheet(window, returnCode: response)
+        guard let window = window else { return }
+        MovableDialog.end(window, with: response)
     }
 }
 

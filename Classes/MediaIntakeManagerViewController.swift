@@ -48,6 +48,7 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
     private var autoCleanEmptyFoldersCheckbox: NSButton!
     private var autoCleanProcessedFilesCheckbox: NSButton!
     private var autoRemoveCompletedCheckbox: NSButton!
+    private var runQueuesTogetherCheckbox: NSButton!
 
     /// Maps each editable folder field to the preference it writes to, so
     /// one text-field delegate method (controlTextDidEndEditing(_:)) can
@@ -148,9 +149,21 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         autoRemoveCompletedCheckbox.translatesAutoresizingMaskIntoConstraints = false
         autoRemoveCompletedCheckbox.toolTip = NSLocalizedString("When a Queue run finishes, the finished rows (the ones with a checkmark) are taken off the list for you. Only the rows go; your files are not touched. Failed rows and rows still waiting for you stay.", comment: "")
 
+        runQueuesTogetherCheckbox = NSButton(checkboxWithTitle: NSLocalizedString("Run the Movies and TV Shows queues at the same time", comment: ""),
+                                              target: self, action: #selector(toggleRunQueuesTogether(_:)))
+        runQueuesTogetherCheckbox.translatesAutoresizingMaskIntoConstraints = false
+        runQueuesTogetherCheckbox.toolTip = NSLocalizedString("Off: the two queues take turns, one file at a time. On: each queue works by itself, so two files can be processed at once.", comment: "")
+
+        let runQueuesTogetherNote = NSTextField(wrappingLabelWithString: NSLocalizedString("By default M3 works on one file at a time across both queues, which is kinder to a single disk. Turn this on only if your files are on fast drives such as SSDs.", comment: ""))
+        runQueuesTogetherNote.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        runQueuesTogetherNote.textColor = .secondaryLabelColor
+        runQueuesTogetherNote.translatesAutoresizingMaskIntoConstraints = false
+        runQueuesTogetherNote.preferredMaxLayoutWidth = 600
+
         let mainStack = NSStackView(views: [headerLabel, descriptionLabel, intakeSection,
                                              autoWatchCheckbox, autoApproveHighConfidenceCheckbox,
-                                             renameAfterMergeCheckbox, autoMergeOnSequenceCheckbox, autoCleanEmptyFoldersCheckbox, autoCleanProcessedFilesCheckbox, autoRemoveCompletedCheckbox])
+                                             renameAfterMergeCheckbox, autoMergeOnSequenceCheckbox, autoCleanEmptyFoldersCheckbox, autoCleanProcessedFilesCheckbox, autoRemoveCompletedCheckbox,
+                                             runQueuesTogetherCheckbox, runQueuesTogetherNote])
         mainStack.orientation = .vertical
         mainStack.alignment = .leading
         mainStack.spacing = 12
@@ -162,7 +175,8 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         mainStack.setCustomSpacing(8, after: autoMergeOnSequenceCheckbox)
         mainStack.setCustomSpacing(8, after: autoCleanEmptyFoldersCheckbox)
         mainStack.setCustomSpacing(8, after: autoCleanProcessedFilesCheckbox)
-        mainStack.setCustomSpacing(20, after: autoRemoveCompletedCheckbox)
+        mainStack.setCustomSpacing(16, after: autoRemoveCompletedCheckbox)
+        mainStack.setCustomSpacing(4, after: runQueuesTogetherCheckbox)
         mainStack.translatesAutoresizingMaskIntoConstraints = false
 
         view.addSubview(mainStack)
@@ -186,6 +200,7 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         autoCleanEmptyFoldersCheckbox.state = MediaIntakePrefs.autoCleanEmptyFolders ? .on : .off
         autoCleanProcessedFilesCheckbox.state = MediaIntakePrefs.autoCleanProcessedFiles ? .on : .off
         autoRemoveCompletedCheckbox.state = MediaIntakePrefs.autoRemoveCompletedItems ? .on : .off
+        runQueuesTogetherCheckbox.state = MediaIntakePrefs.runQueuesTogether ? .on : .off
     }
 
     // MARK: - Layout helpers
@@ -400,6 +415,10 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
 
     @objc private func toggleAutoRemoveCompleted(_ sender: NSButton) {
         MediaIntakePrefs.autoRemoveCompletedItems = sender.state == .on
+    }
+
+    @objc private func toggleRunQueuesTogether(_ sender: NSButton) {
+        MediaIntakePrefs.runQueuesTogether = sender.state == .on
     }
 }
 

@@ -74,7 +74,7 @@ public struct PluginMetadataService: MetadataService {
         metadata.mediaKind = .movie
 
         metadata[.serviceContentID] = dictionary["id"] as? String
-        metadata[.name]             = dictionary["title"] as? String
+        metadata[.name]             = (dictionary["title"] as? String)?.withoutPromotionText
         metadata[.releaseDate]      = dictionary["releaseDate"] as? String
         metadata[.longDescription]  = dictionary["synopsis"] as? String
         metadata[.studio]           = dictionary["studio"] as? String
@@ -124,5 +124,43 @@ public struct PluginMetadataService: MetadataService {
 
     public func loadTVMetadata(_ metadata: MetadataResult, language: String) -> MetadataResult {
         return metadata
+    }
+}
+
+extension String {
+
+    /// Some sites print a promotion after the real title ("On Sale!" and the
+    /// like), set apart by line breaks or a long run of blanks. The title
+    /// ends at the first line break or the first run of four or more blank
+    /// characters; everything after it, and any blanks or dashes left at the
+    /// end, are dropped. A title without either is only trimmed.
+    var withoutPromotionText: String {
+        let text = trimmingCharacters(in: .whitespacesAndNewlines)
+        var cut: String.Index?
+        var runStart: String.Index?
+        var runLength = 0
+        var index = text.startIndex
+        while index < text.endIndex {
+            let character = text[index]
+            if character.isNewline {
+                cut = runStart ?? index
+                break
+            }
+            if character.isWhitespace {
+                if runLength == 0 { runStart = index }
+                runLength += 1
+                if runLength >= 4 {
+                    cut = runStart
+                    break
+                }
+            } else {
+                runLength = 0
+                runStart = nil
+            }
+            index = text.index(after: index)
+        }
+        guard let cut = cut else { return text }
+        let dashes = CharacterSet(charactersIn: "-\u{2013}\u{2014}")
+        return String(text[..<cut]).trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(dashes))
     }
 }

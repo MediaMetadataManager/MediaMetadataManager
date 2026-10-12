@@ -813,4 +813,12 @@ enum MediaIntakePrefs {
     /// rows still waiting on you stay. Off by default.
     @Stored(key: "SBMediaIntakeAutoRemoveCompletedItems", defaultValue: false)
     static var autoRemoveCompletedItems: Bool
+
+    /// When false (the default) the Movies and TV Shows queues take turns:
+    /// only one file is processed or merged at a time across both, which is
+    /// kinder to a single disk and avoids both queues writing into the same
+    /// destination folder at once. When true each queue works on its own, so
+    /// two files can be processed at the same time.
+    @Stored(key: "SBQueuesRunTogether", defaultValue: false)
+    static var runQueuesTogether: Bool
 }

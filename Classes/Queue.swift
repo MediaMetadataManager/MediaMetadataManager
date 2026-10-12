@@ -57,6 +57,14 @@ final class Queue {
             items = []
         }
 
+        // Queue files saved before rows were numbered get numbers in the order
+        // they are listed in, so "#" starts out matching what is on screen.
+        var lastNumber = items.map { $0.addedNumber }.max() ?? 0
+        for row in items where row.addedNumber == 0 {
+            lastNumber += 1
+            row.addedNumber = lastNumber
+        }
+
         for item in items.compactMap({ $0.effectiveItem }) where item.status == .working {
             item.restoreInterruptedEdit()
             item.status = .failed
@@ -65,6 +73,13 @@ final class Queue {
         // A release that was merging when M3 quit has no merge running any
         // more. Left as "merging" it could never be removed or retried, so
         // it is moved to "merge failed", where Edit reopens the merge sheet.
+        // Nothing is merging yet at launch, so any hidden half-written merge
+        // file next to a queued release was left by an earlier quit or crash.
+        let folders = items.compactMap({ $0.release?.folderURL })
+        DispatchQueue.global(qos: .utility).async {
+            for folder in folders { FileMerger.removeLeftoverTemporaries(in: folder) }
+        }
+
         for release in items.compactMap({ $0.release }) where release.stage == .merging {
             release.stage = .mergeFailed
             release.mergeErrorMessage = NSLocalizedString("M3 was quit while this release was merging. Open it to check the order and merge again.", comment: "Release merge interrupted by quitting")
@@ -196,8 +211,10 @@ final class Queue {
             while(true) {
                 try? self.saveToDisk()
 
+                let tookLane = QueueLane.shared.enter(exclusive: !MediaIntakePrefs.runQueuesTogether)
                 if let currentItem = self.firstItemInQueue {
                     let result = self.process(currentItem)
+                    QueueLane.shared.leave(tookLane)
                     if .completed == result {
                         completed += 1
                         self.logger.write(toLog: currentItem.fileURL.lastPathComponent + " completed")
@@ -209,6 +226,7 @@ final class Queue {
                         break
                     }
                 } else {
+                    QueueLane.shared.leave(tookLane)
                     break
                 }
             }
@@ -247,7 +265,11 @@ final class Queue {
     /// main thread) and callers dispatch their own UI updates back to main
     /// themselves, same as they already did.
     func performSerialized(_ work: @escaping () -> Void) {
-        workQueue.async(execute: work)
+        workQueue.async {
+            let tookLane = QueueLane.shared.enter(exclusive: !MediaIntakePrefs.runQueuesTogether)
+            work()
+            QueueLane.shared.leave(tookLane)
+        }
     }
 
     private var statusInternal: Status
@@ -289,7 +311,24 @@ final class Queue {
 
     func append(_ row: QueueRow) {
         arrayQueue.sync {
+            numberIfNeeded(row)
             items.append(row)
+        }
+    }
+
+    /// Gives a newly added row the next "added" number (see
+    /// QueueRow.addedNumber). Call while the list is locked.
+    private func numberIfNeeded(_ row: QueueRow) {
+        guard row.addedNumber == 0 else { return }
+        row.addedNumber = (items.map { $0.addedNumber }.max() ?? 0) + 1
+    }
+
+    /// The number shown in the "#" column: 1 for the file added first of the
+    /// ones still in the Queue. Counting only what is left means removing a
+    /// file never leaves a gap.
+    func addedRank(of row: QueueRow) -> Int {
+        return arrayQueue.sync {
+            items.filter { $0.folderHeaderURL == nil && $0.addedNumber < row.addedNumber }.count + 1
         }
     }
 
@@ -310,11 +349,32 @@ final class Queue {
     }
 
     func insert(_ row: QueueRow, at index: Int) {
-        arrayQueue.sync { items.insert(row, at: index) }
+        arrayQueue.sync {
+            numberIfNeeded(row)
+            items.insert(row, at: index)
+        }
     }
 
     func remove(at indexes: IndexSet) {
         arrayQueue.sync { items = IndexSet(items.indices).subtracting(indexes).map { items[$0] } }
+    }
+
+    /// A copy of the rows in their current order.
+    var allRows: [QueueRow] {
+        return arrayQueue.sync { items }
+    }
+
+    /// Puts the rows in the order `transform` returns. Runs while the list
+    /// is locked, so rows added meanwhile are not lost; the result is
+    /// ignored unless it holds exactly the same rows.
+    func reorder(_ transform: ([QueueRow]) -> [QueueRow]) {
+        arrayQueue.sync {
+            let proposed = transform(items)
+            guard proposed.count == items.count,
+                  Set(proposed.map { ObjectIdentifier($0) }) == Set(items.map { ObjectIdentifier($0) })
+            else { return }
+            items = proposed
+        }
     }
 
     func swapAt(_ i: Int, _ j: Int) {
@@ -433,4 +493,27 @@ final class Queue {
         NotificationCenter.default.post(name: Queue.Cancelled, object: self)
     }
 
+}
+
+/// One turn at a time across the Movies and TV Shows queues. Each queue has
+/// its own worker; unless "run both queues together" is on, a worker takes
+/// this lane before it processes or merges a file and gives it back
+/// afterwards, so the two queues alternate instead of competing for the disk.
+final class QueueLane {
+
+    static let shared = QueueLane()
+
+    private let semaphore = DispatchSemaphore(value: 1)
+
+    /// Waits for the lane when `exclusive`. Returns whether the lane was
+    /// taken, to be passed to `leave`. When not exclusive it never waits.
+    func enter(exclusive: Bool) -> Bool {
+        guard exclusive else { return false }
+        semaphore.wait()
+        return true
+    }
+
+    func leave(_ tookLane: Bool) {
+        if tookLane { semaphore.signal() }
+    }
 }

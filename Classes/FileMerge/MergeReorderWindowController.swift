@@ -12,11 +12,11 @@
 //  project's notes) to match Subler's existing method rather than invent
 //  a new interaction.
 //
-//  Also runs MergeCompatibility.check(files:) live as the order changes
-//  (see updateCompatibility()) and disables Merge when the current order
-//  isn't mergeable -- closing the design doc's "live compatibility
-//  preview" item, which previously only surfaced a mismatch after Merge
-//  was clicked and the destination panel/release merge actually ran.
+//  Also checks every file for compatibility when the sheet opens (in the
+//  background, see updateCompatibility()), marks the file that doesn't fit
+//  with a warning icon and the reason, and keeps Merge disabled until all
+//  files fit. Compatibility doesn't depend on the order, so dragging
+//  doesn't re-read the files.
 //
 
 import Cocoa
@@ -31,6 +31,17 @@ final class MergeReorderWindowController: NSWindowController, NSTableViewDataSou
     /// nothing here ever re-sorts underneath a manual reorder.
     private(set) var orderedFiles: [URL]
 
+    /// Files unticked in the list: they stay in the list but are left out of
+    /// the merge. A file about as big as all the others together (the
+    /// finished merge from an earlier run) starts unticked.
+    private var excluded = Set<URL>()
+
+    /// What gets merged: the ticked files, in the order shown. Read this,
+    /// not `orderedFiles`, after the sheet ends with .OK.
+    var filesToMerge: [URL] {
+        return orderedFiles.filter { excluded.contains($0) == false }
+    }
+
     private let tableView = NSTableView()
     private let fileColumn = NSUserInterfaceItemIdentifier("file")
     private let pasteboardType = NSPasteboard.PasteboardType("SublerMergeReorderRowType")
@@ -44,14 +55,20 @@ final class MergeReorderWindowController: NSWindowController, NSTableViewDataSou
     /// moves on to the destination panel.
     private var statusLabel: NSTextField!
 
-    /// Disabled whenever updateCompatibility() finds the current order
-    /// incompatible, so there's no point clicking through to a destination
-    /// panel (or, for a release-driven merge, starting the merge) that
+    /// Disabled while the check runs and whenever it finds a file that does
+    /// not fit, so there's no point clicking through to a destination panel
+    /// (or, for a release-driven merge, starting the merge) that
     /// MergeCompatibility.check would just reject anyway.
     private var mergeButton: NSButton!
 
     init(files: [URL]) {
-        orderedFiles = MergeReorderWindowController.defaultOrder(for: files)
+        let ordered = MergeReorderWindowController.defaultOrder(for: files)
+        orderedFiles = ordered
+
+        let sized = ordered.map { (url: $0, size: Int64((try? $0.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)) }
+        if let found = AlreadyMergedDetector.find(in: sized) {
+            excluded = [found.merged]
+        }
 
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 420, height: 344),
                                styleMask: [.titled],
@@ -159,7 +176,7 @@ final class MergeReorderWindowController: NSWindowController, NSTableViewDataSou
         let view = NSView(frame: NSRect(x: 0, y: 0, width: 420, height: 344))
         controller.view = view
 
-        let label = NSTextField(wrappingLabelWithString: NSLocalizedString("Drag to set the order the files should play in:", comment: "Merge reorder window -> label"))
+        let label = NSTextField(wrappingLabelWithString: NSLocalizedString("Drag to set the order the files should play in. Untick a file to leave it out:", comment: "Merge reorder window -> label"))
         label.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         label.translatesAutoresizingMaskIntoConstraints = false
 
@@ -225,25 +242,94 @@ final class MergeReorderWindowController: NSWindowController, NSTableViewDataSou
         return controller
     }
 
-    /// Runs MergeCompatibility.check(files:) against the current
-    /// orderedFiles and reflects the result in statusLabel/mergeButton --
-    /// called once from init (so the sheet opens already showing whether
-    /// the starting order is mergeable) and again after every reorder
-    /// (tableView(_:acceptDrop:row:dropOperation:) below). Cheap enough to
-    /// run eagerly on every change: per MergeCompatibility.check's own doc
-    /// comment it only opens each file and inspects track metadata -- the
-    /// same cost the destination panel/release merge already pays once at
-    /// merge time, just paid here earlier and repeatedly instead of once
-    /// at the end.
+    /// Per-file result of the compatibility check, keyed by file. Compatibility
+    /// does not depend on the order, so the files are read once, in the
+    /// background, when the sheet opens; dragging only redraws the status.
+    private var report: MergeFitReport?
+    private var analysisStarted = false
+    /// What was read from each file that could be opened.
+    private var signatures: [URL: MergeFileSignature] = [:]
+
+    /// Starts the one-time background check. Until it finishes the sheet says
+    /// "Checking files..." and Merge stays disabled, so a slow drive or large
+    /// files never freeze the window.
     private func updateCompatibility() {
-        do {
-            _ = try MergeCompatibility.check(files: orderedFiles)
+        refreshStatus()
+        guard analysisStarted == false else { return }
+        analysisStarted = true
+
+        let files = orderedFiles
+        reportFiles = files
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            var read: [URL: MergeFileSignature] = [:]
+            for file in files {
+                if let signature = try? MergeFileSignature.read(from: file) { read[file] = signature }
+            }
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.signatures = read
+                self.analysisFinished = true
+                self.rebuildReport()
+            }
+        }
+    }
+
+    private var analysisFinished = false
+
+    /// Judges only the ticked files against each other; called when the
+    /// files have been read and whenever a file is ticked or unticked.
+    private func rebuildReport() {
+        guard analysisFinished else { return }
+        let included = filesToMerge
+        reportFiles = included
+        report = MergeFitReport.make(signatures: included.map { signatures[$0] })
+        tableView.reloadData()
+        refreshStatus()
+    }
+
+    @objc private func toggleInclude(_ sender: NSButton) {
+        let row = tableView.row(for: sender)
+        guard row >= 0, row < orderedFiles.count else { return }
+        let url = orderedFiles[row]
+        if sender.state == .on { excluded.remove(url) } else { excluded.insert(url) }
+        rebuildReport()
+    }
+
+    /// The problem text for the file at `url`, from the finished check.
+    private func problem(for url: URL) -> String? {
+        guard let report = report, let index = reportFiles.firstIndex(of: url) else { return nil }
+        return report.problems[index]
+    }
+
+    /// The files the report was made for, in the order it was made.
+    private var reportFiles: [URL] = []
+
+    private func refreshStatus() {
+        statusLabel.toolTip = nil
+        guard let report = report else {
+            statusLabel.stringValue = NSLocalizedString("Checking files\u{2026}", comment: "Merge reorder window -> checking status")
+            statusLabel.textColor = .secondaryLabelColor
+            mergeButton.isEnabled = false
+            return
+        }
+
+        if let overall = report.overallProblem {
+            statusLabel.stringValue = overall
+            statusLabel.textColor = .systemRed
+            mergeButton.isEnabled = false
+        } else if report.isCompatible {
             statusLabel.stringValue = NSLocalizedString("\u{2713} All files are compatible and can be merged.", comment: "Merge reorder window -> compatible status")
             statusLabel.textColor = .secondaryLabelColor
             mergeButton.isEnabled = true
-        } catch {
-            statusLabel.stringValue = error.localizedDescription
+        } else {
+            let odd = report.problems.enumerated().compactMap { index, text in text.map { (reportFiles[index], $0) } }
+            var message = String(format: NSLocalizedString("\u{201C}%@\u{201D} doesn\u{2019}t fit: %@", comment: "Merge reorder window -> odd file status"), odd[0].0.lastPathComponent, odd[0].1)
+            if odd.count > 1 {
+                message += String(format: NSLocalizedString(" (and %ld more)", comment: "Merge reorder window -> more odd files"), odd.count - 1)
+            }
+            statusLabel.stringValue = message
             statusLabel.textColor = .systemRed
+            statusLabel.toolTip = message
             mergeButton.isEnabled = false
         }
     }
@@ -263,8 +349,8 @@ final class MergeReorderWindowController: NSWindowController, NSTableViewDataSou
     }
 
     private func endSheet(with response: NSApplication.ModalResponse) {
-        guard let window = window, let sheetParent = window.sheetParent else { return }
-        sheetParent.endSheet(window, returnCode: response)
+        guard let window = window else { return }
+        MovableDialog.end(window, with: response)
     }
 
     // MARK: NSTableViewDataSource / NSTableViewDelegate
@@ -278,19 +364,52 @@ final class MergeReorderWindowController: NSWindowController, NSTableViewDataSou
         let cell = tableView.makeView(withIdentifier: identifier, owner: self) as? NSTableCellView ?? {
             let cell = NSTableCellView()
             cell.identifier = identifier
+            let checkbox = NSButton(checkboxWithTitle: "", target: self, action: #selector(toggleInclude(_:)))
+            checkbox.identifier = NSUserInterfaceItemIdentifier("includeCheckbox")
+            checkbox.translatesAutoresizingMaskIntoConstraints = false
+            checkbox.toolTip = NSLocalizedString("Untick to leave this file out of the merge", comment: "Merge reorder window -> checkbox tooltip")
             let textField = NSTextField(labelWithString: "")
             textField.translatesAutoresizingMaskIntoConstraints = false
             textField.lineBreakMode = .byTruncatingMiddle
+            let icon = NSImageView()
+            icon.translatesAutoresizingMaskIntoConstraints = false
+            icon.imageScaling = .scaleProportionallyDown
+            cell.addSubview(checkbox)
             cell.addSubview(textField)
+            cell.addSubview(icon)
             cell.textField = textField
+            cell.imageView = icon
             NSLayoutConstraint.activate([
-                textField.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 4),
-                textField.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -4),
-                textField.centerYAnchor.constraint(equalTo: cell.centerYAnchor)
+                checkbox.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 4),
+                checkbox.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
+                checkbox.widthAnchor.constraint(equalToConstant: 18),
+                textField.leadingAnchor.constraint(equalTo: checkbox.trailingAnchor, constant: 4),
+                textField.trailingAnchor.constraint(equalTo: icon.leadingAnchor, constant: -4),
+                textField.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
+                icon.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -4),
+                icon.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
+                icon.widthAnchor.constraint(equalToConstant: 16),
+                icon.heightAnchor.constraint(equalToConstant: 16)
             ])
             return cell
         }()
 
+        let url = orderedFiles[row]
+        let included = excluded.contains(url) == false
+        if let checkbox = cell.subviews.first(where: { $0.identifier?.rawValue == "includeCheckbox" }) as? NSButton {
+            checkbox.state = included ? .on : .off
+        }
+        cell.textField?.textColor = included ? .labelColor : .disabledControlTextColor
+        if included == false {
+            cell.imageView?.image = nil
+            cell.toolTip = NSLocalizedString("Left out of the merge", comment: "Merge reorder window -> unticked file tooltip")
+        } else if let problem = problem(for: url) {
+            cell.imageView?.image = NSImage(named: NSImage.cautionName)
+            cell.toolTip = problem
+        } else {
+            cell.imageView?.image = nil
+            cell.toolTip = nil
+        }
         cell.textField?.stringValue = orderedFiles[row].lastPathComponent
         return cell
     }
@@ -332,7 +451,6 @@ final class MergeReorderWindowController: NSWindowController, NSTableViewDataSou
         }
 
         tableView.reloadData()
-        updateCompatibility()
         return true
     }
 }

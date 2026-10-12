@@ -9,9 +9,9 @@ inherited from Subler and MP42Foundation).
 
 Main features include:
 
-* Creation of tx3g subtitles tracks, compatible with all Apple's devices (iPod, AppleTV, iPhone, QuickTime?).
+* Creation of tx3g subtitles tracks, compatible with all Apple's devices (iPod, AppleTV, iPhone, QuickTime).
 * Mux video, audio, chapters, subtitles and closed captions tracks from mov, mp4 and mkv.
-* Raw formats: H.264 Elementary streams (.h264, .264), AAC (.aac), AC3 (.ac3), Scenarist (.scc), VobSub? (.idx).
+* Raw formats: H.264 Elementary streams (.h264, .264), AAC (.aac), AC3 (.ac3), Scenarist (.scc), VobSub (.idx).
 * Metadata editing with TMDb, TheTVDB, iTunes Store, and pluggable custom/third-party metadata sources.
 * A Media Intake Manager and Queue-based naming/merge workflow, and a file-merge feature.
 

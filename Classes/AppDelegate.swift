@@ -338,6 +338,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
         _ = QueueController.shared
         _ = QueueController.tvShows
+        _ = QueueWindowController.shared
 
         if #available(macOS 10.15, *) {
             sendToExternalApp.title = NSLocalizedString("Send to TV", comment: "Send to tv app menu item")
@@ -429,14 +430,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     @IBAction func toggleStartStop(_ sender: Any?) {
-        QueueController.shared.toggleStartStop(sender)
+        QueueWindowController.shared.activeController.toggleStartStop(sender)
     }
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         let action = menuItem.action
 
         if action == #selector(toggleStartStop(_:)) {
-            let state = QueueController.shared.status
+            let state = QueueWindowController.shared.activeController.status
             if state == .working {
                 menuItem.title = NSLocalizedString("Stop Queue", comment: "Main Menu -> Stop Queue")
             } else {

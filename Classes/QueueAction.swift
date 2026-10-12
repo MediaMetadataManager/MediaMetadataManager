@@ -423,6 +423,20 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
 
     }
 
+    /// Downloads the candidates one by one and returns the first that is
+    /// really portrait; nothing is embedded when none is.
+    private func portraitArtwork(from artworks: [Artwork], preferred: Artwork?, service: String) -> MP42Image? {
+        for candidate in artworks.portraitCandidates(preferred: preferred, service: service) {
+            guard let data = URLSession.data(from: candidate.url) else { continue }
+            if ArtworkOrientation.of(data: data) == .portrait {
+                return MP42Image(data: data, type: MP42_ART_JPEG)
+            }
+            Logger.shared.write(toLog: "Artwork skipped (not portrait): \(candidate.url.lastPathComponent)")
+        }
+        Logger.shared.write(toLog: "No portrait artwork found; none embedded")
+        return nil
+    }
+
     private func load(artworkURL: URL) -> MP42Image? {
         guard let data = URLSession.data(from: artworkURL) else { return nil }
         return MP42Image(data: data, type: MP42_ART_JPEG)
@@ -563,7 +577,16 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
                 }
             }()
 
-            if let url = artwork?.url, let artwork = load(artworkURL: url) {
+            // A movie cover must be portrait. Apple TV and the iTunes Store
+            // return both versions, so the real pixel size is checked and
+            // a landscape image is skipped for the next candidate.
+            let requiresPortrait = terms.isMovie && preferredArtwork == .poster && preferredArtworkSize == .standard
+            if requiresPortrait {
+                if let portrait = portraitArtwork(from: artworks, preferred: artwork, service: found.provider) {
+                    metadata.artworks.append(portrait)
+                }
+            }
+            else if let url = artwork?.url, let artwork = load(artworkURL: url) {
                 metadata.artworks.append(artwork)
             }
         }

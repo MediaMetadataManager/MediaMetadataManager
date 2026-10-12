@@ -12,6 +12,34 @@ next round of work.
 
 ## Unreleased
 
+## 1.1.0 (2026-10-11)
+
+- New: the Merge Order window now has a tick box beside each file, so a file can be left out of the merge (and the box starts unticked for a file that is about as big as all the others together, which is probably a merge already made). Merge is judged on the ticked files only.
+- Improved: the Queue's review windows (naming, merge order, metadata search and "already merged") now open centred over the Queue but can be dragged aside, so the list and its Status column stay readable while you decide.
+- New: a folder in the Queue that is still waiting to be named or merged now has a disclosure triangle. Click it (or press the Right/Left arrow keys on the selected folder) to list the files inside, Finder-style; Option-click opens or closes every folder at once. The listed files are for looking at only for now. Folders in the Queue also show a folder icon.
+- Improved: the Queue window now has the same look as the tabs in Settings (such as Media Intake): small Movies / TV Shows tabs in a bordered panel set in from the window edge.
+- Improved: while a folder is being merged, each of its files listed in the open folder shows "Merging" in the Status column ("Merge failed" if it did not work).
+- Improved: a merge now shows its progress in the Queue ("Merging 42%" on the folder and on each of its files), and the progress bar and status line at the bottom follow the merge ("Merging <name> 42%") the same way they follow a file being processed, so a long merge no longer looks stuck.
+- Fixed: in the Review Metadata window, results with exactly the same title were merged into one line in the list, so picking one could open a different result than the one chosen. Every result now has its own line.
+- Improved: if a queued file was renamed in Finder and it is the only media file left in its folder, Edit finds it and carries on instead of saying it can't be found (the Queue entry follows the new name).
+- Improved: Show in Finder now works for every Queue row, not just finished ones: it shows the file (or the folder of a folder row), and if that has been moved or renamed it opens the closest folder that still exists.
+- Improved: when a queued file cannot be found, the message now names the folder it was looked for in and offers Find…, which lets you pick the file's new name or place; the Queue entry then follows it.
+- New: once a folder has been merged, its part files show "Merged" in the Status column.
+- Fixed: half-written merge files (hidden ".merging" files) left behind when M3 was quit or crashed during a merge are removed the next time M3 starts.
+- New: the Review Metadata window has a "Search with" menu listing the sources switched on in Settings. The first search works as before; pick another source and it searches again there, and the match you choose from it is the one applied.
+- Improved: in the Review Metadata window, results that share the same title (some sources list only titles) now get their year and studio added to the line once the details load, so the right one can be told apart.
+- Improved: files changed outside the app now show up in the Queue when you come back to its window: sizes are re-read, and a folder still waiting to be named or merged picks up files that were added, removed or renamed in Finder. Clicking Edit (or double-clicking) also re-reads that folder or file from disk first, so the window that opens shows what is there now; if the file has been moved, renamed or deleted, you are told so instead of getting an error.
+- Fixed: a movie title that a source printed with promotion text after it (such as a sale notice, set apart by line breaks or a long run of spaces) is now cut back to the real title, so searches and file names stay clean.
+- New: when a release folder already holds a merged file (one about as big as all the other files together), the Queue no longer merges the parts again. The release is set aside with the status "Already merged: review"; double-click it to use the merged file, or to merge the parts anyway (the existing merged file is kept and renamed with " - OLD" added).
+- New: the Movies and TV Shows queues now share one window with a tab for each, so the Queue is a single place to look. The toolbar (Add, Merge, Start, Settings) acts on whichever tab is showing, and the window remembers its position and the last tab used. A TV Show added by Intake opens its tab automatically.
+- New: the Movies and TV Shows queues now take turns, one file at a time across both, which is kinder to a single disk. Preferences > Media Intake has a new option, "Run the Movies and TV Shows queues at the same time", for people whose files are on fast drives.
+- New: the Queue windows (Movies and TV Shows) now have Name, Status, Size and Type columns. Click a header to sort the Queue by it (A to Z, with numbers in names sorted as numbers) and click again to reverse. Sorting changes the order files are processed in, can be undone with Edit > Undo, and rows can still be dragged. Files added from a folder stay under their folder.
+- New: the Queue has a "#" column on the far left showing the order files were added. Click its header to put the Queue back in that order after sorting by another column. The Info and Edit buttons are now in their own column on the right, and the column headers have a tinted background so they stand out.
+- New: under the Queue list, a line now shows how many files are in the Queue and how many are done, failed, waiting or need you. While the Queue runs it also shows the time elapsed, about how long is left and when it should finish (judged by file size), and afterwards how long the last run took.
+- Improved: when the Queue picks movie cover art it now checks the real size of each image, because Apple TV and the iTunes Store return both portrait and landscape versions. A landscape (or square) image is skipped and the next poster is tried; if none is portrait, no cover is embedded. Images are never rotated.
+- Edited: wording in the README and documentation tidied for readability.
+- Improved: the Merge Order window now marks the file that doesn't fit the others (different codec, size, timescale or track count) with a warning icon and says why, even when it is the first file. The files are checked in the background when the window opens, so large files on a slow drive no longer freeze it, and dragging to reorder no longer re-reads them.
+
 ## 1.0.6 (2026-10-11)
 
 - Fixed: turning off **Automatically watch these folders for new files** (Media Intake) made M3 quit. Saving the setting and the Queue reading it back happened at the same moment, which macOS treats as a fatal error; the Queue now waits for the save to finish.

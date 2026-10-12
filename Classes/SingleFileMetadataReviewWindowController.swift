@@ -25,6 +25,11 @@
 //  words and which result -- is handed back to the Queue so the metadata
 //  that is applied is the one the user looked at.
 //
+//  The first search uses the Queue's chosen provider, as before. A "Search
+//  with" pop-up under the search words lists every provider enabled in
+//  Settings > Sources; picking another one searches again with it, and if
+//  its result is used, that provider is handed back too.
+//
 //  Built entirely in code (no .xib) -- same reasoning as
 //  NamingReviewWindowController/MergeReorderWindowController: a small
 //  one-off window with no reason to round-trip through Interface
@@ -33,13 +38,17 @@
 
 import Cocoa
 
-final class SingleFileMetadataReviewWindowController: NSWindowController {
+final class SingleFileMetadataReviewWindowController: NSWindowController, NSMenuDelegate {
 
     private static let maxResults = 10
 
     private let release: QueueRelease
     private let movieProvider: String
     private let movieLanguage: String
+    /// The provider the listed results come from: the Queue's own to begin
+    /// with, then whatever the "Search with" pop-up is set to.
+    private var provider: String
+    private let providerPopUp = NSPopUpButton(frame: .zero, pullsDown: false)
     private let artworkSize: ArtworkSize
 
     private let searchField = NSTextField(string: "")
@@ -64,6 +73,52 @@ final class SingleFileMetadataReviewWindowController: NSWindowController {
     /// response from an earlier one can't overwrite a newer one.
     private var generation = 0
 
+    /// Bumped by every new search (not by picking a result), so the extra
+    /// details being filled into the list stop when the list is replaced.
+    private var listGeneration = 0
+
+    /// Details already fetched for entries of the current list (by index).
+    /// Touched on the main thread only.
+    private var detailCache: [Int: MetadataResult] = [:]
+    /// Only one detail fetch runs at a time: some sources load
+    /// every page through one shared hidden web view, so two fetches at once
+    /// can stall each other.
+    private let fetchLock = NSLock()
+    /// Lets the background clean-up of duplicate titles step aside while the
+    /// result the person picked is being loaded, or stop for good.
+    private let gateLock = NSLock()
+    private var pickedLoads = 0
+    private var windowEnded = false
+    private var listForGate = 0
+
+    /// Line changes that arrived while the results menu was open. Changing
+    /// an item under an open menu can upset the menu, so they wait.
+    private var menuIsOpen = false
+    private var waitingTitles: [Int: String] = [:]
+
+    func menuWillOpen(_ menu: NSMenu) {
+        menuIsOpen = true
+    }
+
+    func menuDidClose(_ menu: NSMenu) {
+        menuIsOpen = false
+        // After the menu's own selection has been delivered.
+        DispatchQueue.main.async { [weak self] in self?.applyWaitingTitles() }
+    }
+
+    private func applyWaitingTitles() {
+        guard menuIsOpen == false else { return }
+        for (index, title) in waitingTitles where index < resultsPopUp.numberOfItems {
+            resultsPopUp.item(at: index)?.title = title
+        }
+        waitingTitles = [:]
+    }
+
+    private func listIsCurrent(_ list: Int) -> Bool {
+        gateLock.lock(); defer { gateLock.unlock() }
+        return windowEnded == false && listForGate == list
+    }
+
     /// Every remote artwork the selected result has, filtered down to
     /// just .poster/.backdrop (the two orientations the toggle below
     /// switches between) since season/episode/person art doesn't apply
@@ -86,7 +141,26 @@ final class SingleFileMetadataReviewWindowController: NSWindowController {
     /// confirming what the automatic search would have found anyway.
     var chosenSearchTerm: String? {
         guard hasMatch else { return nil }
-        return (lastSearchedTerm != initialTerm || chosenResultIndex != 0) ? lastSearchedTerm : nil
+        return (lastSearchedTerm != initialTerm || chosenResultIndex != 0 || provider != movieProvider) ? lastSearchedTerm : nil
+    }
+
+    /// The provider whose result was picked, when it is not the Queue's own;
+    /// nil otherwise.
+    var chosenProvider: String? {
+        guard hasMatch, provider != movieProvider else { return nil }
+        return provider
+    }
+
+    /// The search language that goes with `chosenProvider`.
+    var chosenLanguage: String? {
+        return chosenProvider == nil ? nil : language
+    }
+
+    /// The Queue's language setting belongs to the Queue's own provider;
+    /// any other provider searches in its own default language.
+    private var language: String {
+        guard provider != movieProvider else { return movieLanguage }
+        return MetadataSearch.defaultLanguage(service: MetadataSearch.service(name: provider), type: .movie)
     }
 
     /// Position of the selected result in the list the search returned.
@@ -97,6 +171,7 @@ final class SingleFileMetadataReviewWindowController: NSWindowController {
     init(release: QueueRelease, movieProvider: String, movieLanguage: String, defaultArtwork: ArtworkType, artworkSize: ArtworkSize) {
         self.release = release
         self.movieProvider = movieProvider
+        self.provider = movieProvider
         self.movieLanguage = movieLanguage
         self.artworkSize = artworkSize
         self.chosenArtworkType = defaultArtwork.isMovieType ? defaultArtwork : .poster
@@ -107,7 +182,7 @@ final class SingleFileMetadataReviewWindowController: NSWindowController {
         self.initialTerm = title
         self.lastSearchedTerm = title
 
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 500),
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 530),
                                styleMask: [.titled],
                                backing: .buffered,
                                defer: false)
@@ -127,7 +202,7 @@ final class SingleFileMetadataReviewWindowController: NSWindowController {
 
     private func makeContentViewController() -> NSViewController {
         let controller = NSViewController()
-        let view = NSView(frame: NSRect(x: 0, y: 0, width: 460, height: 500))
+        let view = NSView(frame: NSRect(x: 0, y: 0, width: 460, height: 530))
         controller.view = view
 
         let originalLabel = NSTextField(labelWithString: NSLocalizedString("File:", comment: "Metadata review window -> label"))
@@ -152,6 +227,22 @@ final class SingleFileMetadataReviewWindowController: NSWindowController {
         searchButton.translatesAutoresizingMaskIntoConstraints = false
         searchButton.bezelStyle = .rounded
 
+        let providerLabel = NSTextField(labelWithString: NSLocalizedString("Search with:", comment: "Metadata review window -> label"))
+        providerLabel.font = NSFont.boldSystemFont(ofSize: NSFont.smallSystemFontSize)
+        providerLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        // Every provider that is switched on in Settings, with the Queue's
+        // own provider kept in the list even if it was switched off since.
+        var providers = MetadataSearch.movieProviders
+        if providers.contains(movieProvider) == false { providers.insert(movieProvider, at: 0) }
+        providerPopUp.removeAllItems()
+        providerPopUp.addItems(withTitles: providers)
+        providerPopUp.selectItem(withTitle: movieProvider)
+        providerPopUp.translatesAutoresizingMaskIntoConstraints = false
+        providerPopUp.target = self
+        providerPopUp.action = #selector(providerChanged(_:))
+        providerPopUp.toolTip = NSLocalizedString("Look for this movie with another source. Only the sources switched on in Settings are listed.", comment: "Metadata review window -> tooltip")
+
         let matchLabel = NSTextField(labelWithString: NSLocalizedString("Found match:", comment: "Metadata review window -> label"))
         matchLabel.font = NSFont.boldSystemFont(ofSize: NSFont.smallSystemFontSize)
         matchLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -159,6 +250,10 @@ final class SingleFileMetadataReviewWindowController: NSWindowController {
         resultsPopUp.translatesAutoresizingMaskIntoConstraints = false
         resultsPopUp.target = self
         resultsPopUp.action = #selector(resultChanged(_:))
+        resultsPopUp.menu?.delegate = self
+        // Longer lines (year, studio) must never widen the window.
+        resultsPopUp.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        resultsPopUp.lineBreakMode = .byTruncatingTail
 
         progressIndicator.style = .spinning
         progressIndicator.controlSize = .small
@@ -199,7 +294,7 @@ final class SingleFileMetadataReviewWindowController: NSWindowController {
         useButton.keyEquivalent = "\r"
         useButton.bezelStyle = .rounded
 
-        [originalLabel, originalValue, searchLabel, searchField, searchButton, matchLabel, resultsPopUp,
+        [originalLabel, originalValue, searchLabel, searchField, searchButton, providerLabel, providerPopUp, matchLabel, resultsPopUp,
          progressIndicator, statusLabel, artworkView, orientationLabel, orientationControl,
          cancelButton, useButton].forEach { view.addSubview($0) }
 
@@ -221,7 +316,13 @@ final class SingleFileMetadataReviewWindowController: NSWindowController {
             searchField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             searchField.trailingAnchor.constraint(equalTo: searchButton.leadingAnchor, constant: -8),
 
-            matchLabel.topAnchor.constraint(equalTo: searchButton.bottomAnchor, constant: 14),
+            providerPopUp.topAnchor.constraint(equalTo: searchButton.bottomAnchor, constant: 10),
+            providerPopUp.leadingAnchor.constraint(equalTo: providerLabel.trailingAnchor, constant: 8),
+
+            providerLabel.centerYAnchor.constraint(equalTo: providerPopUp.centerYAnchor),
+            providerLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+
+            matchLabel.topAnchor.constraint(equalTo: providerPopUp.bottomAnchor, constant: 14),
             matchLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
 
             progressIndicator.centerYAnchor.constraint(equalTo: resultsPopUp.centerYAnchor),
@@ -265,10 +366,14 @@ final class SingleFileMetadataReviewWindowController: NSWindowController {
         guard trimmed.isEmpty == false else { return }
 
         generation += 1
+        listGeneration += 1
+        gateLock.lock(); listForGate = listGeneration; gateLock.unlock()
         let current = generation
         lastSearchedTerm = trimmed
 
         results = []
+        detailCache = [:]
+        waitingTitles = [:]
         artworks = []
         artworkView.image = nil
         orientationControl.isEnabled = false
@@ -281,8 +386,8 @@ final class SingleFileMetadataReviewWindowController: NSWindowController {
         searchButton.isEnabled = false
         progressIndicator.startAnimation(nil)
 
-        let provider = movieProvider
-        let language = movieLanguage
+        let provider = self.provider
+        let language = self.language
         let limit = SingleFileMetadataReviewWindowController.maxResults
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -315,16 +420,91 @@ final class SingleFileMetadataReviewWindowController: NSWindowController {
             return
         }
 
+        // Items are added to the menu directly: NSPopUpButton.addItem(withTitle:)
+        // drops an earlier item with the same title, which would collapse
+        // several identically named results into one and leave the list out of
+        // step with `results`.
         for result in found {
-            let name = result[.name] as? String ?? NSLocalizedString("Untitled", comment: "Metadata review window -> fallback title")
-            let year = ParsedMediaName.firstFourDigitYear(in: result[.releaseDate] as? String)
-            resultsPopUp.addItem(withTitle: year.map { "\(name) (\($0))" } ?? name)
+            resultsPopUp.menu?.addItem(NSMenuItem(title: label(for: result), action: nil, keyEquivalent: ""))
         }
         resultsPopUp.isEnabled = true
         resultsPopUp.selectItem(at: 0)
         statusLabel.stringValue = NSLocalizedString("This match wasn't confident enough to apply automatically \u{2014} pick the right result, or change the search words and search again.", comment: "Metadata review window -> status")
 
         loadSelectedResult()
+        fillInDuplicateLabels()
+    }
+
+    /// "Title (year)" for the results list.
+    private func label(for result: MetadataResult) -> String {
+        let name = result[.name] as? String ?? NSLocalizedString("Untitled", comment: "Metadata review window -> fallback title")
+        let year = ParsedMediaName.firstFourDigitYear(in: result[.releaseDate] as? String)
+        return year.map { "\(name) (\($0))" } ?? name
+    }
+
+    /// Some providers list only titles in their search results, so several
+    /// entries can read exactly the same (several movies with one and the
+    /// same title). For each such entry the full details are fetched in
+    /// the background and the year and studio are added to its line, so the
+    /// right one can be told apart without opening each in turn.
+    private func fillInDuplicateLabels() {
+        let labels = results.map { label(for: $0) }
+        var counts: [String: Int] = [:]
+        for text in labels { counts[text, default: 0] += 1 }
+        let duplicated = labels.indices.filter { (counts[labels[$0]] ?? 0) > 1 }
+        guard duplicated.isEmpty == false else { return }
+
+        let current = listGeneration
+        let snapshot = results
+        let term = lastSearchedTerm
+        let provider = self.provider
+        let language = self.language
+
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            let service = MetadataSearch.service(name: provider)
+            let search = MetadataSearch.movieSeach(service: service, movie: term, language: language)
+
+            for index in duplicated {
+                // Step aside while the picked result loads; stop if the list
+                // has been replaced or the window closed.
+                while true {
+                    guard let me = self else { return }
+                    me.gateLock.lock()
+                    let ended = me.windowEnded
+                    let paused = me.pickedLoads > 0
+                    me.gateLock.unlock()
+                    if ended { return }
+                    if paused == false { break }
+                    Thread.sleep(forTimeInterval: 0.2)
+                }
+
+                if self?.listIsCurrent(current) != true { return }
+
+                var loaded: MetadataResult? = nil
+                self?.fetchLock.lock()
+                search.loadAdditionalMetadata(snapshot[index], completionHandler: { loaded = $0 }).run()
+                self?.fetchLock.unlock()
+                guard let detail = loaded else { continue }
+
+                DispatchQueue.main.async {
+                    guard let self = self, self.listGeneration == current,
+                          index < self.resultsPopUp.numberOfItems else { return }
+                    self.detailCache[index] = detail
+                    self.waitingTitles[index] = self.detailedLabel(for: detail, fallback: labels[index])
+                    self.applyWaitingTitles()
+                }
+            }
+        }
+    }
+
+    /// "Title (year) \u{2014} Studio", using whatever the details provide.
+    private func detailedLabel(for detail: MetadataResult, fallback: String) -> String {
+        guard detail[.name] as? String != nil else { return fallback }
+        var text = label(for: detail)
+        if let studio = (detail[.studio] as? String) ?? (detail[.director] as? String), studio.isEmpty == false {
+            text += " \u{2014} " + studio
+        }
+        return text
     }
 
     /// Loads the full details (mainly the artwork list) of the result
@@ -337,32 +517,50 @@ final class SingleFileMetadataReviewWindowController: NSWindowController {
         let current = generation
         let hit = results[index]
         let term = lastSearchedTerm
-        let provider = movieProvider
-        let language = movieLanguage
+        let provider = self.provider
+        let language = self.language
 
         artworks = []
         artworkView.image = nil
         orientationControl.isEnabled = false
+
+        // Already fetched for the duplicate-title labels: nothing to wait for.
+        if let cached = detailCache[index] {
+            showDetails(cached)
+            return
+        }
+
         useButton.isEnabled = false
         progressIndicator.startAnimation(nil)
+
+        gateLock.lock(); pickedLoads += 1; gateLock.unlock()
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let service = MetadataSearch.service(name: provider)
             let search = MetadataSearch.movieSeach(service: service, movie: term, language: language)
 
             var loaded: MetadataResult? = hit
-            search.loadAdditionalMetadata(hit, completionHandler: { loaded = $0 }).run()
+            var fetched = false
+            self?.fetchLock.lock()
+            search.loadAdditionalMetadata(hit, completionHandler: { loaded = $0; fetched = true }).run()
+            self?.fetchLock.unlock()
 
             DispatchQueue.main.async {
-                guard let self = self, self.generation == current else { return }
-                self.progressIndicator.stopAnimation(nil)
-                self.useButton.isEnabled = true
-
-                self.artworks = (loaded?.remoteArtworks ?? []).filter { $0.type == .poster || $0.type == .backdrop }
-                self.orientationControl.isEnabled = self.artworks.isEmpty == false
-                self.loadPreview()
+                guard let self = self else { return }
+                self.gateLock.lock(); self.pickedLoads -= 1; self.gateLock.unlock()
+                guard self.generation == current else { return }
+                if fetched, let loaded = loaded { self.detailCache[index] = loaded }
+                self.showDetails(loaded)
             }
         }
+    }
+
+    private func showDetails(_ details: MetadataResult?) {
+        progressIndicator.stopAnimation(nil)
+        useButton.isEnabled = true
+        artworks = (details?.remoteArtworks ?? []).filter { $0.type == .poster || $0.type == .backdrop }
+        orientationControl.isEnabled = artworks.isEmpty == false
+        loadPreview()
     }
 
     // MARK: Artwork preview
@@ -375,7 +573,7 @@ final class SingleFileMetadataReviewWindowController: NSWindowController {
     private func loadPreview() {
         guard let type = chosenArtworkType else { return }
 
-        let preferred = artworks.first(by: type, size: artworkSize, service: movieProvider) ?? artworks.first { $0.type == type } ?? artworks.first
+        let preferred = artworks.first(by: type, size: artworkSize, service: provider) ?? artworks.first { $0.type == type } ?? artworks.first
 
         guard let artwork = preferred else {
             artworkView.image = nil
@@ -399,6 +597,12 @@ final class SingleFileMetadataReviewWindowController: NSWindowController {
         runSearch(term: searchField.stringValue)
     }
 
+    @objc private func providerChanged(_ sender: Any?) {
+        guard let title = providerPopUp.titleOfSelectedItem, title != provider else { return }
+        provider = title
+        runSearch(term: searchField.stringValue)
+    }
+
     @objc private func resultChanged(_ sender: Any?) {
         loadSelectedResult()
     }
@@ -412,7 +616,10 @@ final class SingleFileMetadataReviewWindowController: NSWindowController {
     }
 
     private func endSheet(with response: NSApplication.ModalResponse) {
-        guard let window = window, let sheetParent = window.sheetParent else { return }
-        sheetParent.endSheet(window, returnCode: response)
+        guard let window = window else { return }
+        gateLock.lock(); windowEnded = true; gateLock.unlock()
+        listGeneration += 1
+        generation += 1
+        MovableDialog.end(window, with: response)
     }
 }

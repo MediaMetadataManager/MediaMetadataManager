@@ -12,6 +12,10 @@ import Cocoa
     @MainActor @objc optional func copySelection(in tableview: NSTableView)
     @MainActor @objc optional func cutSelection(in tableview: NSTableView)
     @MainActor @objc optional func paste(to tableview: NSTableView)
+    /// First look at an arrow key. Return true when the delegate used it
+    /// (for example to open or close a folder row), false to let the table
+    /// handle it as usual.
+    @MainActor @objc optional func tableView(_ tableview: NSTableView, handleArrowKey key: Int, modifiers: NSEvent.ModifierFlags) -> Bool
 }
 
 protocol ExpandedTableViewCellActionable {
@@ -84,6 +88,11 @@ class ExpandedTableView: NSTableView {
             } else {
                 expandedDelegate?.deleteSelection!(in: self)
             }
+        }
+        else if key == NSRightArrowFunctionKey || key == NSLeftArrowFunctionKey,
+                implements(selector: #selector(ExpandedTableViewDelegate.tableView(_:handleArrowKey:modifiers:))),
+                expandedDelegate?.tableView!(self, handleArrowKey: Int(key), modifiers: event.modifierFlags) == true {
+            return
         }
         else if key == NSRightArrowFunctionKey || key == NSLeftArrowFunctionKey {
             self.window?.windowController?.keyDown(with: event)

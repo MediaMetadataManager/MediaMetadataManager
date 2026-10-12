@@ -49,6 +49,7 @@ import Cocoa
         case mergeFailed           // MergeCompatibility/FileMerger failed; see mergeErrorMessage
         case pendingLibraryMove    // resolvedItem exists and has been added to the Queue for muxing
         case done                  // moved to Ready for Media Library
+        case alreadyMerged         // the folder already holds a merged copy of its parts; set aside for review
     }
     var stage: Stage
 
@@ -74,6 +75,9 @@ import Cocoa
     /// the release goes through the same metadata step as a single-file
     /// release, using this file instead of sourceFileURLs.first.
     var mergedFileURL: URL?
+    /// For a release in .alreadyMerged: the file in the folder that is about
+    /// as big as all the other files together, so most likely their merge.
+    var existingMergedFileURL: URL?
     /// Mirrors FileMerger's progressHandler while stage == .merging.
     /// Deliberately not persisted -- see encode(with:) below.
     var mergeProgress: Double = 0
@@ -109,6 +113,7 @@ import Cocoa
         aCoder.encode(mergeOrder as NSArray?, forKey: "SBQueueReleaseMergeOrder")
         aCoder.encode(mergeErrorMessage, forKey: "SBQueueReleaseMergeErrorMessage")
         aCoder.encode(mergedFileURL, forKey: "SBQueueReleaseMergedFileURL")
+        aCoder.encode(existingMergedFileURL, forKey: "SBQueueReleaseExistingMergedFileURL")
         aCoder.encode(resolvedItem, forKey: "SBQueueReleaseResolvedItem")
         // mergeProgress is deliberately not persisted -- meaningless after
         // a relaunch, same as QueueItem doesn't persist a partial mux's
@@ -134,7 +139,59 @@ import Cocoa
         self.mergeOrder = aDecoder.decodeObject(of: [NSArray.classForCoder(), NSURL.classForCoder()], forKey: "SBQueueReleaseMergeOrder") as? [URL]
         self.mergeErrorMessage = aDecoder.decodeObject(of: [NSString.classForCoder()], forKey: "SBQueueReleaseMergeErrorMessage") as? String
         self.mergedFileURL = aDecoder.decodeObject(of: [NSURL.classForCoder()], forKey: "SBQueueReleaseMergedFileURL") as? URL
+        self.existingMergedFileURL = aDecoder.decodeObject(of: [NSURL.classForCoder()], forKey: "SBQueueReleaseExistingMergedFileURL") as? URL
         self.resolvedItem = aDecoder.decodeObject(of: [QueueItem.classForCoder()], forKey: "SBQueueReleaseResolvedItem") as? QueueItem
         self.mergeProgress = 0
+    }
+}
+
+// MARK: - Spotting a folder that already holds the merged file
+
+enum AlreadyMergedDetector {
+
+    /// How far the big file's size may be from the other files' total. A
+    /// merge only drops a little container overhead, so this is generous.
+    static let tolerance = 0.02
+
+    /// If the largest file is about as big as all the others together (and
+    /// there are at least two others), it is probably their merge: returns
+    /// that file and the parts. Otherwise nil.
+    static func find(in files: [(url: URL, size: Int64)]) -> (merged: URL, parts: [URL])? {
+        guard files.count >= 3,
+              let largest = files.max(by: { $0.size < $1.size }),
+              largest.size > 0
+        else { return nil }
+
+        let others = files.filter { $0.url != largest.url }
+        let total = others.reduce(Int64(0)) { $0 + max($1.size, 0) }
+        guard total > 0 else { return nil }
+
+        let difference = abs(Double(largest.size) - Double(total))
+        guard difference <= Double(total) * tolerance else { return nil }
+        return (largest.url, others.map { $0.url })
+    }
+}
+
+extension QueueRelease {
+    /// "Merging", or "Merging 42%" once the merge has reported progress.
+    var mergingText: String {
+        let base = NSLocalizedString("Merging", comment: "Queue status column")
+        guard mergeProgress >= 1 else { return base }
+        return base + " " + String(Int(min(mergeProgress, 100))) + "%"
+    }
+
+    /// What the Status column shows beside one of this folder's files while
+    /// the folder is open in the Queue: "Merging" for each file going into
+    /// the merge, "Merge failed" if the last attempt did not work, and
+    /// "Merged" once the merged file exists. Files left out of the merge, and
+    /// every other stage, show nothing of their own.
+    func fileStatusText(for url: URL) -> String? {
+        let mergedFileExists = mergedFileURL != nil && (stage == .pendingMetadata || stage == .pendingLibraryMove || stage == .done)
+        guard stage == .merging || stage == .mergeFailed || mergedFileExists else { return nil }
+        if let order = mergeOrder, order.contains(url) == false { return nil }
+        if mergedFileExists { return NSLocalizedString("Merged", comment: "Queue status column") }
+        return stage == .merging
+            ? mergingText
+            : NSLocalizedString("Merge failed", comment: "Queue status column")
     }
 }

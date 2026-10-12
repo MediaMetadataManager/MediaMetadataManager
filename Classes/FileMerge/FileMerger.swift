@@ -112,6 +112,17 @@ public enum FileMerger {
                    preparedAt: preparedAt, finishedAt: Date(), importers: concatImporters)
     }
 
+    /// Removes the hidden half-written files (".Name.merging.mp4") a merge
+    /// leaves behind when M3 is quit or crashes while merging. Only call this
+    /// when no merge is running, such as at launch.
+    static func removeLeftoverTemporaries(in folder: URL) {
+        let manager = FileManager.default
+        guard let names = try? manager.contentsOfDirectory(atPath: folder.path) else { return }
+        for name in names where name.hasPrefix(".") && name.contains(".merging.") {
+            try? manager.removeItem(at: folder.appendingPathComponent(name))
+        }
+    }
+
     /// Writes a short timing breakdown of a finished merge to the debug
     /// log, so a slow merge can be traced to the source drive, the
     /// destination write, or something else (e.g. both on one spinning

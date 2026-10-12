@@ -159,3 +159,147 @@ public enum MergeCompatibility {
         return string.trimmingCharacters(in: .whitespaces)
     }
 }
+
+// MARK: - Per-file report (odd file out)
+
+/// What decides whether two files can be spliced: the ordered video and
+/// audio tracks with their codec, timescale and (video) size. Two files are
+/// compatible exactly when their signatures are equal, which is the same
+/// rule `MergeCompatibility.check(files:)` enforces at merge time, and it
+/// does not depend on the order of the files.
+public struct MergeFileSignature: Equatable {
+    public struct Track: Equatable {
+        public let mediaType: String   // "video" or "audio"
+        public let format: MP42CodecType
+        public let timescale: UInt32
+        public let width: UInt64
+        public let height: UInt64
+
+        public init(mediaType: String, format: MP42CodecType, timescale: UInt32, width: UInt64 = 0, height: UInt64 = 0) {
+            self.mediaType = mediaType
+            self.format = format
+            self.timescale = timescale
+            self.width = width
+            self.height = height
+        }
+    }
+
+    /// Video tracks first, then audio tracks, each in the file's own order.
+    public let tracks: [Track]
+
+    public init(tracks: [Track]) {
+        self.tracks = tracks
+    }
+
+    /// Reads the signature of one file. Opens the file and inspects track
+    /// metadata only, so it is cheap but should still run off the main thread.
+    public static func read(from url: URL) throws -> MergeFileSignature {
+        let file: MP42File
+        do {
+            file = try MP42File(url: url)
+        } catch {
+            throw MergeCompatibilityError.couldNotOpenFile(url)
+        }
+
+        var tracks: [Track] = []
+        for mediaType in [kMP42MediaType_Video, kMP42MediaType_Audio] {
+            let name = MergeCompatibility.name(for: mediaType)
+            for track in file.tracks(withMediaType: mediaType) {
+                let video = track as? MP42VideoTrack
+                tracks.append(Track(mediaType: name,
+                                    format: track.format,
+                                    timescale: track.timescale,
+                                    width: video?.width ?? 0,
+                                    height: video?.height ?? 0))
+            }
+        }
+        return MergeFileSignature(tracks: tracks)
+    }
+
+    /// A short, readable description of how this file differs from
+    /// `reference`, or nil when they match.
+    public func difference(from reference: MergeFileSignature) -> String? {
+        for mediaType in ["video", "audio"] {
+            let mine = tracks.filter { $0.mediaType == mediaType }
+            let theirs = reference.tracks.filter { $0.mediaType == mediaType }
+
+            if mine.count != theirs.count {
+                return String(format: NSLocalizedString("%ld %@ track(s), the others have %ld", comment: "Merge compatibility difference"), mine.count, mediaType, theirs.count)
+            }
+            for (a, b) in zip(mine, theirs) {
+                if a.format != b.format {
+                    return String(format: NSLocalizedString("%@ codec %@, the others use %@", comment: "Merge compatibility difference"), mediaType, MergeCompatibility.fourCCString(a.format), MergeCompatibility.fourCCString(b.format))
+                }
+                if a.timescale != b.timescale {
+                    return String(format: NSLocalizedString("%@ timescale %u, the others use %u", comment: "Merge compatibility difference"), mediaType, a.timescale, b.timescale)
+                }
+                if a.width != b.width || a.height != b.height {
+                    return String(format: NSLocalizedString("%ld\u{00D7}%ld, the others are %ld\u{00D7}%ld", comment: "Merge compatibility difference"), Int(a.width), Int(a.height), Int(b.width), Int(b.height))
+                }
+            }
+        }
+        return nil
+    }
+}
+
+/// Which files in a merge selection don't fit the rest, and why.
+public struct MergeFitReport {
+    /// One entry per file, in the order given: nil means it fits.
+    public let problems: [String?]
+    /// Set when the selection can't be judged per file at all (too few files,
+    /// or nothing to merge).
+    public let overallProblem: String?
+
+    public var isCompatible: Bool {
+        overallProblem == nil && problems.allSatisfy { $0 == nil }
+    }
+
+    public var oddFileCount: Int { problems.compactMap { $0 }.count }
+
+    /// Compares each file with the signature most of the files share (ties
+    /// go to the earliest file), so the odd one out is flagged even when it
+    /// is the first file in the list. `signatures[i]` is nil when file i
+    /// couldn't be opened.
+    public static func make(signatures: [MergeFileSignature?]) -> MergeFitReport {
+        guard signatures.count >= 2 else {
+            return MergeFitReport(problems: signatures.map { _ in nil },
+                                  overallProblem: NSLocalizedString("At least two files are needed to merge.", comment: "Merge compatibility error"))
+        }
+
+        var groups: [(signature: MergeFileSignature, count: Int)] = []
+        for case let signature? in signatures {
+            if let index = groups.firstIndex(where: { $0.signature == signature }) {
+                groups[index].count += 1
+            } else {
+                groups.append((signature, 1))
+            }
+        }
+
+        // The first group with the highest count wins, so a tie keeps the earliest.
+        guard let best = groups.enumerated().max(by: { lhs, rhs in
+            lhs.element.count != rhs.element.count ? lhs.element.count < rhs.element.count : lhs.offset > rhs.offset
+        })?.element.signature else {
+            return MergeFitReport(problems: signatures.map { _ in NSLocalizedString("couldn\u{2019}t be opened", comment: "Merge compatibility difference") },
+                                  overallProblem: nil)
+        }
+
+        let problems: [String?] = signatures.map { signature in
+            guard let signature = signature else {
+                return NSLocalizedString("couldn\u{2019}t be opened", comment: "Merge compatibility difference")
+            }
+            return signature.difference(from: best)
+        }
+
+        let overall: String? = best.tracks.isEmpty
+            ? NSLocalizedString("None of the selected files share a video or audio track to merge.", comment: "Merge compatibility error")
+            : nil
+
+        return MergeFitReport(problems: problems, overallProblem: overall)
+    }
+
+    /// Reads every file and builds the report. Blocking: call it off the
+    /// main thread.
+    public static func analyze(files: [URL]) -> MergeFitReport {
+        make(signatures: files.map { try? MergeFileSignature.read(from: $0) })
+    }
+}

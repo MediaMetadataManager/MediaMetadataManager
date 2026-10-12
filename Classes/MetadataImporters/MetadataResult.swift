@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import ImageIO
 import MP42Foundation
 
 // MARK: - Image
@@ -110,6 +111,63 @@ public struct Artwork: Equatable, Hashable {
             }
         }
         return uniques
+    }
+}
+
+// MARK: - Orientation
+
+/// Orientation judged from the real pixel size of an image, never from the
+/// label a provider gives it (Apple TV and the iTunes Store return both
+/// portrait and landscape versions). Images are never rotated.
+public enum ArtworkOrientation: Equatable {
+    case portrait
+    case landscape
+    case square
+    case unknown
+
+    /// Taller than wide by more than 10% is portrait, wider than tall by more
+    /// than 10% is landscape, anything in between is square.
+    public static func classify(width: Int, height: Int) -> ArtworkOrientation {
+        guard width > 0, height > 0 else { return .unknown }
+        if Double(height) > Double(width) * 1.1 { return .portrait }
+        if Double(width) > Double(height) * 1.1 { return .landscape }
+        return .square
+    }
+
+    /// Reads only the image header, so it is cheap. An EXIF orientation that
+    /// turns the image sideways (5 to 8) swaps width and height.
+    public static func of(data: Data) -> ArtworkOrientation {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              var width = properties[kCGImagePropertyPixelWidth] as? Int,
+              var height = properties[kCGImagePropertyPixelHeight] as? Int
+        else { return .unknown }
+
+        if let exif = properties[kCGImagePropertyOrientation] as? Int, exif >= 5 {
+            swap(&width, &height)
+        }
+        return classify(width: width, height: height)
+    }
+}
+
+extension Array where Element == Artwork {
+
+    /// The posters to try, best first, when the art must be portrait: the one
+    /// already chosen, then the provider's own standard-size posters, then
+    /// every other poster (a provider's size label can be wrong, so the pixel
+    /// check decides). At most `limit` entries, no duplicates.
+    func portraitCandidates(preferred: Artwork?, service: String, limit: Int = 6) -> [Artwork] {
+        var result: [Artwork] = []
+        func add(_ artwork: Artwork?) {
+            if let artwork = artwork, result.contains(artwork) == false { result.append(artwork) }
+        }
+        add(preferred)
+        let posters = filter { $0.type == .poster }
+        for artwork in posters where artwork.size == .standard && artwork.service == service { add(artwork) }
+        for artwork in posters where artwork.size == .standard { add(artwork) }
+        for artwork in posters where artwork.service == service { add(artwork) }
+        for artwork in posters { add(artwork) }
+        return Array<Artwork>(result.prefix(limit))
     }
 }
 
