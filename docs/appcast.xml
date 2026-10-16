@@ -3,8 +3,24 @@
     <channel>
         <title>M3</title>
         <item>
+            <title>1.1.1</title>
+            <pubDate>Thu, 15 Oct 2026 19:28:11 -0700</pubDate>
+            <sparkle:version>1.1.1</sparkle:version>
+            <sparkle:shortVersionString>1.1.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
+            <description><![CDATA[<html><body style="font-family:-apple-system;font-size:13px">
+<h3>Media Metadata Manager 1.1.1</h3><ul>
+<li>New: TV episodes added by hand to the Movies tab (Add button, drag and drop, File > Open) are put on the TV Shows tab automatically, and the status line says so. A folder holding both movies and episodes is split file by file. Movies added to the TV Shows tab are left alone. A new checkbox in Settings > Media Intake turns this off.</li>
+<li>Fixed: the app could quit when you clicked Search Metadata for a TV episode and a result's details were shown in the search window. The list of fields is now always built from the result as it is, in one fixed order, and the table no longer stops the app if a row or its sizing cell is missing.</li>
+<li>Removed: leftover internal code for the old "Send to TV" Queue option (the option itself was removed in 1.0.5).</li>
+<li>Improved: the User Guide now describes the TV episode setting and the option to run the Movies and TV Shows queues at the same time, and the README on GitHub has been rewritten with install and update notes.</li>
+</ul></body></html>
+]]></description>
+            <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.1.1/MediaMetadataManager-1.1.1.zip" length="14395868" type="application/octet-stream" sparkle:edSignature="c14VOo2igUKMwjlW9nHFqhUVWFNa9tc35jSIkGhjktBOnFjmGcz0qbn7MHHqMdR3EV4/f+TvUHA+iaM52p1+CA=="/>
+        </item>
+        <item>
             <title>1.1.0</title>
-            <pubDate>Sun, 11 Oct 2026 22:49:40 -0700</pubDate>
+            <pubDate>Thu, 15 Oct 2026 19:28:21 -0700</pubDate>
             <sparkle:version>1.1.0</sparkle:version>
             <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
@@ -41,7 +57,7 @@
         </item>
         <item>
             <title>1.0.6</title>
-            <pubDate>Sun, 11 Oct 2026 22:49:49 -0700</pubDate>
+            <pubDate>Thu, 15 Oct 2026 19:28:20 -0700</pubDate>
             <sparkle:version>1.0.6</sparkle:version>
             <sparkle:shortVersionString>1.0.6</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
@@ -53,26 +69,6 @@
 </ul></body></html>
 ]]></description>
             <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.0.6/MediaMetadataManager-1.0.6.zip" length="14193373" type="application/octet-stream" sparkle:edSignature="amfnS7JgnAhMAewQYRQuMB/8YM0sN58yijvU3EALukW7YGc7zNSRsl1WeFyX+ORtnw6d7on4kRCTsRvGaVKrBw=="/>
-        </item>
-        <item>
-            <title>1.0.5</title>
-            <pubDate>Sun, 11 Oct 2026 22:49:48 -0700</pubDate>
-            <sparkle:version>1.0.5</sparkle:version>
-            <sparkle:shortVersionString>1.0.5</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
-            <description><![CDATA[<html><body style="font-family:-apple-system;font-size:13px">
-<h3>Media Metadata Manager 1.0.5</h3><ul>
-<li>Fixed: in a Media Locations or Filename rule, the value list for Media Kind was empty, and a typed value such as "Movie" never matched because the file stores Media Kind as a number. The list now offers the same names as the Metadata tab (Movie, TV Show and so on), and they match. Content Rating gets its list too.</li>
-<li>Improved: when the Queue looks up a title by itself it now searches every provider enabled on the Providers tab and merges the results of those that found the same title. The provider chosen in the Queue options is the primary one; blank fields are filled from the others, cast, genre and crew lists are combined, the longest description is kept, and artwork from all of them is pooled. A provider that found a different title is ignored. Editing a single file still uses the provider you choose.</li>
-<li>Improved: a file edited where it sits (a file already in the staging folder or another delivery folder) is copied aside first, in a hidden file next to it, and put back if the edit fails or M3 is quit part-way. The copy is deleted when the edit is done. On APFS the copy is instant and takes no extra space; if there is no room for a copy the edit goes ahead without one.</li>
-<li>Removed: the Send to TV checkbox in the Queue options. Finished files are delivered by the Media Locations settings (staging folder or straight to the library), so a separate send to the TV app only caused confusion.</li>
-<li>Fixed: a release that was merging when M3 was quit came back stuck as "merging" and could not be removed or retried. It now comes back as a failed merge, and Edit reopens the merge sheet.</li>
-<li>Fixed: a Set chosen in the Queue options was not applied to releases coming through the Intake workflow (only to files added by hand). It is now applied after the online search, and its values win over what the search found: every tag the Set fills in replaces the searched value, and tags it leaves blank keep the searched value. Nothing else is erased.</li>
-<li>Fixed: the Artwork Position choice in General preferences was never saved, so the Queue ignored it. It is now saved at once and the Queue always follows it.</li>
-<li>Improved: the Media Intake, Filename and Sets tabs have a heading and short description at the top, like the other tabs. The Sets description explains what Sets are and how they fit into a workflow. Media Locations explains that Movies and TV Shows are routed by Media Kind with no rule needed. The Media Intake note at the bottom was removed and one tooltip reworded.</li>
-</ul></body></html>
-]]></description>
-            <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.0.5/MediaMetadataManager-1.0.5.zip" length="14192897" type="application/octet-stream" sparkle:edSignature="WThlUskK2YVJ9w/JnAB5y+PhSfZK21GZV3YSWI+xsnHY4muho7ogQPgCo+pl6NdMH9TtqYYhMMjqVNHIgXg0Aw=="/>
         </item>
     </channel>
 </rss>
