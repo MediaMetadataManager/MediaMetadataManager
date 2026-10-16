@@ -920,23 +920,6 @@ class QueueOptimizeAction: NSObject, QueueActionProtocol {
     static var supportsSecureCoding: Bool { return true }
 }
 
-class QueueSendToiTunesAction: NSObject, QueueActionProtocol {
-
-    var type: QueueActionType { return .post }
-    var localizedDescription: String { return NSLocalizedString("Sending to iTunes", comment: "Action localized description.") }
-    override var description: String { return NSLocalizedString("Send to iTunes", comment: "Action description.") }
-
-    override init() {}
-
-    func runAction(_ item: QueueItem) -> Bool {
-        return sendToFileExternalApp(fileURL: item.destURL)
-    }
-
-    func encode(with aCoder: NSCoder) {}
-    required init?(coder aDecoder: NSCoder) {}
-    static var supportsSecureCoding: Bool { return true }
-}
-
 /// An action that changes the 'enabled' audio track to the language preferred, if a track labeled with that language exists
 class QueueChangeAudioLanguageAction : NSObject, QueueActionProtocol {
 
@@ -983,9 +966,8 @@ class QueueChangeAudioLanguageAction : NSObject, QueueActionProtocol {
 /// moment a release resolves to a real QueueItem (QueueController's
 /// resolveSingleFileRelease(_:)/resolveMergedRelease(_:mergedFileURL:)),
 /// so the existing mux engine runs it automatically right after a
-/// successful write -- exactly like QueueOptimizeAction/
-/// QueueSendToiTunesAction above, with no new completion-observing
-/// plumbing needed.
+/// successful write -- exactly like QueueOptimizeAction above,
+/// with no new completion-observing plumbing needed.
 ///
 /// Stores only releaseID -- never a live QueueRelease reference --
 /// because QueueActionProtocol actions are persisted independently as

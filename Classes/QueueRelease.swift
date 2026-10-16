@@ -82,6 +82,18 @@ import Cocoa
     /// Deliberately not persisted -- see encode(with:) below.
     var mergeProgress: Double = 0
 
+    /// True while attemptAutoResolveMetadata(for:) has a background
+    /// metadata search in flight for this release (stage ==
+    /// .pendingMetadata the whole time it's true). Lets the Status
+    /// column tell "still working, nothing to do" apart from "stopped
+    /// and genuinely waiting on you" -- both used to show the identical
+    /// "Waiting for metadata" text, which is exactly what Hans flagged
+    /// (2026-10-13) as leaving him guessing whether anything needed his
+    /// attention. Deliberately not persisted, same reasoning as
+    /// mergeProgress: meaningless after a relaunch, and the search
+    /// would just be kicked off again on the next launch's attempt.
+    var isSearchingMetadata: Bool = false
+
     /// Set once there's exactly one real, correctly-named file to mux.
     /// Until this is non-nil, the row this release belongs to is
     /// invisible to the Queue's mux work loop by construction (see
@@ -142,6 +154,7 @@ import Cocoa
         self.existingMergedFileURL = aDecoder.decodeObject(of: [NSURL.classForCoder()], forKey: "SBQueueReleaseExistingMergedFileURL") as? URL
         self.resolvedItem = aDecoder.decodeObject(of: [QueueItem.classForCoder()], forKey: "SBQueueReleaseResolvedItem") as? QueueItem
         self.mergeProgress = 0
+        self.isSearchingMetadata = false
     }
 }
 
@@ -182,16 +195,19 @@ extension QueueRelease {
 
     /// What the Status column shows beside one of this folder's files while
     /// the folder is open in the Queue: "Merging" for each file going into
-    /// the merge, "Merge failed" if the last attempt did not work, and
-    /// "Merged" once the merged file exists. Files left out of the merge, and
-    /// every other stage, show nothing of their own.
+    /// the merge -- always plain, with no percentage. The percentage is
+    /// shown once, on the folder's own row (see mergingText above); showing
+    /// the same number again on every file line underneath it is just
+    /// noise. Also "Merge failed" if the last attempt did not work, and
+    /// "Merged" once the merged file exists. Files left out of the merge,
+    /// and every other stage, show nothing of their own.
     func fileStatusText(for url: URL) -> String? {
         let mergedFileExists = mergedFileURL != nil && (stage == .pendingMetadata || stage == .pendingLibraryMove || stage == .done)
         guard stage == .merging || stage == .mergeFailed || mergedFileExists else { return nil }
         if let order = mergeOrder, order.contains(url) == false { return nil }
         if mergedFileExists { return NSLocalizedString("Merged", comment: "Queue status column") }
         return stage == .merging
-            ? mergingText
+            ? NSLocalizedString("Merging", comment: "Queue status column")
             : NSLocalizedString("Merge failed", comment: "Queue status column")
     }
 }

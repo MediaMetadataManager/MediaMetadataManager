@@ -446,7 +446,6 @@
 "Send the current document to the queue" = "将当前文档发送到任务队列";
 
 /* Action description. */
-"Send to iTunes" = "发送到 iTunes";
 
 /* Toolbar */
 "Send to Queue" = "发送到任务队列";
@@ -458,7 +457,6 @@
 "Send to TV" = "发送到“视频”";
 
 /* Action localized description. */
-"Sending to iTunes" = "正在发送到 iTunes";
 
 /* No comment provided by engineer. */
 "Series Description" = "节目描述";

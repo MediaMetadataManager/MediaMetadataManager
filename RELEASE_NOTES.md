@@ -12,6 +12,13 @@ next round of work.
 
 ## Unreleased
 
+## 1.1.1 (2026-10-15)
+
+- New: TV episodes added by hand to the Movies tab (Add button, drag and drop, File > Open) are put on the TV Shows tab automatically, and the status line says so. A folder holding both movies and episodes is split file by file. Movies added to the TV Shows tab are left alone. A new checkbox in Settings > Media Intake turns this off.
+- Fixed: the app could quit when you clicked Search Metadata for a TV episode and a result's details were shown in the search window. The list of fields is now always built from the result as it is, in one fixed order, and the table no longer stops the app if a row or its sizing cell is missing.
+- Removed: leftover internal code for the old "Send to TV" Queue option (the option itself was removed in 1.0.5).
+- Improved: the User Guide now describes the TV episode setting and the option to run the Movies and TV Shows queues at the same time, and the README on GitHub has been rewritten with install and update notes.
+
 ## 1.1.0 (2026-10-11)
 
 - New: the Merge Order window now has a tick box beside each file, so a file can be left out of the merge (and the box starts unticked for a file that is about as big as all the others together, which is probably a merge already made). Merge is judged on the ticked files only.

@@ -2,7 +2,7 @@
 title: "Media Metadata Manager"
 subtitle: "User Guide"
 doctype: "User Guide"
-version: "Documentation set of October 10, 2026"
+version: "Documentation set of October 15, 2026"
 ---
 
 # About this guide
@@ -19,7 +19,7 @@ This guide describes every window, menu and setting of Media Metadata Manager (M
 
 **Ready for Media Library.** The staging folder where finished files and folders are placed. It is your last human checkpoint before the files reach a media server. M3 never writes into your final library itself.
 
-**Queue.** An ordered list of jobs. There are two: the **Movies Queue** and the **TV Shows Queue**. Jobs run in the order shown, one at a time.
+**Queue.** An ordered list of jobs. There are two lists, the **Movies Queue** and the **TV Shows Queue**, shown as two tabs of one Queue window. Jobs run in the order shown, one at a time. By default the two lists take turns (see 5.1).
 
 **Row.** One line in a Queue. A row is either a plain **item** (a single file you added by hand) or a **release** (a folder of files discovered by Intake that still needs naming, a metadata decision, or a merge).
 
@@ -37,7 +37,23 @@ This guide describes every window, menu and setting of Media Metadata Manager (M
 
 # 2. Installing and starting M3
 
-M3 is built from source in Xcode (see the project README for build instructions). The built app is a normal Mac application; copy it to your Applications folder.
+**What you need.** A Mac running macOS 10.13 or later (macOS 11 or later is recommended; a few interface details use newer system features) and an internet connection for metadata and artwork lookups.
+
+## 2.1 Installing
+
+1. Download the latest zip from the **Releases** page of the project on GitHub (github.com/MediaMetadataManager/MediaMetadataManager).
+2. Unzip it and drag **M3** into your **Applications** folder.
+3. The first time you open it, macOS may say it cannot verify the app. Open **System Settings → Privacy & Security**, scroll to the message about M3, click **Open Anyway**, and confirm. On older versions of macOS, right-click the app and choose **Open** instead. You only need to do this once.
+
+You can also build M3 from source in Xcode; the project README has the instructions. The built app is the same normal Mac application.
+
+## 2.2 Updating
+
+Choose **Media Metadata Manager → Check for Updates…** to look for a newer version. M3 also checks for updates by itself about once a day and offers any it finds, with a short list of what changed. Accept the update and M3 downloads it, replaces itself and restarts.
+
+M3 never takes updates from the original Subler; it uses this project's own update feed only. Updating replaces the application only: your preferences, folders, keys and installed plugins stay where they are, so you do not need to set anything up again. To see which version you are running, open **Media Metadata Manager → About**.
+
+## 2.3 First launch
 
 On first launch you will see the **Welcome window** with three actions:
 
@@ -46,8 +62,6 @@ On first launch you will see the **Welcome window** with three actions:
 - **Scan Library for Missing Metadata** — look through a folder for files that still need tagging.
 
 Untick **Show this window at launch** to stop seeing it. You can choose what M3 does at launch under **Preferences → General → At Launch**: show the open panel, show the main window, or show the Queue.
-
-*Important.* M3 never takes updates from the original Subler. Once this project publishes its own update feed, **Check for Updates…** and the automatic daily check use that feed only. Updating replaces the application only: your preferences, folders, keys and installed plugins stay where they are.
 
 # 3. The windows
 
@@ -83,7 +97,7 @@ You can change which buttons are shown, and whether they show icons, text or bot
 
 ## 3.2 The Queue windows
 
-Choose **Window → Show Movies Queue** or **Window → Show TV Shows Queue**. The two windows are identical in behavior; each keeps its own list and its own saved state across launches. The Dock badge shows the combined number of waiting items.
+Choose **Window → Show Movies Queue** or **Window → Show TV Shows Queue**, or click **Queue** in the editor's toolbar. They all open the same Queue window, which has a **Movies** tab and a **TV Shows** tab; the menu item you chose decides which tab is showing. Each tab keeps its own list, the toolbar acts on the tab that is showing, and the window remembers its position and the last tab you used across launches. A TV show added by Intake opens its tab automatically. The Dock badge shows the combined number of waiting items.
 
 ![How a Queue row can be a plain item or a release, and what the work loop processes.](images/queue-model.png)
 
@@ -91,12 +105,16 @@ Choose **Window → Show Movies Queue** or **Window → Show TV Shows Queue**. T
 
 | Button | Action |
 |---|---|
-| **Add Item** | Add files or folders to the Queue by hand. Files added this way become plain items. |
+| **Add Item** | Add files or folders to the Queue by hand. Files added this way become plain items. Files whose names look like TV episodes are put on the TV Shows tab (see **Handle TV episodes** in section 6). |
 | **Merge** | Enabled when two or more not-yet-processed items are selected. Opens the Merge Review sheet, then asks where to save the merged file. |
 | **Start / Stop** | Run or pause the Queue. |
 | **Settings** | Show or hide the Queue Options panel (see 3.3). |
 
 The toolbar's display mode (icon, icon and text, or text only) also controls the **Info** and **Edit** buttons on each row and the progress display at the bottom of the window: with text shown, a percentage; with icons only, a progress bar.
+
+**Columns.** Each tab lists **Name**, **Status**, **Size** and **Type**. Click a column header to sort by it (A to Z, with numbers in names sorted as numbers) and click again to reverse. Sorting changes the order the files are processed in, can be undone with **Edit → Undo**, and rows can still be dragged. Files added from a folder stay under their folder.
+
+**Folders.** A folder that is still waiting to be named or merged has a disclosure triangle. Click it, or press the Right and Left arrow keys on the selected folder, to list the files inside; Option-click opens or closes every folder at once. The listed files are for looking at only. While a folder is being merged, each of its files shows *Merging* in the Status column with a percentage, and the progress bar and status line at the bottom follow the merge.
 
 **Rows.** Each row shows a status icon and the name. On the right are two buttons:
 
@@ -115,12 +133,14 @@ Closing an editor window does not remove its row.
 | Naming rejected | You rejected the suggested name. The row stays so nothing is lost. | Double-click to review again. |
 | Waiting for metadata review | One file (or a merged file); the online match was not confident enough, or nothing was found. | Double-click to open Metadata Review. |
 | Waiting for merge order | Several files; the order is not yet confirmed. | Double-click to open Merge Review. |
+| Already merged: review | The folder already holds a merged file (one about as big as all the other files together), so M3 did not merge the parts again. | Double-click to use the merged file, or to merge the parts anyway (the existing merged file is kept and renamed with " - OLD" added). |
 | Merging | The parts are being joined. | Wait; progress is shown on the row. |
+| Merged | The parts of this folder have been merged; each part file shows *Merged* in the Status column. | Nothing; carry on with the merged file. |
 | Merge failed | The parts could not be joined. The reason is shown in plain language. | Double-click, adjust the selection, retry. |
 | Ready | A single file is ready to be written. | Click **Start**. |
 | Done | The release has been delivered: to the staging folder, or with automatic delivery on, to its final destination. | Remove it with **Remove completed items**, or turn on **Remove finished items from the Queue automatically**. |
 
-**Context menu.** Right-click a row for **Reveal in Finder**, **Edit…**, **Remove from queue** and **Remove completed items**. You can also drag rows to change their order, and drop files or folders from Finder into the window. A dropped folder is grouped under its own folder row, exactly as with the **Add** button; a dropped file is added as a single row.
+**Context menu.** Right-click a row for **Reveal in Finder**, **Edit…**, **Remove from queue** and **Remove completed items**. You can also drag rows to change their order, and drop files or folders from Finder into the window. A dropped folder is grouped under its own folder row, exactly as with the **Add** button; a dropped file is added as a single row. TV episodes dropped on the Movies tab are moved to the TV Shows tab in the same way as with **Add**.
 
 ## 3.3 Queue Options
 
@@ -222,6 +242,8 @@ All of these are in **Preferences → Sources → Media Intake**. Hover over any
 | **Remove empty folders automatically** | off | After each Queue run and each editor save, moves empty folders inside the Incoming and Ready folders to the Trash and logs them. Folders touched in the last two minutes are left alone. The same cleanup can be run by hand with **Window → Clean Up Empty Folders…**. |
 | **Clean up processed files** | off | After a release is moved into Ready for Media Library, moves the original files it was made from (the parts that were merged, or the unconverted source when the Queue converted a file) to the Trash and logs them. The finished file is never touched. This applies to Queue runs only; it does not apply to a file you tag with Edit and Save (see 5.4). |
 | **Remove finished items from the Queue automatically** | off | When a Queue run finishes, the rows with a checkmark are taken off the list. Only the rows are removed, never files. Failed rows and rows still waiting for you stay. |
+| **Send TV episodes to the TV Shows tab when I add files** | on | When you add files by hand (Add button, drag and drop, File → Open) to the Movies tab, any whose names look like TV episodes are put on the TV Shows tab instead, and the status line at the bottom of the Queue says so. Movies added to the TV Shows tab are left where they are. Turn it off to keep every hand-added file on the tab you chose. Files found in the Incoming Folders are always sorted this way, whatever this setting says. |
+| **Run the Movies and TV Shows queues at the same time** | off | Off: the two queues take turns, one file at a time, which is kinder to a single disk. On: each queue works by itself, so two files can be processed at once. Turn it on only if your files are on fast drives such as SSDs. |
 | **Ready for Media Library** | none | Now set on the **Media Locations** tab (see 5.5), where it is the **staging folder**: finished files wait there for you to check them. |
 | **Automatically Add to Apple TV Folders** | | Now on the **Media Locations** tab (see 5.5), where it is the default destination. |
 
@@ -284,7 +306,7 @@ The same choice applies everywhere a finished file is moved: Queue items, whole 
 
 **Merge parts by hand.** Add the parts to the Movies Queue, select them, click **Merge**, drag them into order, confirm, and choose where to save.
 
-**Handle TV episodes.** Episodes found by Intake go to the TV Shows Queue. Turn on **Organize into Show/Season folders** under Preferences → Filename to have them filed as `Show/Season 01/…`. Files you drop into a Queue by hand stay in the Queue where you dropped them.
+**Handle TV episodes.** Episodes found by Intake go to the TV Shows Queue. Turn on **Organize into Show/Season folders** under Preferences → Filename to have them filed as `Show/Season 01/…`. Files you add by hand are sorted the same way: if you drop or add a file whose name has a season and episode marker (such as `S02E05` or `2x05`) on the Movies tab, M3 puts it on the TV Shows tab and says so in the status line. A folder that holds both movies and episodes is split file by file. Movies added to the TV Shows tab stay where you put them, and a name without an episode marker is treated as a movie. If you would rather keep every file on the tab you added it to, untick **Send TV episodes to the TV Shows tab when I add files** under Preferences → Sources → Media Intake.
 
 **Find files that need tagging.** Welcome window → **Scan Library for Missing Metadata**.
 

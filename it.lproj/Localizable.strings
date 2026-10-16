@@ -481,7 +481,6 @@ Toolbar */
 "Send the current document to the queue" = "Mette il documento corrente in coda";
 
 /* Action description. */
-"Send to iTunes" = "Invia ad iTunes";
 
 /* Toolbar */
 "Send to Queue" = "Aggiungi alla coda";
@@ -493,7 +492,6 @@ Toolbar */
 "Send to TV" = "Invia a TV";
 
 /* Action localized description. */
-"Sending to iTunes" = "Invio ad iTunes";
 
 /* nil */
 "Series Description" = "Descrizione serie";

@@ -1,12 +1,13 @@
 digraph S {
-  graph [rankdir=LR, fontname="Inter", bgcolor="white", nodesep=0.35, ranksep=0.55, pad=0.3, dpi=170];
-  node  [shape=box, style="rounded,filled", fontname="Inter", fontsize=11, color="#2b5d8a", fillcolor="#e6f0fa", margin="0.16,0.09"];
-  edge  [fontname="Inter", fontsize=9.5, color="#4a5b6c", arrowsize=0.8];
+  graph [rankdir=TB, fontname="Inter", bgcolor="white", nodesep=0.5, ranksep=0.5, pad=0.3, dpi=170, newrank=true];
+  node  [shape=box, style="rounded,filled", fontname="Inter", fontsize=12, color="#2b5d8a", fillcolor="#e6f0fa", margin="0.16,0.09"];
+  edge  [fontname="Inter", fontsize=10.5, color="#4a5b6c", arrowsize=0.8];
   pn  [label="pendingNaming\nname not yet approved", fillcolor="#fff4d6", color="#c79a1c"];
   nr  [label="namingRejected\nparked, row stays", fillcolor="#f9dede", color="#b04a4a"];
   pm  [label="pendingMetadata\none file, match not confident\nor nothing found", fillcolor="#fff4d6", color="#c79a1c"];
   ps  [label="pendingMergeSelection\nseveral files, order unconfirmed", fillcolor="#fff4d6", color="#c79a1c"];
-  mg  [label="merging"];
+  am  [label="alreadyMerged\nfolder already holds a merged file", fillcolor="#fff4d6", color="#c79a1c"];
+  mg  [label="merging\nparts marked Merged afterwards"];
   mf  [label="mergeFailed\nreason shown on the row", fillcolor="#f9dede", color="#b04a4a"];
   pl  [label="pendingLibraryMove\nitem resolved, in the Queue"];
   dn  [label="done\ndelivered (staging folder\nor final destination)", fillcolor="#2f7d4f", fontcolor="white", color="#2f7d4f"];
@@ -14,10 +15,13 @@ digraph S {
   nr -> pn [label="reopen", style=dashed];
   pn -> pm [label="approve (1 file)"];
   pn -> ps [label="approve (several)"];
-  pm -> pl [label="confident, or you confirm\n(or continue without metadata)"];
-  ps -> mg [label="auto-merge, or you confirm"];
+  pn -> am [label="approve (several, one is\nalready the merge)"];
+  am -> pm [label="use the merged file"];
+  am -> mg [label="merge the parts anyway"];
+  ps -> mg [label="auto-merge,\nor you confirm"];
   mg -> pm [label="success: merged file\ngets the same check"];
   mg -> mf [label="failure"];
   mf -> ps [label="reopen and retry", style=dashed];
+  pm -> pl [label="confident, or you confirm\n(or continue without metadata)"];
   pl -> dn [label="Queue Start finishes"];
 }

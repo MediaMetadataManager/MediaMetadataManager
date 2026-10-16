@@ -612,7 +612,9 @@ final class MetadataSearchController: NSViewController, NSTableViewDataSource, N
 
             switch state {
             case .completed(_, _, let result):
-                let key = result.orderedKeys[row]
+                let keys = result.orderedKeys
+                guard row >= 0, row < keys.count else { return nil }
+                let key = keys[row]
                 if tableColumn?.identifier.rawValue == "name" {
                     let cell = tableView.makeView(withIdentifier: annotationCell, owner:self) as? NSTableCellView
                     cell?.textField?.stringValue = key.localizedDisplayName
@@ -637,12 +639,17 @@ final class MetadataSearchController: NSViewController, NSTableViewDataSource, N
         return nil
     }
 
-    private lazy var dummyCell: NSTableCellView = { return metadataTable.makeView(withIdentifier: valueCellForSizing, owner:self) as? NSTableCellView }()!
-    private lazy var dummyCellWidth: NSLayoutConstraint = {
-        let constraint = NSLayoutConstraint(item: dummyCell, attribute: NSLayoutConstraint.Attribute.width,
+    // The cell used only to measure how tall a value will be. If the nib
+    // does not provide it, rows simply keep the standard height.
+    private lazy var dummyCell: NSTableCellView? = {
+        return metadataTable.makeView(withIdentifier: valueCellForSizing, owner:self) as? NSTableCellView
+    }()
+    private lazy var dummyCellWidth: NSLayoutConstraint? = {
+        guard let cell = dummyCell else { return nil }
+        let constraint = NSLayoutConstraint(item: cell, attribute: NSLayoutConstraint.Attribute.width,
                                             relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil,
                                             attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 500)
-        dummyCell.addConstraint(constraint)
+        cell.addConstraint(constraint)
         return constraint
     }()
 
@@ -650,13 +657,16 @@ final class MetadataSearchController: NSViewController, NSTableViewDataSource, N
 
     func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
         if tableView == metadataTable, case .completed(_, _, let result) = state {
+            let keys = result.orderedKeys
+            guard row >= 0, row < keys.count, tableView.tableColumns.count > 1 else { return tableView.rowHeight }
             let column = tableView.tableColumns[1]
-            let key = result.orderedKeys[row]
-            dummyCell.textField?.stringValue = result[key] as? String ?? ""
-            dummyCellWidth.constant = column.width
-            dummyCell.textField?.preferredMaxLayoutWidth = column.width - 4
+            let key = keys[row]
+            guard let cell = dummyCell, let widthConstraint = dummyCellWidth else { return tableView.rowHeight }
+            cell.textField?.stringValue = result[key] as? String ?? ""
+            widthConstraint.constant = column.width
+            cell.textField?.preferredMaxLayoutWidth = column.width - 4
 
-            let height = dummyCell.fittingSize.height
+            let height = cell.fittingSize.height
             return height > MetadataSearchController.minHeight ? height : MetadataSearchController.minHeight
         }
         return tableView.rowHeight

@@ -461,7 +461,6 @@
 "Send the current document to the queue" = "Envoyer le document actuel dans la file d'attente";
 
 /* Action description. */
-"Send to iTunes" = "Envoyer à iTunes";
 
 /* Toolbar */
 "Send to Queue" = "Envoyer dans la file d'attente";
@@ -473,7 +472,6 @@
 "Send to TV" = "Envoyer à la TV";
 
 /* Action localized description. */
-"Sending to iTunes" = "Envoi à iTunes";
 
 /* No comment provided by engineer. */
 "Series Description" = "Description de la série";

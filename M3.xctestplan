@@ -1,0 +1,36 @@
+{
+  "configurations" : [
+    {
+      "id" : "B2A48BAF-E724-48C1-AF24-D59BC3BFDA81",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "environmentVariableEntries" : [
+      {
+        "key" : "IDEPreferLogStreaming",
+        "value" : "YES"
+      }
+    ],
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:M3.xcodeproj",
+      "identifier" : "8D15AC270486D014006FF6A4",
+      "name" : "MediaMetadataManager"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:M3.xcodeproj",
+        "identifier" : "E702E6F8307C092400836990",
+        "name" : "M3Tests"
+      }
+    }
+  ],
+  "version" : 1
+}

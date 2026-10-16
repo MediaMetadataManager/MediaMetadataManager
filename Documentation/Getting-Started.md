@@ -23,8 +23,8 @@ M3 has four places you will use:
 
 | Window | What it is for |
 |---|---|
-| **Movies Queue** | The home of your work. Every file or folder waiting for naming, tagging or merging is one row. |
-| **TV Shows Queue** | The same list, kept separate so TV episodes do not mix with movies. |
+| **Queue: Movies tab** | The home of your work. Every file or folder waiting for naming, tagging or merging is one row. |
+| **Queue: TV Shows tab** | The same list on its own tab, kept separate so TV episodes do not mix with movies. |
 | **Editor** | Opens one file so you can search for metadata, edit tags, change artwork and save. |
 | **Preferences** | Where you choose metadata sources, naming rules and the Media Intake options. |
 

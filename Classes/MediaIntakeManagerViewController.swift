@@ -49,6 +49,7 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
     private var autoCleanProcessedFilesCheckbox: NSButton!
     private var autoRemoveCompletedCheckbox: NSButton!
     private var runQueuesTogetherCheckbox: NSButton!
+    private var sendEpisodesToTVTabCheckbox: NSButton!
 
     /// Maps each editable folder field to the preference it writes to, so
     /// one text-field delegate method (controlTextDidEndEditing(_:)) can
@@ -149,6 +150,11 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         autoRemoveCompletedCheckbox.translatesAutoresizingMaskIntoConstraints = false
         autoRemoveCompletedCheckbox.toolTip = NSLocalizedString("When a Queue run finishes, the finished rows (the ones with a checkmark) are taken off the list for you. Only the rows go; your files are not touched. Failed rows and rows still waiting for you stay.", comment: "")
 
+        sendEpisodesToTVTabCheckbox = NSButton(checkboxWithTitle: NSLocalizedString("Send TV episodes to the TV Shows tab when I add files", comment: ""),
+                                                target: self, action: #selector(toggleSendEpisodesToTVTab(_:)))
+        sendEpisodesToTVTabCheckbox.translatesAutoresizingMaskIntoConstraints = false
+        sendEpisodesToTVTabCheckbox.toolTip = NSLocalizedString("When files are added to the Movies tab with the Add button or by drag and drop, any whose names look like TV episodes (S01E02, 1x02) are put on the TV Shows tab instead. Movies added to the TV Shows tab stay where they are. Files from the Incoming Folders are always sorted this way.", comment: "")
+
         runQueuesTogetherCheckbox = NSButton(checkboxWithTitle: NSLocalizedString("Run the Movies and TV Shows queues at the same time", comment: ""),
                                               target: self, action: #selector(toggleRunQueuesTogether(_:)))
         runQueuesTogetherCheckbox.translatesAutoresizingMaskIntoConstraints = false
@@ -163,7 +169,7 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         let mainStack = NSStackView(views: [headerLabel, descriptionLabel, intakeSection,
                                              autoWatchCheckbox, autoApproveHighConfidenceCheckbox,
                                              renameAfterMergeCheckbox, autoMergeOnSequenceCheckbox, autoCleanEmptyFoldersCheckbox, autoCleanProcessedFilesCheckbox, autoRemoveCompletedCheckbox,
-                                             runQueuesTogetherCheckbox, runQueuesTogetherNote])
+                                             sendEpisodesToTVTabCheckbox, runQueuesTogetherCheckbox, runQueuesTogetherNote])
         mainStack.orientation = .vertical
         mainStack.alignment = .leading
         mainStack.spacing = 12
@@ -175,7 +181,8 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         mainStack.setCustomSpacing(8, after: autoMergeOnSequenceCheckbox)
         mainStack.setCustomSpacing(8, after: autoCleanEmptyFoldersCheckbox)
         mainStack.setCustomSpacing(8, after: autoCleanProcessedFilesCheckbox)
-        mainStack.setCustomSpacing(16, after: autoRemoveCompletedCheckbox)
+        mainStack.setCustomSpacing(8, after: autoRemoveCompletedCheckbox)
+        mainStack.setCustomSpacing(16, after: sendEpisodesToTVTabCheckbox)
         mainStack.setCustomSpacing(4, after: runQueuesTogetherCheckbox)
         mainStack.translatesAutoresizingMaskIntoConstraints = false
 
@@ -201,6 +208,7 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         autoCleanProcessedFilesCheckbox.state = MediaIntakePrefs.autoCleanProcessedFiles ? .on : .off
         autoRemoveCompletedCheckbox.state = MediaIntakePrefs.autoRemoveCompletedItems ? .on : .off
         runQueuesTogetherCheckbox.state = MediaIntakePrefs.runQueuesTogether ? .on : .off
+        sendEpisodesToTVTabCheckbox.state = MediaIntakePrefs.sendEpisodesToTVTab ? .on : .off
     }
 
     // MARK: - Layout helpers
@@ -415,6 +423,10 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
 
     @objc private func toggleAutoRemoveCompleted(_ sender: NSButton) {
         MediaIntakePrefs.autoRemoveCompletedItems = sender.state == .on
+    }
+
+    @objc private func toggleSendEpisodesToTVTab(_ sender: NSButton) {
+        MediaIntakePrefs.sendEpisodesToTVTab = sender.state == .on
     }
 
     @objc private func toggleRunQueuesTogether(_ sender: NSButton) {

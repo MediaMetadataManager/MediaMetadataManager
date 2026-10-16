@@ -25,9 +25,6 @@
 /* Class = "CocoaBindingsConnection"; ibShadowedNotApplicablePlaceholder = "None"; ObjectID = "3w0-jj-Nkk"; */
 "3w0-jj-Nkk.ibShadowedNotApplicablePlaceholder" = "Nessuno";
 
-/* Class = "NSButtonCell"; title = "Send to AppleTV/iTunes"; ObjectID = "4an-VK-S2u"; */
-"4an-VK-S2u.title" = "Invia ad TV/iTunes";
-
 /* Class = "CocoaBindingsConnection"; ibShadowedIsNilPlaceholder = "None"; ObjectID = "4rl-TJ-0yZ"; */
 "4rl-TJ-0yZ.ibShadowedIsNilPlaceholder" = "Nessuno";
 

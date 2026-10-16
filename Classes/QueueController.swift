@@ -109,6 +109,44 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         ])
     }
 
+    /// The running percentage ("42%"), shown beside the progress bar
+    /// instead of folded into statusLabel's title text -- Hans asked
+    /// (2026-10-13) for the number to read as paired with the bar
+    /// graphic rather than squeezed into the sentence, and for the
+    /// footer to stay one line tall (no second row under the title).
+    private let percentLabel = NSTextField(labelWithString: "")
+
+    /// Installed in code, the same way installStatsLabel() is above,
+    /// rather than by touching Queue.xib's layout: the single constraint
+    /// that used to pin progressBar's trailing edge to the container's
+    /// trailing edge moves onto this label instead, so the bar makes
+    /// room for it with no Interface Builder frame/constraint edits.
+    private func installPercentLabel() {
+        guard let container = progressBar.superview else { return }
+
+        if let barTrailing = container.constraints.first(where: {
+            ($0.firstItem as? NSView) === container && $0.firstAttribute == .trailing &&
+            ($0.secondItem as? NSView) === progressBar && $0.secondAttribute == .trailing
+        }) {
+            barTrailing.isActive = false
+        }
+
+        percentLabel.translatesAutoresizingMaskIntoConstraints = false
+        percentLabel.font = statusLabel.font
+        percentLabel.alignment = .right
+        percentLabel.lineBreakMode = .byClipping
+        percentLabel.isHidden = true
+        percentLabel.setContentHuggingPriority(.required, for: .horizontal)
+        container.addSubview(percentLabel)
+
+        NSLayoutConstraint.activate([
+            percentLabel.leadingAnchor.constraint(equalTo: progressBar.trailingAnchor, constant: 6),
+            percentLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -10),
+            percentLabel.widthAnchor.constraint(equalToConstant: 36),
+            percentLabel.centerYAnchor.constraint(equalTo: progressBar.centerYAnchor)
+        ])
+    }
+
     /// Called when a run starts: remembers the start time and which files are
     /// part of the run (files added while it runs join it), and reads their
     /// sizes so the estimate can go by size rather than by file count.
@@ -153,29 +191,54 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     }
 
     /// How far through the run is, in bytes when every file's size is known
-    /// and in files otherwise.
+    /// and in files otherwise. Counts both plain QueueItems being muxed
+    /// AND releases still merging -- a release that hasn't resolved to a
+    /// QueueItem yet used to contribute nothing at all, so "about X left"
+    /// quietly ignored however long its merge would still take. Releases
+    /// parked waiting on the user (naming, merge order, a metadata
+    /// review) are deliberately left out: there's no way to estimate
+    /// how long a human takes to click something, so folding those in
+    /// would make the estimate worse, not better.
     private func runProgressUnits() -> (done: Double, total: Double) {
-        let fraction = progressBar.isIndeterminate ? 0 : min(max(progressBar.doubleValue, 0), 100) / 100
+        let itemFraction = progressBar.isIndeterminate ? 0 : min(max(progressBar.doubleValue, 0), 100) / 100
 
-        var rows: [(finished: Bool, working: Bool, bytes: Double?)] = []
-        for row in queue.allRows {
-            guard let item = row.effectiveItem, runItemIDs.contains(ObjectIdentifier(item)) else { continue }
+        struct Entry {
+            var doneFraction: Double
+            var bytes: Double?
+        }
+        var entries: [Entry] = []
+
+        func bytesTotal(for urls: [URL]) -> Double? {
             var bytes: Double? = 0
-            for url in row.sizeSourceURLs {
+            for url in urls {
                 if let size = sizeCache[url], size >= 0 { bytes = (bytes ?? 0) + Double(size) } else { bytes = nil }
             }
-            rows.append((finished: item.status == .completed || item.status == .failed || item.status == .cancelled,
-                         working: item.status == .working,
-                         bytes: bytes))
+            return bytes
         }
 
-        let useBytes = rows.isEmpty == false && rows.allSatisfy { $0.bytes != nil }
+        for row in queue.allRows {
+            if let item = row.effectiveItem, runItemIDs.contains(ObjectIdentifier(item)) {
+                let finished = item.status == .completed || item.status == .failed || item.status == .cancelled
+                let doneFraction = finished ? 1 : (item.status == .working ? itemFraction : 0)
+                entries.append(Entry(doneFraction: doneFraction, bytes: bytesTotal(for: row.sizeSourceURLs)))
+            } else if let release = row.release, release.stage == .merging {
+                // Its own mergeProgress, not the shared progressBar's
+                // itemFraction above -- that one may belong to a
+                // completely different row (a QueueItem muxing, or
+                // another release merging) at this exact tick.
+                let doneFraction = min(max(release.mergeProgress, 0), 100) / 100
+                let urls = release.mergeOrder ?? release.sourceFileURLs
+                entries.append(Entry(doneFraction: doneFraction, bytes: bytesTotal(for: urls)))
+            }
+        }
+
+        let useBytes = entries.isEmpty == false && entries.allSatisfy { $0.bytes != nil }
         var done = 0.0
         var total = 0.0
-        for entry in rows {
+        for entry in entries {
             let weight = useBytes ? (entry.bytes ?? 0) : 1
             total += weight
-            if entry.finished { done += weight } else if entry.working { done += weight * fraction }
+            done += weight * entry.doneFraction
         }
         return (done, total)
     }
@@ -258,6 +321,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         table.target = self
         progressBar.isHidden = true
         installStatsLabel()
+        installPercentLabel()
         refreshStats()
 
         if #available(macOS 11, *) {
@@ -292,9 +356,16 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             self.progressBar.stopAnimation(self)
             self.progressBar.doubleValue = 0
             self.progressBar.isIndeterminate = true
+            self.percentLabel.isHidden = true
+
+            self.runTimeLimitTimer?.invalidate()
+            self.runTimeLimitTimer = nil
+            let pausedByTimeLimit = self.queue.pausedByTimeLimit
 
             QueueWindowController.existing?.setRunning(false, for: self)
-            self.statusLabel.stringValue = NSLocalizedString("Done", comment: "Queue -> Done")
+            self.statusLabel.stringValue = pausedByTimeLimit
+                ? NSLocalizedString("Paused \u{2014} time limit reached. Start again to pick up where it left off.", comment: "Queue -> paused by time limit")
+                : NSLocalizedString("Done", comment: "Queue -> Done")
             self.endRunStats()
 
             if MediaIntakePrefs.autoRemoveCompletedItems {
@@ -304,7 +375,9 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             EmptyFolderCleaner.runAutomaticallyIfEnabled()
 
             if self.prefs.showDoneNotification, let info = note.userInfo {
-                let title = NSLocalizedString("Queue Done", comment: "")
+                let title = pausedByTimeLimit
+                    ? NSLocalizedString("Queue Paused", comment: "Queue -> paused by time limit, notification title")
+                    : NSLocalizedString("Queue Done", comment: "")
                 let informativeText = {
                     if let failedCount = info["FailedCount"] as? UInt, failedCount > 0,
                        let completedCount = info["CompletedCount"] as? UInt {
@@ -844,19 +917,45 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     private var progressStatusText = ""
 
     /// While the queue runs, the bottom status area follows the toolbar's
-    /// display mode: Icon Only shows just the progress bar, Text Only just
-    /// the percentage (appended to the status text), Icon and Text both.
+    /// display mode: Icon Only shows just the progress bar (no text at
+    /// all -- the same way the toolbar's own icon-only mode drops button
+    /// titles), Text Only just the percentage (appended to the status
+    /// text), Icon and Text both.
     private func refreshProgressDisplay() {
         guard queue.status == .working || mergeNamesShown.isEmpty == false else { return }
 
         let mode = window?.toolbar?.displayMode ?? .default
         progressBar.isHidden = mode == .labelOnly
 
-        if mode != .iconOnly && progressBar.isIndeterminate == false {
-            let percent = Int(min(max(progressBar.doubleValue, 0), 100).rounded())
-            statusLabel.stringValue = "\(progressStatusText) \(percent)%"
-        } else {
+        switch mode {
+        case .iconOnly:
+            // Just the bar -- no title, no percent, same as the
+            // toolbar's own icon-only mode drops every button's title.
+            statusLabel.stringValue = ""
+            percentLabel.isHidden = true
+        case .labelOnly:
+            // No bar to sit the percent beside, so it stays folded into
+            // the status text, same as before.
+            percentLabel.isHidden = true
+            if progressBar.isIndeterminate == false {
+                let percent = Int(min(max(progressBar.doubleValue, 0), 100).rounded())
+                statusLabel.stringValue = "\(progressStatusText) \(percent)%"
+            } else {
+                statusLabel.stringValue = progressStatusText
+            }
+        default:
+            // Icon and Text: the title stays plain, and the percent is
+            // its own label right next to the bar instead of appended
+            // to the sentence.
             statusLabel.stringValue = progressStatusText
+            if progressBar.isIndeterminate == false {
+                let percent = Int(min(max(progressBar.doubleValue, 0), 100).rounded())
+                percentLabel.stringValue = "\(percent)%"
+                percentLabel.isHidden = false
+            } else {
+                percentLabel.stringValue = ""
+                percentLabel.isHidden = true
+            }
         }
     }
 
@@ -889,6 +988,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         progressBar.stopAnimation(self)
         progressBar.doubleValue = 0
         progressBar.isIndeterminate = true
+        percentLabel.isHidden = true
         updateState()
     }
 
@@ -1123,7 +1223,12 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     /// An episode file name (S01E02, 1x02, ...) marks a candidate as a TV
     /// show; those go to the TV Show Queue instead.
     private static func isTVShow(_ candidate: IntakeScanner.Candidate) -> Bool {
-        return candidate.files.contains { ReleaseFilenameParser.parse($0.lastPathComponent)?.season != nil }
+        return candidate.files.contains { isTVEpisodeFile($0) }
+    }
+
+    /// True when a file's name carries an episode marker (S01E02, 1x02).
+    static func isTVEpisodeFile(_ url: URL) -> Bool {
+        return ReleaseFilenameParser.parse(url.lastPathComponent)?.season != nil
     }
 
     /// Returns how many items were added. With `force` (Scan Now) nothing
@@ -1647,19 +1752,45 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     /// insertFolder(_:at:)), and a plain file becomes a single ungrouped
     /// row. Used by the Add panel, Finder drag-and-drop, and File > Open
     /// of a folder so all of them behave identically.
+    ///
+    /// On the Movies tab, files whose names carry an episode marker go to the
+    /// TV Shows tab instead (unless the user turned that off in the Media
+    /// Intake settings); a folder holding both kinds is split file by file.
+    /// Nothing is ever moved off the TV Shows tab.
     func insertGrouped(_ urls: [URL], at index: Int) {
         let sortedURLs = urls.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == ComparisonResult.orderedAscending }
         var insertionIndex = min(max(index, 0), queue.count)
+        let sendEpisodesToTVTab = isTVShowQueue == false && MediaIntakePrefs.sendEpisodesToTVTab
+        let tvQueue = QueueController.tvShows
+        var sentToTV = 0
 
         for url in sortedURLs {
             let isDirectory = (try? url.resourceValues(forKeys: [URLResourceKey.isDirectoryKey]))?.isDirectory ?? false
+            var include: (URL) -> Bool = { _ in true }
+
+            if sendEpisodesToTVTab {
+                if isDirectory {
+                    sentToTV += tvQueue.insertFolder(url, at: tvQueue.count, include: QueueController.isTVEpisodeFile)
+                    include = { QueueController.isTVEpisodeFile($0) == false }
+                } else if QueueController.isTVEpisodeFile(url) {
+                    let countBefore = tvQueue.count
+                    tvQueue.insert(contentOf: [url], at: tvQueue.count)
+                    sentToTV += tvQueue.count - countBefore
+                    continue
+                }
+            }
+
             let countBefore = queue.count
             if isDirectory {
-                insertFolder(url, at: insertionIndex)
+                insertFolder(url, at: insertionIndex, include: include)
             } else {
                 insert(contentOf: [url], at: insertionIndex)
             }
             insertionIndex += queue.count - countBefore
+        }
+
+        if sentToTV > 0 {
+            statusLabel.stringValue = String.localizedStringWithFormat(NSLocalizedString("%lu TV episode(s) were added to the TV Shows tab.", comment: "Queue -> files that look like TV episodes were put on the TV Shows tab"), sentToTV)
         }
     }
 
@@ -1667,7 +1798,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     /// makeRelease(contentOf:)) that are in a format this app can queue,
     /// each tagged with sourceFolderURL so its row renders indented under
     /// folderURL's own header row -- see insertFolder(_:at:) below.
-    private func items(contentOfFolder folderURL: URL) -> [QueueItem] {
+    private func items(contentOfFolder folderURL: URL, include: (URL) -> Bool = { _ in true }) -> [QueueItem] {
         let supportedFileFormats = MP42FileImporter.supportedFileFormats()
 
         guard let directoryEnumerator = FileManager.default.enumerator(at: folderURL, includingPropertiesForKeys: [URLResourceKey.isDirectoryKey], options: [.skipsSubdirectoryDescendants, .skipsHiddenFiles], errorHandler: nil) else {
@@ -1677,7 +1808,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         var items: [QueueItem] = []
         for case let fileURL as URL in directoryEnumerator {
             let value = try? fileURL.resourceValues(forKeys: [URLResourceKey.isDirectoryKey])
-            if value?.isDirectory != true, supportedFileFormats.contains(fileURL.pathExtension.lowercased()) {
+            if value?.isDirectory != true, supportedFileFormats.contains(fileURL.pathExtension.lowercased()), include(fileURL) {
                 items.append(createItem(url: fileURL, sourceFolderURL: folderURL))
             }
         }
@@ -1694,9 +1825,13 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     /// manually-queued file. Purely a readability grouping in the table --
     /// see tableView(_:viewFor:row:). A no-op if the folder has no
     /// queueable files directly inside it.
-    func insertFolder(_ folderURL: URL, at index: Int) {
-        let children = items(contentOfFolder: folderURL)
-        guard children.isEmpty == false else { return }
+    ///
+    /// `include` limits which of the folder's files are added. Returns how
+    /// many files were added.
+    @discardableResult
+    func insertFolder(_ folderURL: URL, at index: Int, include: (URL) -> Bool = { _ in true }) -> Int {
+        let children = items(contentOfFolder: folderURL, include: include)
+        guard children.isEmpty == false else { return 0 }
 
         let rows = [QueueRow(folderHeaderURL: folderURL)] + children.map { QueueRow(item: $0) }
 
@@ -1717,6 +1852,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         if prefs.autoStart {
             statusLabel.stringValue = String(format: NSLocalizedString("Added %d file(s) from \u{201C}%@\u{201D} \u{2014} merge if needed, then press Start", comment: "Queue -> folder add with Auto-Start on"), children.count, folderURL.lastPathComponent)
         }
+        return children.count
     }
 
     /// Scans a folder for supported media files and builds a QueueRelease
@@ -2009,31 +2145,170 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         updateDockTile()
     }
 
+    /// Set while a Start-time "run for a time limit" choice is active;
+    /// invalidated on completion, on manual Stop, and before a fresh one
+    /// is scheduled, so a stale timer from an earlier run can never fire
+    /// into a later one.
+    private var runTimeLimitTimer: Timer?
+
+    /// What presentRunDurationPrompt(in:completion:) can answer with --
+    /// nil from that method itself means "Cancel", not "until done".
+    private enum RunDurationChoice {
+        case untilDone
+        case limited(TimeInterval)
+    }
+
+    /// Preset choices offered in the Start-time run-duration sheet, each
+    /// a whole number of minutes; -1 marks the "type your own" option,
+    /// read from the sheet's accessory text field instead. Hans asked
+    /// for this 2026-10-13, wondering about a "run for one hour, then
+    /// pause" option.
+    private static let runDurationPresets: [(title: String, minutes: Int)] = [
+        (NSLocalizedString("Until done", comment: "Queue run duration"), 0),
+        (NSLocalizedString("30 minutes", comment: "Queue run duration"), 30),
+        (NSLocalizedString("1 hour", comment: "Queue run duration"), 60),
+        (NSLocalizedString("2 hours", comment: "Queue run duration"), 120),
+        (NSLocalizedString("4 hours", comment: "Queue run duration"), 240),
+        (NSLocalizedString("Custom (minutes below)\u{2026}", comment: "Queue run duration"), -1)
+    ]
+
+    /// Asks, every time Start is clicked, whether to run until the queue
+    /// is empty or stop automatically after a time limit. Answered via
+    /// `completion`: nil means Cancel (don't start at all); .untilDone
+    /// or .limited(seconds) otherwise. A sheet on `window` rather than
+    /// an app-modal alert, so it doesn't block anything else Hans might
+    /// be doing while it's up.
+    private func presentRunDurationPrompt(in window: NSWindow, completion: @escaping (RunDurationChoice?) -> Void) {
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("Run the queue for how long?", comment: "Queue run duration prompt")
+        alert.informativeText = NSLocalizedString("Whatever file or merge is in progress when a time limit is reached always finishes; only the next one waits. Click Start again anytime to pick up where it left off.", comment: "Queue run duration prompt")
+        alert.addButton(withTitle: NSLocalizedString("Start", comment: "Queue run duration prompt"))
+        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "Queue run duration prompt"))
+
+        // .zero frame + explicit width constraints, same convention as
+        // the popups/fields in CustomSourcesListViewController.swift,
+        // DestinationsViewController.swift and
+        // SingleFileMetadataReviewWindowController.swift -- an alert's
+        // accessoryView is autolayout, not frame-based.
+        let popup = NSPopUpButton(frame: .zero, pullsDown: false)
+        popup.translatesAutoresizingMaskIntoConstraints = false
+        for preset in QueueController.runDurationPresets {
+            popup.addItem(withTitle: preset.title)
+        }
+
+        let customField = NSTextField(frame: .zero)
+        customField.translatesAutoresizingMaskIntoConstraints = false
+        customField.placeholderString = NSLocalizedString("minutes", comment: "Queue run duration -- custom minutes field placeholder")
+        customField.alignment = .right
+
+        let stack = NSStackView(views: [popup, customField])
+        stack.orientation = .horizontal
+        stack.spacing = 8
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 28))
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            popup.widthAnchor.constraint(equalToConstant: 200),
+            customField.widthAnchor.constraint(equalToConstant: 70),
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            stack.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+        ])
+        alert.accessoryView = container
+
+        alert.beginSheetModal(for: window) { response in
+            guard response == .alertFirstButtonReturn else {
+                completion(nil)
+                return
+            }
+
+            let index = popup.indexOfSelectedItem
+            guard index >= 0, index < QueueController.runDurationPresets.count else {
+                completion(.untilDone)
+                return
+            }
+
+            let minutes = QueueController.runDurationPresets[index].minutes
+            if minutes == 0 {
+                completion(.untilDone)
+            } else if minutes == -1 {
+                let typed = Int(customField.stringValue.trimmingCharacters(in: .whitespaces)) ?? 0
+                completion(typed > 0 ? .limited(TimeInterval(typed * 60)) : .untilDone)
+            } else {
+                completion(.limited(TimeInterval(minutes * 60)))
+            }
+        }
+    }
+
+    /// Starts the queue immediately, with no time limit -- used by
+    /// AppleScript's Start/"start and wait" commands (QueueScriptCommand.swift)
+    /// and MediaIntakePrefs.autoStart's "start as soon as something is
+    /// added" behavior, neither of which should ever block on a dialog
+    /// nobody is there to answer. The toolbar/menu Start control a
+    /// person actually clicks goes through toggleStartStop(_:) below
+    /// instead, which asks first.
     @IBAction func start(_ sender: Any?) {
         if queue.status == .working {
             return
         }
+        beginTimedRun(timeLimit: nil)
+    }
 
+    /// The actual startup work Start used to do directly, now shared by
+    /// both answers to presentRunDurationPrompt(in:completion:).
+    /// `timeLimit`, when given, schedules runTimeLimitTimer to call
+    /// queue.pauseAfterCurrentItem() once it fires -- the item or merge
+    /// in progress at that moment still finishes; only the next one
+    /// waits (see Queue.pauseAfterCurrentItem()'s own doc comment).
+    private func beginTimedRun(timeLimit: TimeInterval?) {
         QueueWindowController.existing?.setRunning(true, for: self)
         statusLabel.stringValue = NSLocalizedString("Working.", comment: "Queue -> Working")
         progressBar.isHidden = (window?.toolbar?.displayMode ?? .default) == .labelOnly
+        percentLabel.isHidden = true
         progressBar.startAnimation(self)
 
         window?.undoManager?.removeAllActions(withTarget: self)
+
+        runTimeLimitTimer?.invalidate()
+        runTimeLimitTimer = nil
+        if let timeLimit = timeLimit {
+            runTimeLimitTimer = Timer.scheduledTimer(withTimeInterval: timeLimit, repeats: false) { [weak self] _ in
+                self?.queue.pauseAfterCurrentItem()
+            }
+        }
 
         beginRunStats()
         queue.start()
     }
 
     @IBAction func stop(_ sender: Any?) {
+        runTimeLimitTimer?.invalidate()
+        runTimeLimitTimer = nil
         queue.stop()
     }
 
+    /// The toolbar button and menu item both wire to this (see
+    /// QueueToolbarDelegate.swift and MainMenu.xib's toggleStartStop:),
+    /// not directly to start(_:) -- so this is the one genuinely
+    /// human-clicked path, and the only place the run-duration prompt
+    /// belongs. If somehow there's no window to sheet onto, fall back
+    /// to start(_:)'s no-prompt behavior rather than silently doing
+    /// nothing.
     @IBAction func toggleStartStop(_ sender: Any?) {
         if queue.status == .working {
             stop(self)
-        } else {
+            return
+        }
+        guard let window = window else {
             start(self)
+            return
+        }
+        presentRunDurationPrompt(in: window) { [weak self] choice in
+            guard let self = self, let choice = choice else { return }
+            switch choice {
+            case .untilDone: self.beginTimedRun(timeLimit: nil)
+            case .limited(let seconds): self.beginTimedRun(timeLimit: seconds)
+            }
         }
     }
 
@@ -2933,6 +3208,9 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         let movieProvider = prefs.movieProvider
         let movieLanguage = prefs.movieProviderLanguage
 
+        release.isSearchingMetadata = true
+        refreshRows(of: release)
+
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             // The chosen provider first, then every other enabled one --
             // the first to find the title decides.
@@ -2973,6 +3251,8 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             }
 
             DispatchQueue.main.async {
+                release.isSearchingMetadata = false
+
                 guard let self = self, release.stage == .pendingMetadata,
                       self.queue.indexesOfRows(where: { $0.release === release }).isEmpty == false
                 else { return }
@@ -2980,12 +3260,14 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
                 if highConfidence {
                     self.resolveSingleFileRelease(release)
                     self.updateUI()
+                } else {
+                    // Parked in .pendingMetadata for the user to open --
+                    // the row needs its own refresh now (unlike before
+                    // isSearchingMetadata existed) since the status text
+                    // changes from "Searching metadata..." to "Waiting
+                    // for metadata" with no stage change to trigger it.
+                    self.refreshRows(of: release)
                 }
-                // Otherwise the release just stays parked in
-                // .pendingMetadata -- its row is already showing
-                // correctly from approveNaming(for:name:)'s own
-                // updateUI() call, so there's nothing further to refresh
-                // here.
             }
         }
     }

@@ -511,6 +511,7 @@
 		DBD55AD3849868ABFC557687 /* AppRestarter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppRestarter.swift; path = Classes/AppRestarter.swift; sourceTree = "<group>"; };
 		E2192B775CE1476DA1DF2E00 /* DestinationsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DestinationsViewController.swift; path = Classes/DestinationsViewController.swift; sourceTree = "<group>"; };
 		E702E6F9307C092400836990 /* M3Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = M3Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E7719E54308044F700717650 /* M3.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = M3.xctestplan; sourceTree = "<group>"; };
 		E79E910A3052336B00E6790F /* CustomSourcesListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CustomSourcesListViewController.swift; path = Classes/CustomSourcesListViewController.swift; sourceTree = "<group>"; };
 		E79E910D3052337A00E6790F /* CustomMetadataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CustomMetadataSource.swift; path = Classes/MetadataImporters/CustomMetadataSource.swift; sourceTree = "<group>"; };
 		E79E910E3052337A00E6790F /* CustomSourceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CustomSourceService.swift; path = Classes/MetadataImporters/CustomSourceService.swift; sourceTree = "<group>"; };
@@ -581,6 +582,7 @@
 		2A37F4AAFDCFA73011CA2CEA /* MP4Sub */ = {
 			isa = PBXGroup;
 			children = (
+				E7719E54308044F700717650 /* M3.xctestplan */,
 				4AFFB6D12DF751110099E229 /* MediaMetadataManager.sdef */,
 				A9B4EE4E1643EBF3009AF6BC /* M3.entitlements */,
 				2A37F4ABFDCFA73011CA2CEA /* Classes */,
@@ -1612,7 +1614,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1.1.0;
+				CURRENT_PROJECT_VERSION = 1.1.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
@@ -1632,7 +1634,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.1.1;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "-Wl,-rpath,@loader_path/../Frameworks";
 				OTHER_SWIFT_FLAGS = "";
@@ -1659,7 +1661,7 @@
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.1.0;
+				CURRENT_PROJECT_VERSION = 1.1.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
@@ -1678,7 +1680,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.1.1;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "-Wl,-rpath,@loader_path/../Frameworks";
 				OTHER_SWIFT_FLAGS = "";
@@ -1882,7 +1884,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.1.0;
+				CURRENT_PROJECT_VERSION = 1.1.1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -1894,7 +1896,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.1.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mediametadatamanager.M3Tests;
@@ -1929,7 +1931,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1.1.0;
+				CURRENT_PROJECT_VERSION = 1.1.1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -1938,7 +1940,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.1.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mediametadatamanager.M3Tests;

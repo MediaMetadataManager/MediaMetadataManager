@@ -97,3 +97,52 @@ final class MetadataMergeTests: XCTestCase {
         XCTAssertFalse(a.describesSameTitle(as: result([.seriesName: "Other Show", .season: 1, .episodeNumber: 2], kind: .tvShow), searchTitle: nil))
     }
 }
+
+/// The search sheet's table asks a result for its fields by row number, so the
+/// ordered list of fields must always match what the result holds right now.
+final class MetadataResultOrderedKeysTests: XCTestCase {
+
+    func testOrderedKeysFollowLaterChanges() {
+        let result = MetadataResult()
+        result[.name] = "Sample Title"
+        XCTAssertEqual(result.orderedKeys.count, result.count)
+
+        result[.studio] = "Example Studio"
+        XCTAssertEqual(result.orderedKeys.count, result.count)
+        XCTAssertTrue(result.orderedKeys.contains(.studio))
+
+        let other = MetadataResult()
+        other[.releaseDate] = "2020-01-01"
+        result.merge(result: other)
+        XCTAssertEqual(result.orderedKeys.count, result.count)
+
+        result[.studio] = nil
+        XCTAssertEqual(result.orderedKeys.count, result.count)
+        XCTAssertFalse(result.orderedKeys.contains(.studio))
+    }
+
+    func testTVShowFieldsAreListedOnceInAFixedOrder() {
+        let result = MetadataResult()
+        result.mediaKind = .tvShow
+        result[.serviceContentID] = 1
+        result[.serviceAdditionalContentID] = 2
+        result[.serviceEpisodeID] = 3
+        result[.seriesName] = "Sample Show"
+        result[.name] = "Sample Episode"
+        result[.season] = 1
+        result[.episodeNumber] = 2
+        result[.episodeID] = "102"
+        result[.network] = "Example Network"
+        result[.seriesDescription] = "About the show"
+        result[.longDescription] = "About the episode"
+        result[.cast] = "Example Person"
+
+        let keys = result.orderedKeys
+        XCTAssertEqual(keys.count, result.count)
+        XCTAssertEqual(Set(keys).count, keys.count)
+        XCTAssertEqual(keys, result.orderedKeys)
+        XCTAssertEqual(keys.first, .name)
+        // The provider's own ID fields come last, in the listed order.
+        XCTAssertEqual(Array(keys.suffix(3)), [.serviceContentID, .serviceAdditionalContentID, .serviceEpisodeID])
+    }
+}

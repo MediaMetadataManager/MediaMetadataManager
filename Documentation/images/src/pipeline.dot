@@ -8,7 +8,7 @@ digraph G {
     DISC [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Discovery</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">Automatically watch (folder watcher + 20 s check)<BR/>or the Scan Now button</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
     SET [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Filter and settle</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">skips hidden files, delivery folders and unfinished<BR/>downloads; waits until sizes stop changing</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
     TV [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>TV episode?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
-    TVQ [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>TV Shows Queue</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">its own window; same steps</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    TVQ [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>TV Shows tab</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">its own list in the Queue window; same steps</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
     ROW [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Release row in Movies Queue</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">one folder of files<BR/>(a loose file gets a folder of its own)</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
     AA [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Auto-approve on and<BR/>confident title match?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
     NR [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Naming Review</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">approve, edit the name, or reject<BR/>Search All Providers</FONT>>, shape=box, style="rounded,filled", fillcolor="#fff4d6", color="#c79a1c"];
@@ -16,17 +16,19 @@ digraph G {
     REN2 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Folder renamed</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">Title Vol N [Studio] (Year)</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
     NF [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>One file or several?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
     MT [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Online match for the<BR/>name, confident?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
-    MR [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Metadata Review</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">search again with other words, pick a result,<BR/>choose Portrait or Landscape art,<BR/>or Continue Without Metadata</FONT>>, shape=box, style="rounded,filled", fillcolor="#fff4d6", color="#c79a1c"];
+    MR [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Metadata Review</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">search again with other words, pick a result,<BR/>choose Portrait or Landscape art,<BR/>or Continue Without Metadata.<BR/>Search with menu: pick another source</FONT>>, shape=box, style="rounded,filled", fillcolor="#fff4d6", color="#c79a1c"];
+    AMG [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Folder already holds<BR/>a merged file?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+    AMR [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Already merged: review</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">use the merged file, or merge the parts anyway<BR/>(the old merged file is kept as " - OLD")</FONT>>, shape=box, style="rounded,filled", fillcolor="#fff4d6", color="#c79a1c"];
     SEV [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Auto-merge on, parts<BR/>numbered and compatible?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
     AM [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Auto-merge</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">starts after about 1 s<BR/>(opening the row cancels it)</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
-    MRV [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Merge Review</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">pick files, drag into order,<BR/>compatibility check</FONT>>, shape=box, style="rounded,filled", fillcolor="#fff4d6", color="#c79a1c"];
-    MG [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Lossless merge</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">no re-encode, a chapter at each join;<BR/>written under a hidden name, renamed when complete</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    MRV [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Merge Review</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">pick files (untick a file to leave it out),<BR/>drag into order, compatibility check</FONT>>, shape=box, style="rounded,filled", fillcolor="#fff4d6", color="#c79a1c"];
+    MG [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Lossless merge</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">no re-encode, a chapter at each join;<BR/>written under a hidden name, renamed when complete;<BR/>progress shown on the row, parts marked Merged afterwards</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
     MF [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Merge failed</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">reason shown on the row;<BR/>reopen and retry</FONT>>, shape=box, style="rounded,filled", fillcolor="#f9dede", color="#b04a4a"];
     RDY [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Item ready in the Queue</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">metadata search and delivery actions attached</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
   }
   subgraph cluster_run {
     label="Queue run"; fontname="Inter"; fontsize=13; fontcolor="#33414f"; style="rounded"; color="#c4ccd4"; labeljust=l; margin=14;
-    ST [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Start</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">Auto-Start, or the Start button</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    ST [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Start</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">Auto-Start, or the Start button.<BR/>Movies and TV Shows tabs take turns, one file<BR/>at a time (or both at once, if you set that)</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
     ACT [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Actions, then write the file</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">clear old tags, search metadata and artwork (a release<BR/>searches by its approved name), set filename,<BR/>subtitles, track tidy-ups, optimize</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
   }
   subgraph cluster_deliver {
@@ -62,7 +64,11 @@ digraph G {
   REJ -> NR [label="reopen", style=dashed];
   REN2 -> NF;
   NF -> MT [label="one"];
-  NF -> SEV [label="several"];
+  NF -> AMG [label="several"];
+  AMG -> SEV [label="no"];
+  AMG -> AMR [label="yes (about as big as\nthe other files together)"];
+  AMR -> MT [label="use the merged file"];
+  AMR -> MG [label="merge the parts anyway"];
   MT -> RDY [label="yes"];
   MT -> MR [label="no, or nothing found"];
   MR -> RDY;

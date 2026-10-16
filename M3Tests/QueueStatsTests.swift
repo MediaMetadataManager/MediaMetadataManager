@@ -166,13 +166,16 @@ final class ReleaseFileStatusTests: XCTestCase {
         XCTAssertEqual(files.map { r.fileStatusText(for: $0) }, ["Merging", "Merging", "Merging"])
     }
 
-    func testMergingShowsPercentOnceProgressIsReported() {
+    func testFileLinesNeverShowThePercentEvenOnceItIsReported() {
         let (r, files) = release(.merging, order: nil)
         r.mergeProgress = 42.7
-        XCTAssertEqual(r.fileStatusText(for: files[0]), "Merging 42%")
+        // The folder/release row shows the percentage (mergingText);
+        // each file line underneath stays plain so it isn't repeated.
         XCTAssertEqual(r.mergingText, "Merging 42%")
+        XCTAssertEqual(r.fileStatusText(for: files[0]), "Merging")
         r.mergeProgress = 0.4
         XCTAssertEqual(r.mergingText, "Merging")
+        XCTAssertEqual(r.fileStatusText(for: files[0]), "Merging")
     }
 
     func testFileLeftOutOfMergeShowsNothing() {
@@ -203,5 +206,19 @@ final class ReleaseFileStatusTests: XCTestCase {
     func testOtherStagesShowNothing() {
         let (r, files) = release(.pendingMergeSelection)
         XCTAssertNil(r.fileStatusText(for: files[0]))
+    }
+
+    func testSearchingMetadataIsDistinctFromWaiting() {
+        let (r, _) = release(.pendingMetadata)
+        let waitingRow = QueueRow(release: r)
+        XCTAssertEqual(waitingRow.statusSummary.text, "Waiting for metadata")
+        XCTAssertEqual(waitingRow.statusSummary.rank, 3)
+
+        r.isSearchingMetadata = true
+        let searchingRow = QueueRow(release: r)
+        XCTAssertEqual(searchingRow.statusSummary.text, "Searching metadata\u{2026}")
+        // Ranked alongside "Working" (0), not "Waiting" (3) -- it's
+        // actively doing something, not parked on the user.
+        XCTAssertEqual(searchingRow.statusSummary.rank, 0)
     }
 }

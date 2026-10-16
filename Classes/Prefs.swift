@@ -821,4 +821,13 @@ enum MediaIntakePrefs {
     /// two files can be processed at the same time.
     @Stored(key: "SBQueuesRunTogether", defaultValue: false)
     static var runQueuesTogether: Bool
+
+    /// When true (the default), files added by hand to the Movies tab (Add
+    /// button, drag and drop, File > Open) whose names carry an episode
+    /// marker (S01E02, 1x02) are put on the TV Shows tab instead. A movie
+    /// added to the TV Shows tab is never moved, since a name without an
+    /// episode marker does not prove it is a movie. The Incoming Folders
+    /// always sort episodes to the TV Shows tab.
+    @Stored(key: "SBQueueSendEpisodesToTVTab", defaultValue: true)
+    static var sendEpisodesToTVTab: Bool
 }

@@ -32,6 +32,21 @@ final class Queue {
     private var cancelled: Bool
     private var currentItem: QueueItem?
 
+    /// Set by pauseAfterCurrentItem() (the Start-time "run for a time
+    /// limit" option in QueueController) -- checked only between items
+    /// in start()'s pull loop, so whatever is currently muxing or
+    /// merging always finishes normally; it's the NEXT item that waits.
+    /// Deliberately separate from `cancelled`, which stop() uses to
+    /// abort the current item outright.
+    private var gracefulStopRequested: Bool = false
+
+    /// Whether the run most recently ended because its time limit was
+    /// reached (pauseAfterCurrentItem()) rather than because the queue
+    /// ran out of ready items. Reset to false every time start() begins
+    /// a new run. QueueController reads this from the Queue.Completed
+    /// notification to word the status line accordingly.
+    private var pausedByTimeLimitInternal: Bool = false
+
     private let url: URL
 
     private let logger = Logger.shared
@@ -196,6 +211,8 @@ final class Queue {
                 shouldStart = true
                 self.statusInternal = .working
                 self.cancelled = false
+                self.gracefulStopRequested = false
+                self.pausedByTimeLimitInternal = false
             }
         }
         if shouldStart == false {
@@ -209,6 +226,13 @@ final class Queue {
             var failed: UInt = 0
 
             while(true) {
+                var shouldPause = false
+                self.arrayQueue.sync { shouldPause = self.gracefulStopRequested }
+                if shouldPause {
+                    self.arrayQueue.sync { self.pausedByTimeLimitInternal = true }
+                    break
+                }
+
                 try? self.saveToDisk()
 
                 let tookLane = QueueLane.shared.enter(exclusive: !MediaIntakePrefs.runQueuesTogether)
@@ -246,6 +270,17 @@ final class Queue {
         }
     }
 
+    /// Asks the run to stop once the item or merge currently in
+    /// progress finishes -- unlike stop(), nothing in flight is
+    /// cancelled. Used by QueueController's Start-time "run for a time
+    /// limit" option once its timer fires. A no-op if the queue isn't
+    /// working; resuming afterwards is just calling start() again.
+    func pauseAfterCurrentItem() {
+        arrayQueue.sync {
+            gracefulStopRequested = true
+        }
+    }
+
     /// Runs `work` serialized against this Queue's own single-worker mux
     /// lane -- the same private workQueue that processItem(_:) already runs
     /// on inside start()'s pull loop. A file merge (FileMerger.merge, called
@@ -277,6 +312,16 @@ final class Queue {
     var status: Status {
         get {
             return arrayQueue.sync { self.statusInternal }
+        }
+    }
+
+    /// Whether the run most recently ended by reaching its time limit
+    /// (pauseAfterCurrentItem()) rather than by running out of ready
+    /// items. Only meaningful right after a Queue.Completed notification
+    /// -- the next start() resets it.
+    var pausedByTimeLimit: Bool {
+        get {
+            return arrayQueue.sync { self.pausedByTimeLimitInternal }
         }
     }
 

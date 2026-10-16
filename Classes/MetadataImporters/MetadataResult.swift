@@ -438,7 +438,13 @@ public final class MetadataResult {
 
     }
 
-    private var dictionary: [Key:Any]
+    private var dictionary: [Key:Any] {
+        // The sorted key list is cached for the tables that show this result;
+        // any change to the values must drop it, or a table can ask for a row
+        // the old list no longer has.
+        didSet { cachedOrderedKeys = nil }
+    }
+    private var cachedOrderedKeys: [Key]?
     public var mediaKind: MediaKind
     public var contentRating: Int
     public var remoteArtworks: [Artwork]
@@ -471,15 +477,26 @@ public final class MetadataResult {
         }
     }
 
-    lazy var orderedKeys: [Key] = {
-        let sortedKeys = Key.sortedKeys
-        return Array(dictionary.keys).sorted(by: { (key1: Key, key2: Key) -> Bool in
-            if let index1 = sortedKeys.firstIndex(of: key1), let index2 = sortedKeys.firstIndex(of: key2) {
-                return index1 < index2
-            }
-            return key1 != Key.serviceContentID && key1 != Key.serviceEpisodeID
+    /// The fields in display order: the ones listed in `Key.sortedKeys` in
+    /// that order, with any others (sorted by name) just before the
+    /// provider's own ID fields at the end of that list. A strict ordering
+    /// (never "A before B" and "B before A"), so the list is the same every
+    /// time and always holds exactly the fields the result has.
+    var orderedKeys: [Key] {
+        if let cached = cachedOrderedKeys { return cached }
+        let listed = Key.sortedKeys
+        var position: [Key: Double] = [:]
+        for (index, key) in listed.enumerated() where position[key] == nil { position[key] = Double(index) }
+        let unlistedRank = (position[Key.serviceContentID] ?? Double(listed.count)) - 0.5
+
+        let keys = Array(dictionary.keys).sorted(by: { (key1: Key, key2: Key) -> Bool in
+            let rank1 = position[key1] ?? unlistedRank, rank2 = position[key2] ?? unlistedRank
+            if rank1 != rank2 { return rank1 < rank2 }
+            return key1.rawValue < key2.rawValue
         })
-    }()
+        cachedOrderedKeys = keys
+        return keys
+    }
 
     public var count: Int {
         return dictionary.count

@@ -461,7 +461,6 @@
 "Send the current document to the queue" = "Enviar documento actual a la cola";
 
 /* Action description. */
-"Send to iTunes" = "Agregar a iTunes";
 
 /* Toolbar */
 "Send to Queue" = "Enviar a la cola";
@@ -473,7 +472,6 @@
 "Send to TV" = "Agregar a TV";
 
 /* Action localized description. */
-"Sending to iTunes" = "Agregando a iTunes";
 
 /* No comment provided by engineer. */
 "Series Description" = "Descripción del programa";

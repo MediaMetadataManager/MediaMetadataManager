@@ -245,7 +245,9 @@ extension QueueRow {
             case .namingRejected: return (NSLocalizedString("Name rejected", comment: "Queue status column"), 1)
             case .pendingNaming: return (NSLocalizedString("Needs name approval", comment: "Queue status column"), 2)
             case .pendingMergeSelection: return (NSLocalizedString("Needs merge order", comment: "Queue status column"), 2)
-            case .pendingMetadata: return (NSLocalizedString("Waiting for metadata", comment: "Queue status column"), 3)
+            case .pendingMetadata: return release.isSearchingMetadata
+                ? (NSLocalizedString("Searching metadata\u{2026}", comment: "Queue status column"), 0)
+                : (NSLocalizedString("Waiting for metadata", comment: "Queue status column"), 3)
             case .pendingLibraryMove: return (NSLocalizedString("Moving to library", comment: "Queue status column"), 3)
             case .done: return (NSLocalizedString("Done", comment: "Queue status column"), 4)
             case .alreadyMerged: return (NSLocalizedString("Already merged: review", comment: "Queue status column"), 2)
@@ -274,6 +276,11 @@ extension QueueRow {
         }
         if release?.stage == .alreadyMerged {
             return NSLocalizedString("The folder already holds a file about the size of all its parts together. Double-click to choose what to do.", comment: "Queue status tooltip")
+        }
+        if let release = release, release.stage == .pendingMetadata {
+            return release.isSearchingMetadata
+                ? NSLocalizedString("Automatically searching online for its metadata. No action needed yet.", comment: "Queue status tooltip")
+                : NSLocalizedString("No confident match was found automatically. Double-click to search again or confirm its metadata by hand.", comment: "Queue status tooltip")
         }
         return nil
     }

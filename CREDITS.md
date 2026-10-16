@@ -47,9 +47,9 @@ the same terms, and its source is available to anyone it's distributed to.
 
 Media Metadata Manager is currently based on Subler 1.9.2; upstream Subler
 has since moved on to 1.9.3. This note is updated by hand whenever code is
-merged in from upstream -- there's no automatic tracking (Sparkle
-auto-update is deliberately disabled, see AppDelegate.swift and the
-commit history, so nothing updates this fork's version on its own).
+merged in from upstream -- there's no automatic tracking. M3 updates itself
+through its own Sparkle update feed, hosted with this project; it never uses
+upstream Subler's update feed or signing keys.
 
 ## Media Metadata Manager
 

@@ -21,7 +21,6 @@ final class QueuePreferences: NSObject {
 
     static private let SBQueueAutoStart: String = "SBQueueAutoStart"
     static private let SBQueueOptimize: String = "SBQueueOptimize"
-    static private let SBQueueSendToiTunes: String = "SBQueueSendToiTunes"
     static private let SBQueueShowDoneNotification: String = "SBQueueShowDoneNotification"
 
     static private let SBQueueFixTrackLanguage: String = "SBQueueFixTrackLanguage"
@@ -93,7 +92,6 @@ final class QueuePreferences: NSObject {
     @objc dynamic var destination: URL?
 
     @objc dynamic var optimize: Bool
-    @objc dynamic var sendToiTunes: Bool
 
     @objc dynamic var autoStart: Bool
     @objc dynamic var showDoneNotification: Bool
@@ -141,7 +139,6 @@ final class QueuePreferences: NSObject {
         }
 
         self.optimize = ud.bool(forKey: QueuePreferences.SBQueueOptimize)
-        self.sendToiTunes = ud.bool(forKey: QueuePreferences.SBQueueSendToiTunes)
 
         self.autoStart = ud.bool(forKey: QueuePreferences.SBQueueAutoStart)
         self.showDoneNotification = ud.bool(forKey: QueuePreferences.SBQueueShowDoneNotification)
@@ -268,7 +265,6 @@ final class QueuePreferences: NSObject {
         put(destination, QueuePreferences.SBQueueDestination)
 
         put(optimize, QueuePreferences.SBQueueOptimize)
-        put(sendToiTunes, QueuePreferences.SBQueueSendToiTunes)
 
         put(autoStart, QueuePreferences.SBQueueAutoStart)
         put(showDoneNotification, QueuePreferences.SBQueueShowDoneNotification)
