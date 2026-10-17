@@ -45,7 +45,7 @@ final class QueueWindowController: NSWindowController, NSWindowDelegate, NSTabVi
     private let moviesItem = NSTabViewItem(identifier: "movies")
     private let tvShowsItem = NSTabViewItem(identifier: "tvShows")
     private let toolbarDelegate = QueueToolbarDelegate()
-    private let toolbar = NSToolbar(identifier: "M3QueueToolbar.v1")
+    private let toolbar = NSToolbar(identifier: "M3QueueToolbar.v2")
 
     private static let selectedTabKey = "SBQueueSelectedTab"
 

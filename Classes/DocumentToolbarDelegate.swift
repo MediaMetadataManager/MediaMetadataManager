@@ -28,6 +28,7 @@ private extension NSToolbarItem.Identifier {
     /// the default pair now (see toolbarDefaultItemIdentifiers below).
     static let saveAndOpen: NSToolbarItem.Identifier = NSToolbarItem.Identifier(rawValue: "SaveAndOpen")
     static let showPreferences: NSToolbarItem.Identifier = NSToolbarItem.Identifier(rawValue: "ShowPreferences")
+    static let showHelp: NSToolbarItem.Identifier = NSToolbarItem.Identifier(rawValue: "ShowHelp")
 }
 
 class DocumentToolbarDelegate: NSObject, NSToolbarDelegate {
@@ -210,17 +211,19 @@ class DocumentToolbarDelegate: NSObject, NSToolbarDelegate {
                                      symbolName: "gear",
                                      target: nil,
                                      action: #selector(AppDelegate.showPrefsWindow(_:)))
+        } else if itemIdentifier == .showHelp {
+            return HelpToolbarAction.editor.makeToolbarItem(identifier: itemIdentifier)
         }
 
         return nil
     }
 
     @MainActor func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        return [.importTracks, .searchMetadata, .actions, .space, .deleteTracks, .flexibleSpace, .sendToQueue, .openDocument, .saveDocument, .saveAndClose, .showQueue, .showPreferences,]
+        return [.importTracks, .searchMetadata, .actions, .space, .deleteTracks, .flexibleSpace, .sendToQueue, .openDocument, .saveDocument, .saveAndClose, .showQueue, .showPreferences, .showHelp]
     }
 
     @MainActor func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        return [.importTracks, .deleteTracks, .actions, .searchMetadata, .sendToQueue, .openDocument, .saveDocument, .saveAndClose, .saveAndOpen, .showQueue, .showPreferences, .flexibleSpace, .space]
+        return [.importTracks, .deleteTracks, .actions, .searchMetadata, .sendToQueue, .openDocument, .saveDocument, .saveAndClose, .saveAndOpen, .showQueue, .showPreferences, .showHelp, .flexibleSpace, .space]
     }
 
 }

@@ -41,6 +41,9 @@ class PrefsWindowController: NSWindowController, NSWindowDelegate {
                     item.image = NSImage(systemSymbolName: "square.and.arrow.down.on.square", accessibilityDescription: "")
                 case support:
                     item.image = NSImage(systemSymbolName: "heart", accessibilityDescription: "")
+                case NSToolbarItem.Identifier("TOOLBAR_HELP"):
+                    item.image = NSImage(systemSymbolName: "questionmark.circle", accessibilityDescription: "")
+                    item.toolTip = NSLocalizedString("Open help for this window", comment: "Help button tooltip")
                 default:
                     item.image = NSImage(systemSymbolName: "placeholdertext.fill", accessibilityDescription: "")
                 }
@@ -57,6 +60,24 @@ class PrefsWindowController: NSWindowController, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         _ = self.window?.endEditing()
+    }
+
+    /// Where the "?" toolbar item (the last item, TOOLBAR_HELP) opens; it follows the tab being shown.
+    private var currentHelpAnchor: HelpAnchor = .preferencesGeneral
+
+    @IBAction func showHelp(_ sender: Any?) {
+        AppHelp.open(currentHelpAnchor)
+    }
+
+    private func helpAnchor(for identifier: NSToolbarItem.Identifier) -> HelpAnchor {
+        if identifier == metadata { return .preferencesMetadata }
+        if identifier == presets { return .preferencesSets }
+        if identifier == output { return .preferencesFilename }
+        if identifier == ocr { return .preferencesOCR }
+        if identifier == advanced { return .preferencesAdvanced }
+        if identifier == sources { return .preferencesSources }
+        if identifier == support { return .preferencesSupport }
+        return .preferencesGeneral
     }
 
     lazy var generalController: GeneralPrefsViewController = { return GeneralPrefsViewController() }()
@@ -104,6 +125,7 @@ class PrefsWindowController: NSWindowController, NSWindowDelegate {
 
         let duration = animationDuration(view: view, previousView: window.contentView)
         window.contentView = view
+        currentHelpAnchor = helpAnchor(for: item.itemIdentifier)
 
         if window.isVisible && animate {
             NSAnimationContext.runAnimationGroup({ context in

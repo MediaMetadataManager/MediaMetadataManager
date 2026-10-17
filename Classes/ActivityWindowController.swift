@@ -34,6 +34,7 @@ final class ActivityWindowController : NSWindowController, MP42Logging {
     override func windowDidLoad() {
         super.windowDidLoad()
         logView.layoutManager?.replaceTextStorage(storage)
+        window?.addHelpButton(anchor: .messageLog)
     }
 
     func write(toLog string: String) {

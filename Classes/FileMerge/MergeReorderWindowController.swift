@@ -78,6 +78,7 @@ final class MergeReorderWindowController: NSWindowController, NSTableViewDataSou
                                backing: .buffered,
                                defer: false)
         window.title = NSLocalizedString("Merge Order", comment: "Merge reorder window -> title")
+        window.addHelpButton(anchor: .reviewSheets)
 
         super.init(window: window)
 

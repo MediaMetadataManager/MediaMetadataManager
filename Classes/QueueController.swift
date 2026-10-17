@@ -3313,6 +3313,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         alert.addButton(withTitle: NSLocalizedString("Use the Merged File", comment: "Already merged review"))
         alert.addButton(withTitle: NSLocalizedString("Merge the Parts Anyway", comment: "Already merged review"))
         alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "Already merged review"))
+        alert.addHelpButton(anchor: .queue)
 
         MovableDialog.present(alert: alert, over: window) { [weak self] response in
             guard let self = self else { return }

@@ -66,6 +66,11 @@
                             <action selector="setPrefView:" target="-2" id="sup-Ac-t02"/>
                         </connections>
                     </toolbarItem>
+                    <toolbarItem implicitItemIdentifier="8B3C5D7E-9F0A-4B2C-AD4E-6F8A0B2C4D6E" explicitItemIdentifier="TOOLBAR_HELP" label="Help" paletteLabel="Help" tag="-1" image="NSInfo" sizingBehavior="auto" selectable="NO" id="hlp-P4-nE3">
+                        <connections>
+                            <action selector="showHelp:" target="-2" id="hlp-Ac-t03"/>
+                        </connections>
+                    </toolbarItem>
                 </allowedToolbarItems>
                 <defaultToolbarItems>
                     <toolbarItem reference="5r6-9s-apQ"/>
@@ -77,6 +82,7 @@
                     <toolbarItem reference="src-P4-nE1"/>
                     <toolbarItem reference="sup-P4-nE2"/>
                     <toolbarItem reference="R2N-58-umt"/>
+                    <toolbarItem reference="hlp-P4-nE3"/>
                 </defaultToolbarItems>
             </toolbar>
             <connections>

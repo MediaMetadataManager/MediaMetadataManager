@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>5.3 Lossless merge</title>
+<meta name="robots" content="anchors">
+<meta name="description" content="Joining parts does not re-encode anything. M3 splices the compressed video and audio samples one after another and adds a chapter at each join, named after t...">
+<link rel="stylesheet" href="../shrd/style.css"></head><body>
+<div class="crumbs"><a href="index.html">Media Metadata Manager Help</a> &rsaquo; User Guide &rsaquo; <a href="guide-media-intake-in-detail.html">5. Media Intake in detail</a></div>
+<a name="lossless-merge"></a><h1>5.3 Lossless merge</h1>
+<p>Joining parts does not re-encode anything. M3 splices the compressed video and audio samples one after another and adds a chapter at each join, named after the source file.</p><p>Parts are merged only when they match: the same number of video, audio and subtitle tracks, the same codecs and time scales, and the same picture size. If they do not match, the merge is refused and the row explains which file differs and how. Nothing is partly merged. Incompatible parts need to be converted first.</p><p><strong>Subtitle files.</strong> A subtitle file beside a video (<code>.srt</code>, <code>.ass</code> or <code>.ssa</code>) is not a part of the movie, so it never counts toward a merge. A folder holding one video and its subtitle file is a single file; the subtitles are embedded in the finished file. With <strong>Clean up processed files</strong> on, the subtitle files that were embedded are moved to the Trash with the other originals.</p><p>You can also merge by hand: select two or more items in the Queue and click <strong>Merge</strong>, or choose several files in <strong>File → Open…</strong> and answer <strong>Merge Into One File…</strong>. The merged file is written next to the parts by default.</p>
+
+<div class="footer"><a href="index.html">Contents</a> &middot; Media Metadata Manager Help</div>
+</body></html>

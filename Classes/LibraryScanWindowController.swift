@@ -294,18 +294,26 @@ final class LibraryScanWindowController: NSWindowController {
         view.addSubview(clearButton)
         view.addSubview(doneButton)
 
+        let helpButton = HelpAnchorButton(anchor: .libraryScan)
+        helpButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(helpButton)
+
         NSLayoutConstraint.activate([
             chooseFolderButton.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
             chooseFolderButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
 
             folderField.centerYAnchor.constraint(equalTo: chooseFolderButton.centerYAnchor),
             folderField.leadingAnchor.constraint(equalTo: chooseFolderButton.trailingAnchor, constant: 10),
-            folderField.trailingAnchor.constraint(lessThanOrEqualTo: optionsButton.leadingAnchor, constant: -10),
+            folderField.trailingAnchor.constraint(lessThanOrEqualTo: helpButton.leadingAnchor, constant: -10),
 
             // Only the options (gear) button is at the top right; Pause,
             // Scan (Stop while scanning) and Done sit in the bottom row.
             optionsButton.centerYAnchor.constraint(equalTo: chooseFolderButton.centerYAnchor),
             optionsButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+
+            // The "?" opens the help book at this window's section.
+            helpButton.centerYAnchor.constraint(equalTo: optionsButton.centerYAnchor),
+            helpButton.trailingAnchor.constraint(equalTo: optionsButton.leadingAnchor, constant: -10),
 
             scrollView.topAnchor.constraint(equalTo: chooseFolderButton.bottomAnchor, constant: 14),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),

@@ -339,6 +339,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         _ = documentController
         _ = activityWindowController
 
+        configureHelpMenu()
+
         logger.clear()
         MP42File.setGlobalLogger(logger)
 
@@ -565,9 +567,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         SupportLinks.showSupportAlert()
     }
 
+    /// Help > Media Metadata Manager Help: the help book inside the app (see
+    /// AppHelp.swift). Cmd-? belongs to the system's Help search box.
     @IBAction func help(_ sender: Any) {
-        guard let url = URL(string: "https://github.com/MediaMetadataManager/MediaMetadataManager") else { return }
-        NSWorkspace.shared.open(url)
+        AppHelp.open(.home)
     }
 }
 

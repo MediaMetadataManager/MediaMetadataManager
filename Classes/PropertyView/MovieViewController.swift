@@ -132,6 +132,7 @@ class MovieViewController: PropertyView, NSTableViewDataSource, ExpandedTableVie
             for (index, identifier) in identifiersMenu.enumerated() {
                 let item = NSMenuItem(title: localizedMetadataKeyName(identifier), action: nil, keyEquivalent: "")
                 item.tag = index
+                item.representedObject = identifier
                 menu.addItem(item)
             }
         }
@@ -193,11 +194,26 @@ class MovieViewController: PropertyView, NSTableViewDataSource, ExpandedTableVie
 
     // MARK: Metadata
 
+    /// Set editors turn this on: a tag that already has a row is greyed out in the "add tag" menu, so it
+    /// is offered again only after its row is removed. The single-file editor keeps every tag in the menu
+    /// (choosing one that exists just selects its row).
+    var greysOutTagsAlreadyInUse: Bool { false }
+
+    private func updateTagsMenu() {
+        guard greysOutTagsAlreadyInUse, let menu = tagsPopUp?.menu else { return }
+        menu.autoenablesItems = false
+        for item in menu.items {
+            guard let identifier = item.representedObject as? String else { continue }
+            item.isEnabled = metadata.metadataItemsFiltered(byIdentifier: identifier).isEmpty
+        }
+    }
+
     private func updateMetadataArray() {
 
         let dataTypes: UInt = MP42MetadataItemDataType.string.rawValue | MP42MetadataItemDataType.stringArray.rawValue | MP42MetadataItemDataType.bool.rawValue | MP42MetadataItemDataType.integer.rawValue | MP42MetadataItemDataType.integerArray.rawValue | MP42MetadataItemDataType.date.rawValue
 
         tags = metadata.metadataItemsFiltered(by: MP42MetadataItemDataType(rawValue: dataTypes))
+        updateTagsMenu()
 
         let context = MP42Metadata.availableMetadata
 

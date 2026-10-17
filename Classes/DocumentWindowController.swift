@@ -61,7 +61,7 @@ final class DocumentWindowController: NSWindowController, NSWindowDelegate, Trac
         // hasn't seen before, otherwise it keeps replaying whatever was
         // saved under this exact identifier indefinitely, new default
         // items and all.
-        let toolbar = NSToolbar(identifier: "SublerDocumentToolbar2")
+        let toolbar = NSToolbar(identifier: "SublerDocumentToolbar3")
         toolbar.delegate = toolbarDelegate
         toolbar.allowsUserCustomization = true
         toolbar.autosavesConfiguration = true

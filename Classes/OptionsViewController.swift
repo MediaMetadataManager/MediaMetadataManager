@@ -86,7 +86,14 @@ final class OptionsViewController: NSViewController, NSUserInterfaceValidations 
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
+        // "?" in the top right corner (that part of the panel is empty), opening Queue Options in the help.
+        let helpButton = HelpAnchorButton(anchor: .queueOptions)
+        helpButton.frame.origin = NSPoint(x: view.bounds.maxX - helpButton.frame.width - 14,
+                                          y: view.bounds.maxY - helpButton.frame.height - 12)
+        helpButton.autoresizingMask = [.minXMargin, .minYMargin]
+        view.addSubview(helpButton)
+
         // Observe the providers changes
         // to update the specific provider languages popup
 

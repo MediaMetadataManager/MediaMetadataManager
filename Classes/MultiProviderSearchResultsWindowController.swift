@@ -45,6 +45,7 @@ final class MultiProviderSearchResultsWindowController: NSWindowController {
                                backing: .buffered,
                                defer: false)
         window.title = NSLocalizedString("Choose a Match", comment: "Multi-provider results window -> title")
+        window.addHelpButton(anchor: .reviewSheets)
 
         super.init(window: window)
 

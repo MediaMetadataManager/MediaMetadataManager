@@ -110,7 +110,7 @@ class MetadataPrefsViewController : NSViewController, NSTableViewDelegate, NSTab
             }
             s.map.items.sort(by: s.sort)
             s.tableView.reloadData()
-            s.builtInTokenField.stringValue = s.currentTokens.reduce("", { "\($0)/\($1)" })
+            s.refreshAvailable()
 
             s.updateControlsState()
         }
@@ -179,6 +179,22 @@ class MetadataPrefsViewController : NSViewController, NSTableViewDelegate, NSTab
         }
     }
 
+    /// Keeps the strip of values and the Add menu current for the Movie or TV Show table being shown.
+    /// Every value stays available to drag into any number of cells; the Add menu greys out an
+    /// annotation that already has a row, and offers it again once that row is removed.
+    private func refreshAvailable() {
+        builtInTokenField.stringValue = currentTokens.reduce("", { "\($0)/\($1)" })
+
+        let rowKeys = Set(map.items.map { $0.key })
+        if let menu = addMetadataPopUpButton.menu {
+            menu.autoenablesItems = false
+            for item in menu.items {
+                guard let key = item.representedObject as? String else { continue }
+                item.isEnabled = !rowKeys.contains(key)
+            }
+        }
+    }
+
     private func updateControlsState() {
         removeMetadataButton.isEnabled = tableView.selectedRow != -1
     }
@@ -197,6 +213,7 @@ class MetadataPrefsViewController : NSViewController, NSTableViewDelegate, NSTab
                 tableView.insertRows(at: IndexSet(integer: index), withAnimation: .slideUp)
             }
             save()
+            refreshAvailable()
         }
     }
 
@@ -206,6 +223,7 @@ class MetadataPrefsViewController : NSViewController, NSTableViewDelegate, NSTab
         }
         tableView.removeRows(at: tableView.selectedRowIndexes, withAnimation: .slideDown)
         save()
+        refreshAvailable()
     }
 
     @objc private func toggleFillSeriesDescription(_ sender: NSButton) {

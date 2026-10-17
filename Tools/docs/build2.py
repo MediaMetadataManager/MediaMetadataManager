@@ -54,7 +54,7 @@ for f in glob.glob('images/screens/*.png'):
     if im.size[0] > 1800:
         im = im.resize((1800, int(im.size[1]*1800/im.size[0])), Image.LANCZOS)
     im.save(os.path.join('_scaled/screens', os.path.basename(f)), optimize=True)
-md = md.replace('images/screens/', '_scaled/screens/')
+md = md.replace('](images/screens/', '](_scaled/screens/')
 open(f'_{name}.md', 'w', encoding='utf-8').write(md)
 subprocess.check_call(['pandoc', f'_{name}.md', '-f', 'markdown', '-o', f'_{name}.docx',
                        f'--reference-doc={name}.docx', '--resource-path=.'])

@@ -85,6 +85,7 @@ final class NamingReviewWindowController: NSWindowController {
                                backing: .buffered,
                                defer: false)
         window.title = NSLocalizedString("Review Naming", comment: "Naming review window -> title")
+        window.addHelpButton(anchor: .reviewSheets)
 
         super.init(window: window)
 

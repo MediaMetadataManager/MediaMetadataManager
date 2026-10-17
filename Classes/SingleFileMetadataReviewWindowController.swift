@@ -190,6 +190,7 @@ final class SingleFileMetadataReviewWindowController: NSWindowController, NSMenu
                                backing: .buffered,
                                defer: false)
         window.title = NSLocalizedString("Review Metadata", comment: "Metadata review window -> title")
+        window.addHelpButton(anchor: .reviewSheets)
 
         super.init(window: window)
 

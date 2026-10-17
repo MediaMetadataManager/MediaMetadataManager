@@ -17,6 +17,7 @@ extension NSToolbarItem.Identifier {
     static let queueSettings: NSToolbarItem.Identifier = NSToolbarItem.Identifier(rawValue: "QueueSettings")
     static let queueStartStop: NSToolbarItem.Identifier = NSToolbarItem.Identifier(rawValue: "QueueStartStop")
     static let queueMerge: NSToolbarItem.Identifier = NSToolbarItem.Identifier(rawValue: "QueueMerge")
+    static let queueHelp: NSToolbarItem.Identifier = NSToolbarItem.Identifier(rawValue: "QueueHelp")
 }
 
 class QueueToolbarDelegate: NSObject, NSToolbarDelegate {
@@ -62,17 +63,19 @@ class QueueToolbarDelegate: NSObject, NSToolbarDelegate {
                                      symbolName: "arrow.triangle.merge",
                                      target: target,
                                      action: #selector(QueueController.mergeSelectedItems(_:)))
+        } else if itemIdentifier == .queueHelp {
+            return HelpToolbarAction.queue.makeToolbarItem(identifier: itemIdentifier)
         }
 
         return nil
     }
 
     @MainActor func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        return [.queueAdd, .queueMerge, .queueStartStop, .flexibleSpace, .queueSettings]
+        return [.queueAdd, .queueMerge, .queueStartStop, .flexibleSpace, .queueSettings, .queueHelp]
     }
 
     @MainActor func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        return [.queueStartStop, .queueSettings, .queueAdd, .queueMerge, .flexibleSpace, .space]
+        return [.queueStartStop, .queueSettings, .queueAdd, .queueMerge, .queueHelp, .flexibleSpace, .space]
     }
 
     func setState(working: Bool, toolbar: NSToolbar) {

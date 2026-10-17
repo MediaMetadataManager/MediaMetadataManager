@@ -30,6 +30,7 @@ final class WelcomeWindowController: NSWindowController {
         window.title = ""
         window.isReleasedWhenClosed = false
         window.center()
+        window.addHelpButton(anchor: .gettingStarted)
 
         super.init(window: window)
 

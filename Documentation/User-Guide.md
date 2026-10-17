@@ -11,6 +11,8 @@ This guide describes every window, menu and setting of Media Metadata Manager (M
 
 **Conventions.** Menu paths are written *Menu → Item*. Buttons and settings are shown in **bold**. File and folder names are shown in `code style`. Notes marked *Tip* are optional shortcuts; notes marked *Important* describe behavior that can affect your files.
 
+**Help inside the app.** Choose **Help → Media Metadata Manager Help** to open this guide in the Help window, which has a search box. You can also open the Help menu and type in its search box to find a topic or a menu command; M3 points at the command in the menu. The **?** button opens the section about the window you are in: it is the last item in the toolbar of the Queue, Editor and Preferences windows (you can move it with Customize Toolbar in the Queue and Editor), in the title bar of the Welcome window, the Message log and the Queue's review windows, beside the gear in the Library scan window, and in the top right corner of the Queue Options panel. **Help** also opens the Getting Started Guide, this guide as a PDF, What's New, and Report an Issue.
+
 **Scope.** M3 is a personal fork of the open-source Subler app. Everything Subler does — muxing and tagging MP4, M4V and MOV files, importing tracks from MKV and raw formats, chapters, subtitles, OCR of image subtitles — still works. This guide concentrates on what M3 adds: extra metadata sources, the Queue-based Intake workflow, lossless merging, naming rules, library scanning and the cleanup options.
 
 # 1. Concepts in one page

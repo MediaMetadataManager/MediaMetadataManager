@@ -22,6 +22,8 @@ final class PresetEditorViewController: MovieViewController {
         return "PresetEditorViewController"
     }
 
+    override var greysOutTagsAlreadyInUse: Bool { true }
+
     init(preset: MetadataPreset) {
         self.preset = preset
         super.init(mp4: nil, metadata: preset.metadata)

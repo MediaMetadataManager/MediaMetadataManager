@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>5.2 What happens, step by step</title>
+<meta name="robots" content="anchors">
+<meta name="description" content="5.2 What happens, step by step">
+<link rel="stylesheet" href="../shrd/style.css"></head><body>
+<div class="crumbs"><a href="index.html">Media Metadata Manager Help</a> &rsaquo; User Guide &rsaquo; <a href="guide-media-intake-in-detail.html">5. Media Intake in detail</a></div>
+<a name="what-happens-step-by-step"></a><h1>5.2 What happens, step by step</h1>
+<ol type="1"><li><strong>Discovery.</strong> M3 finds media files in the Incoming Folders. It ignores hidden files, packages, symbolic links, the Ready folder, and folders that still contain unfinished downloads (<code>.part</code>, <code>.crdownload</code> and similar). Anything it has already taken in, or that is already in a Queue, is skipped. A path is forgotten once the file is gone, so putting a file with the same name back later is treated as new.</li><li><strong>TV or movie.</strong> A name with a season and episode marker (for example <code>S02E05</code> or <code>2x05</code>) goes to the <strong>TV Shows Queue</strong>; everything else goes to the <strong>Movies Queue</strong>.</li><li><strong>Naming.</strong> M3 proposes <code>Title Vol N [Studio] (Year)</code>. It understands uploader-stamped names such as <code>2026_Uploader_Title_Studio_720p</code> and <code>03.10.2026_Uploader_Title_Studio_720p</code>, and scene names such as <code>Title.2023.1080p.WEB-DL.x264-GROUP</code>. You approve, edit or reject, or it is approved automatically when you have chosen that option.</li><li><strong>Metadata or merge.</strong> One file: the online match is checked. Several files: the parts are checked for compatibility and ordered, merged, and then the merged file gets the same online match check as a single file. The merged file appears under its final name only when it is complete (a merge of a long movie can take ten minutes or more).</li><li><strong>Ready.</strong> The release becomes a normal Queue item with a metadata step and a move-to-library step attached.</li><li><strong>Start.</strong> The Queue writes the file, searches the provider you chose, applies artwork and tags, and then moves the whole release folder into <strong>Ready for Media Library</strong>. If a folder with that name already exists there, the new one is called <code>name 2</code>, <code>name 3</code> and so on; nothing is overwritten.</li><li><strong>Cleanup</strong> (if enabled), then your final check in the Ready folder.</li></ol>
+
+<div class="footer"><a href="index.html">Contents</a> &middot; Media Metadata Manager Help</div>
+</body></html>

@@ -12,6 +12,11 @@ next round of work.
 
 ## Unreleased
 
+## 1.2.3 (2026-10-16)
+
+- Changed: in **Preferences → Metadata**, the **Add** menu greys out an annotation that already has a row, so it cannot be added twice. Remove the row and it is offered again. Values stay available to use in any number of cells. The same goes for the tag menu when you edit a **Set**: a tag the Set already has is greyed out until you remove it.
+- New: **Help** is now a Help window inside the app, built from the guides, with a search box and a list of topics. **Help → Media Metadata Manager Help** opens it. The Help menu's search box finds help topics as well as menu commands (it points at the command in the menu). The Welcome, Editor, Queue, Message log, Library scan and Preferences windows, the Queue's review windows (naming, metadata, choose a match, merge order) and the Queue Options panel have a **?** button that opens the matching section (in the Queue, Editor and Preferences toolbars it is the last item; in the Library scan window it is beside the gear; in Queue Options it is in the top right corner). The Queue and Editor toolbars start from their default layout once, because of the new item. The Help window can be used while a review window is open. The Help menu also opens the Getting Started Guide, the User Guide as a PDF, What's New and Report an Issue. Before, the Help item opened the project's web page.
+
 ## 1.1.2 (2026-10-16)
 
 - New: the Library scan window has a **Clear** button (bottom left, after Send to Queue) and a right-click **Clear List** that empty the list once files are loaded. The folder stays chosen and the columns stay, so Scan starts again from it, and no file is changed. Both are off while a scan is running (press Stop first) and while a tag is being written.
