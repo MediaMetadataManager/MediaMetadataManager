@@ -3,8 +3,25 @@
     <channel>
         <title>M3</title>
         <item>
+            <title>1.3.1</title>
+            <pubDate>Sat, 17 Oct 2026 16:35:53 -0700</pubDate>
+            <sparkle:version>1.3.1</sparkle:version>
+            <sparkle:shortVersionString>1.3.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
+            <description><![CDATA[<html><body style="font-family:-apple-system;font-size:13px">
+<h3>Media Metadata Manager 1.3.1</h3><ul>
+<li>New: the Library scan has a Source choice when a plugin for your own media server (a library server) is installed. Scan it and the list shows only the files where the server has something the file lacks, in orange; a movie whose file is not at the server's path shows "File not found".</li>
+<li>New: Accept writes the server's values straight into the files, one tag at a time (right-click an orange cell), for the selected files, or for all of them. A copy of each file is kept until its write works.</li>
+<li>New: files sent from a library-server scan to the Queue are filled from the server's own item for each file (no search), adding only the tags the file lacks.</li>
+<li>Improved: Edit… on an orange cell starts with the server's value.</li>
+<li>Changed: Preferences → Sources keeps the two kinds of source apart. In Providers, a plugin for your own media server is listed in its own Library Servers column (shown only when one is installed) instead of among the movie providers; in Custom Sources, the list has Online and Library Servers headings (also only when a library server plugin is installed).</li>
+</ul></body></html>
+]]></description>
+            <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.3.1/MediaMetadataManager-1.3.1.zip" length="22992416" type="application/octet-stream" sparkle:edSignature="ExNOhDKj8WeB7DWueNwRb64gtFsYADrcUiZQGoXKGZNMfoFIV9jwFsg1ylKbX//Orxcy1GKe5x0WMYz4nRWGAw=="/>
+        </item>
+        <item>
             <title>1.3.0</title>
-            <pubDate>Sat, 17 Oct 2026 11:40:38 -0700</pubDate>
+            <pubDate>Sat, 17 Oct 2026 16:36:09 -0700</pubDate>
             <sparkle:version>1.3.0</sparkle:version>
             <sparkle:shortVersionString>1.3.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
@@ -19,7 +36,7 @@
         </item>
         <item>
             <title>1.2.3</title>
-            <pubDate>Sat, 17 Oct 2026 11:40:49 -0700</pubDate>
+            <pubDate>Sat, 17 Oct 2026 16:36:07 -0700</pubDate>
             <sparkle:version>1.2.3</sparkle:version>
             <sparkle:shortVersionString>1.2.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
@@ -30,41 +47,6 @@
 </ul></body></html>
 ]]></description>
             <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.2.3/MediaMetadataManager-1.2.3.zip" length="21446574" type="application/octet-stream" sparkle:edSignature="aqiNv70OnEnQSVWhhJr1OXQwmy17ZVuuvW4NzZkRMUKXlqX/n2l/icnVjpwvmnRWSEdSIuH47Xtw8+3h8reWCg=="/>
-        </item>
-        <item>
-            <title>1.1.2</title>
-            <pubDate>Sat, 17 Oct 2026 11:40:49 -0700</pubDate>
-            <sparkle:version>1.1.2</sparkle:version>
-            <sparkle:shortVersionString>1.1.2</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
-            <description><![CDATA[<html><body style="font-family:-apple-system;font-size:13px">
-<h3>Media Metadata Manager 1.1.2</h3><ul>
-<li>New: the Library scan window has a Clear button (bottom left, after Send to Queue) and a right-click Clear List that empty the list once files are loaded. The folder stays chosen and the columns stay, so Scan starts again from it, and no file is changed. Both are off while a scan is running (press Stop first) and while a tag is being written.</li>
-<li>Fixed: the Library scan and the Queue showed Content Rating and Media Kind as their stored numbers (4, 9, 10). They now show the names the Editor uses (Explicit, Movie, TV Show), and a Rating such as "mpaa|R|300|" shows as "R". A code the lists do not know still shows as the number.</li>
-<li>New: the Queue options have an Existing tags choice under Artwork, for what the search does with tags a file already has: Use Preferences (follows Preferences > Metadata), Fill missing only (a tag that already has a value is never changed), Append (add artwork) (also adds new artwork next to the existing artwork) or Overwrite. A Keep empty annotations checkbox below it applies when the choice is not Use Preferences. Before this the Queue always overwrote, whatever the preferences said; it now follows Preferences > Metadata unless you choose otherwise, so with the default preferences a file's existing tags are kept and only the gaps are filled. A Queue saved by an earlier version opens with Use Preferences.</li>
-<li>New: Pause in the Library scan window. The scan finishes the file it is reading, shows what it has found so far and waits; Resume carries on from the same place. The scan buttons now sit in the bottom row (Pause, Scan, Done) and only the options (gear) button stays at the top right. While scanning, Scan reads Stop (it was Cancel) because the files found so far stay in the list; Stop or closing the window ends a scan, even a paused one.</li>
-<li>New: the Queue's columns can be sorted, resized and rearranged. The tag columns from a Library scan sort like the others (click the heading; files with no value come first, numbers sort as numbers; the files that have not been read yet are read first). Drag a heading to move a column anywhere between "#" and Actions; drag its edge to make it wider or narrower. The Library scan table now remembers its column order, widths and sort between scans and launches.</li>
-<li>New: files sent from the Library scan to the Queue bring the scan's tag columns with them (Title, Release Date and any extra tags), so you can watch the gaps being filled. Each file starts with the values the scan found (a red "Missing" for a gap) and is read again when the Queue has finished it, so the cell shows the tag that was written. The columns sit before Actions and go away when no such file is left in the Queue.</li>
-<li>New: fix the gaps found by a Library scan without leaving the window. Right-click a tag cell and choose Edit… to type a value, which is written straight into that file (a copy of the file is kept until the write has worked, and put back if it fails). Rating, artwork and other tags that are not plain text, numbers or dates are still changed in the Editor. You can also select files (Command-A for all, or Shift/Command-click) and choose Send Selected to Queue… (or Send All to Queue… when nothing is selected, or right-click > Send to Queue for In-Place Edit): the Queue searches for the metadata and writes the tags into each file where it sits, with no copy and no move to the library (and, when "Set output filename" is on in the Queue options, renames the file from its tags).</li>
-<li>Improved: the Library scan table now has a column for each tag being checked (Title and Release Date, plus any ticked in the gear panel), showing the file's value or a red "Missing". Columns can be made wider or narrower or dragged into a different order, a click on a heading sorts by it (with an arrow showing the direction; missing values come first), and the window opens larger and remembers the size you give it. Ticking a tag in the gear panel adds its column straight away.</li>
-<li>Changed: the Library scan now checks only Title and Release Date on every scan. Rating and Studio are no longer checked by default; they are in the gear panel's "Also look for" list and can be ticked if you want them.</li>
-<li>Fixed: the Genre drop-down in the editor (and in Sets) offered only ten TV categories, and could show items left over from another drop-down. It now lists the usual movie and TV genres in name order. You can still type any genre you like, and a genre you type is kept and offered in the list from then on.</li>
-<li>New: Preferences > Metadata has an Edit My Genres… button. It opens a list of the genres you have typed into the Genre box, where you can correct a misspelling (double-click it), add one, or remove one. Files already tagged with the old spelling are not changed.</li>
-<li>Fixed: a folder row that was waiting for a merge order kept asking for one after the other files were taken out of the folder in Finder and only one was left. When the folder is read again (when you open the row, or in the background) a folder with a single file is now treated as a single-file release and goes on to metadata, with no merge order.</li>
-<li>Fixed: the review windows (naming, merge order, metadata search and "already merged") could open behind other windows. They now always open on top of the app's other windows, still centred over the Queue and still movable.</li>
-<li>Fixed: a movie with its subtitle file beside it (an .mp4 and an .srt, for example) showed as "Needs merge order", as if the subtitle were a second part. A subtitle file (.srt, .ass, .ssa) beside a video is no longer counted as a part: the movie is one file, it is never merged, and the subtitles are embedded in the finished file. This covers folders and loose files in an Incoming Folder, and folders added by hand. With "Clean up processed files" on, the subtitle files that were embedded are moved to the Trash with the other originals. When a folder holds several parts, subtitle files are left alone.</li>
-<li>Fixed: dragging a TV show folder (a show folder holding Season folders) onto the Queue added nothing, because only the folder's own files were looked at. Folders are now searched a few levels down and each Season folder is added as its own group, on either tab.</li>
-<li>Changed: files added by hand are now always sorted onto the right tab. A movie dropped or added on the TV Shows tab goes to the Movies tab (1.1.1 left it on the TV Shows tab), and the status line says so. The "Send TV episodes to the TV Shows tab" checkbox in Media Intake is gone, since sorting is always wanted; a file that is sorted wrongly can have its media type changed in Edit.</li>
-<li>New: folder rows in the Queue can be opened and closed with the triangle in front of them (or the right and left arrow keys). Option-click the triangle to open or close them all. Folders start open, on the Movies and TV Shows tabs alike, and closing one hides its files without removing them.</li>
-<li>Fixed: adding the same files or folder to the Queue again added them a second and third time. Files that are already in the Queue and not yet completed are now skipped, and the status line says how many were left out. A completed file can still be added again.</li>
-<li>Fixed: rows added to the TV Shows tab while it was out of sight could show without their names. That tab is now redrawn when it is added to and when you switch to it.</li>
-<li>Fixed: removing a folder row from the Queue left the files under it behind. It now removes the folder and all its files (files being processed stay, and so does their folder row). Removing a single file keeps the folder row, and removing the last file of a folder removes the folder row too, as before.</li>
-<li>Fixed: a TV season added to the Movies tab as a folder named like "Season 1" (as store purchases are laid out, with no episode marker in the file names) stayed on the Movies tab. Files inside a season folder are now treated as TV episodes and go to the TV Shows tab.</li>
-<li>Improved: the Queue shows a season folder together with the folder above it (for example "Sample Show – Season 1"), so you can tell which show it belongs to.</li>
-<li>Fixed: in the Queue options, the language list for TV Shows showed short lowercase codes (such as "eng") when TheTVDB was the source. It now shows language names, the same as the Movies list, and your choice is still saved as the source's own code.</li>
-</ul></body></html>
-]]></description>
-            <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.1.2/MediaMetadataManager-1.1.2.zip" length="14527769" type="application/octet-stream" sparkle:edSignature="pjmzwLYqfY5BHjlUzkfW7fWgI93SPVfOLTUNrUl+tH/sQz4Kig2qFtfzuZI7wXu9TACRKOOTPRi3dVqGQxvmAg=="/>
         </item>
     </channel>
 </rss>
