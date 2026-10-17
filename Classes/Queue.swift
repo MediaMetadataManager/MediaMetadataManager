@@ -4,6 +4,11 @@
 //
 //  Created by Damiano Galassi on 27/01/2019.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Queue rows for folders and multi-file releases, added numbers, sortable
+//  columns, queues taking turns, time-limited runs, "Merged" file status.
+//
 
 import Foundation
 import IOKit

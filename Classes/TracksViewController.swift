@@ -4,6 +4,11 @@
 //
 //  Created by Damiano Galassi on 03/02/2018.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Minor change to dragging a track row. Includes later upstream undo/redo
+//  changes ported by hand.
+//
 
 import Cocoa
 import MP42Foundation

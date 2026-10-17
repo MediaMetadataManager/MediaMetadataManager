@@ -5,6 +5,10 @@
 //  Created by Damiano Galassi on 05/09/15.
 //  Copyright © 2022 Damiano Galassi. All rights reserved.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Importers can choose the quality of service of their demuxer thread.
+//
 
 #import <Foundation/Foundation.h>
 #import <AudioToolbox/AudioToolbox.h>

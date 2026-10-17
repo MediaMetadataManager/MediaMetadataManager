@@ -1,6 +1,9 @@
 //
 //  QueueWindowController.swift
-//  M3
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 10/11/2026.
 //
 //  One Queue window with a Movies tab and a TV Shows tab, in place of two
 //  separate windows. Each tab is still its own QueueController (its own
@@ -175,6 +178,7 @@ final class QueueWindowController: NSWindowController, NSWindowDelegate, NSTabVi
 
     func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
         UserDefaults.standard.set(tabViewItem === tvShowsItem ? 1 : 0, forKey: QueueWindowController.selectedTabKey)
+        activeController.reloadTable()
         toolbarDelegate.setState(working: activeController.status == .working, toolbar: toolbar)
         toolbar.validateVisibleItems()
     }
@@ -217,19 +221,29 @@ enum MovableDialog {
         dialog.setFrameOrigin(NSPoint(x: parentFrame.midX - size.width / 2, y: parentFrame.midY - size.height / 2))
     }
 
+    /// Makes a dialog window ready to show: titled, movable, centred over
+    /// `parent`, and above every other window of the app, so a review
+    /// window is never hidden behind the Queue, an editor or the Message Log.
+    static func prepare(_ dialog: NSWindow, over parent: NSWindow) {
+        dialog.styleMask.insert(.titled)
+        dialog.isMovableByWindowBackground = true
+        dialog.level = .modalPanel
+        centre(dialog, over: parent)
+    }
+
     /// Shows a dialog window (one that used to be a sheet) and calls
     /// `completion` with the response it ends with.
     static func present(_ dialog: NSWindow, over parent: NSWindow, completion: @escaping (NSApplication.ModalResponse) -> Void) {
-        dialog.styleMask.insert(.titled)
-        dialog.isMovableByWindowBackground = true
-        centre(dialog, over: parent)
+        prepare(dialog, over: parent)
         // Not DispatchQueue.main.async: a modal loop started from inside a
         // main-queue block keeps that block "running", so every other
         // main-queue block (the dialog's own background work reporting back,
         // for one) would wait until the dialog closed.
         RunLoop.main.perform(inModes: [.common]) {
+            dialog.makeKeyAndOrderFront(nil)
             let response = NSApp.runModal(for: dialog)
             dialog.orderOut(nil)
+            dialog.level = .normal
             completion(response)
         }
     }

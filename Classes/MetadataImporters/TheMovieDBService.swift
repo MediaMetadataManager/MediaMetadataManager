@@ -4,6 +4,10 @@
 //
 //  Created by Damiano Galassi on 27/06/2017.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Passes the Allow Adult Content preference to TMDB search requests.
+//
 
 import Foundation
 

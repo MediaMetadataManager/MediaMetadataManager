@@ -4,6 +4,10 @@
 //
 //  Created by Damiano Galassi on 21/08/2017.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Sets folder now lives in M3's Application Support folder.
+//
 
 import Foundation
 

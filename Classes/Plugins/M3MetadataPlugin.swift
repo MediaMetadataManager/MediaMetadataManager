@@ -1,6 +1,9 @@
 //
 //  M3MetadataPlugin.swift
-//  Subler
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 09/27/2026.
 //
 //  The interface a dynamically-loaded metadata-source plugin bundle must
 //  implement. See MetadataPluginLoader.swift for how a plugin gets found

@@ -1,6 +1,9 @@
 //
 //  WelcomeWindowController.swift
-//  M3
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 10/02/2026.
 //
 //  An Xcode-style "what would you like to do" window, shown at launch
 //  when Prefs.showWelcomeScreenAtLaunch is on (General preferences --

@@ -1,6 +1,9 @@
 //
 //  MultiProviderSearchResultsWindowController.swift
-//  Subler
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 10/01/2026.
 //
 //  Shown by NamingReviewWindowController's "Search All Providers..."
 //  button once a multi-provider fan-out search

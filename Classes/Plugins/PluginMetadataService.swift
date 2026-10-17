@@ -1,6 +1,9 @@
 //
 //  PluginMetadataService.swift
-//  Subler
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 09/14/2026.
 //
 //  Wraps a loaded M3MetadataPlugin so it behaves exactly like a
 //  built-in MetadataService everywhere Subler uses one -- the Search

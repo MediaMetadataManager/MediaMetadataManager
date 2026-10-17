@@ -5,6 +5,11 @@
 //  Created by Damiano Galassi on 31/01/10.
 //  Copyright 2022 Damiano Galassi All rights reserved.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Demuxer thread quality of service can be set by the importer (used by the
+//  merge importer).
+//
 
 #import "MP42FileImporter.h"
 #import "MP42FileImporter+Private.h"

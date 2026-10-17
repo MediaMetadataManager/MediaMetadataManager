@@ -4,6 +4,10 @@
 //
 //  Created by Damiano Galassi on 28/01/2019.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Source-folder grouping, missing and renamed file handling, edit in place.
+//
 
 import Cocoa
 import MP42Foundation
@@ -60,6 +64,17 @@ import MP42Foundation
     /// under its folder's header row (QueueController.tableView(_:viewFor
     /// :row:)) and nothing about how the item itself is processed.
     let sourceFolderURL: URL?
+
+    /// True for a file edited where it sits, with no new copy written and no
+    /// move to the library (a file already in the staging folder, or one
+    /// sent from the Library scan). The Set Name step then leaves the
+    /// destination alone and the file is renamed in place afterwards.
+    var editsInPlace = false
+
+    /// The tags (MP42 metadata identifiers) whose values the Queue shows as
+    /// extra columns for this item: set for files sent from the Library scan,
+    /// so the scan's columns carry over. Empty for every other item.
+    var trackedTagKeys: [String] = []
 
     weak var delegate: Queue?
 
@@ -542,6 +557,8 @@ import MP42Foundation
         if let sourceFolderURL = sourceFolderURL {
             aCoder.encode(sourceFolderURL, forKey: "SBQueueItemSourceFolderURL")
         }
+        aCoder.encode(editsInPlace, forKey: "SBQueueItemEditsInPlace")
+        aCoder.encode(trackedTagKeys, forKey: "SBQueueItemTrackedTags")
         aCoder.encode(attributes, forKey: "SBQueueItemAttributes")
         aCoder.encode(actionsInternal, forKey: "SBQueueItemActions")
 
@@ -597,6 +614,8 @@ import MP42Foundation
         }
         #endif
         sourceFolderURL = aDecoder.decodeObject(of: [NSURL.classForCoder()], forKey: "SBQueueItemSourceFolderURL") as? URL
+        editsInPlace = aDecoder.decodeBool(forKey: "SBQueueItemEditsInPlace")
+        trackedTagKeys = (aDecoder.decodeObject(of: [NSArray.classForCoder(), NSString.classForCoder()], forKey: "SBQueueItemTrackedTags") as? [String]) ?? []
 
         actionsInternal = aDecoder.decodeObject(of: [NSArray.classForCoder(), QueueSetAction.classForCoder(),
                                                      QueueMetadataAction.classForCoder(), QueueSubtitlesAction.classForCoder(),

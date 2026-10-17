@@ -1,5 +1,12 @@
 #!/bin/bash
 #
+#  make-appcast.sh
+#
+#             Media Metadata Manager
+#                       M3
+#  Created by: Hans Hoffmeister on 10/10/2026.
+#
+#
 # (Re)generate the Sparkle appcast from the zips in build-release/updates plus
 # every earlier release kept in release-archive/. Called by make-release.sh; can
 # also be run on its own to rebuild the appcast without rebuilding the app:

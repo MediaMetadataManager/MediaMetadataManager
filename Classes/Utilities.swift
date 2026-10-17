@@ -4,6 +4,11 @@
 //
 //  Created by Damiano Galassi on 31/01/2019.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Media Intake and Automatically Add folder helpers, Apple TV media-folder
+//  detection, Queue folder clean-up, M3 wording.
+//
 
 import Cocoa
 import MP42Foundation
@@ -512,6 +517,9 @@ enum IntakeScanner {
         /// when it is brought into the Queue).
         let folder: URL?
         let files: [URL]
+        /// Subtitle files that belong to a loose video (same name, .srt); they
+        /// travel with it into its folder and are embedded, never merged.
+        var companions: [URL] = []
         /// Names, sizes and modification times of the files -- unchanged
         /// between scans means the download or copy has finished.
         let signature: String
@@ -582,16 +590,21 @@ enum IntakeScanner {
 
             mediaFiles.sort { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
 
+            // A subtitle file beside a video is not a part of the movie.
+            let split = SidecarSubtitles.partition(mediaFiles)
+            mediaFiles = split.media
+
             if depth == 0 {
                 for file in mediaFiles {
-                    result.append(Candidate(root: root, folder: nil, files: [file], signature: signature(of: [file])))
+                    let companions = SidecarSubtitles.subtitles(for: file, among: split.subtitles)
+                    result.append(Candidate(root: root, folder: nil, files: [file], companions: companions, signature: signature(of: [file] + companions)))
                 }
                 for folder in subfolders {
                     scan(folder, depth: 1, root: root)
                 }
             } else if mediaFiles.isEmpty == false {
                 if unfinished == false {
-                    result.append(Candidate(root: root, folder: directory, files: mediaFiles, signature: signature(of: mediaFiles)))
+                    result.append(Candidate(root: root, folder: directory, files: mediaFiles, signature: signature(of: mediaFiles + split.subtitles)))
                 }
             } else if depth < maximumDepth {
                 for folder in subfolders {

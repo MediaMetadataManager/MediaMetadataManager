@@ -1,6 +1,9 @@
 //
 //  QueueRelease.swift
-//  Subler
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 09/24/2026.
 //
 //  A multi-file "release" discovered by the Intake/Queue workflow (a
 //  multi-file download folder, typically) that hasn't resolved to a single,

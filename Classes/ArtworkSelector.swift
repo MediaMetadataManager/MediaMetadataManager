@@ -4,6 +4,11 @@
 //
 //  Created by Damiano Galassi on 04/08/2017.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Select All button; artwork options ordered and de-duplicated so the size
+//  variants are easier to pick.
+//
 
 import Cocoa
 import MP42Foundation

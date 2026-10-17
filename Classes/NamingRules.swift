@@ -1,6 +1,9 @@
 //
 //  NamingRules.swift
-//  Subler
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 09/27/2026.
 //
 //  A small conditional naming-rule engine for the "Filename" preferences
 //  tab's Movie template: an ordered list of NamingRule values, each a

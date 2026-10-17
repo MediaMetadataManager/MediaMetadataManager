@@ -1,6 +1,9 @@
 //
 //  IntakeFolderWatcher.swift
-//  Subler
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 09/14/2026.
 //
 //  Watches a single directory for changes using a DispatchSourceFileSystemObject
 //  on the directory's own file descriptor -- kept as its own standalone

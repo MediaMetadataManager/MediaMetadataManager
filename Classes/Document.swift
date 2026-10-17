@@ -4,6 +4,11 @@
 //
 //  Created by Damiano Galassi on 10/02/2018.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Delivery to the staging folder and Destinations rules, Media Intake
+//  feeding the Queue, searching by the approved release name, M3 wording.
+//
 
 import Cocoa
 import IOKit.pwr_mgt

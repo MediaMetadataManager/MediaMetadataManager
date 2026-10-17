@@ -1,3 +1,10 @@
+#
+#  pages.py
+#
+#             Media Metadata Manager
+#                       M3
+#  Created by: Hans Hoffmeister on 10/16/2026.
+#
 import sys, subprocess
 name=sys.argv[1]
 heads=open(f'heads_{name}.txt',encoding='utf-8').read().split('\n')

@@ -4,6 +4,10 @@
 //
 //  Created by Damiano Galassi on 20/08/2017.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Sources tab and icon, Media Intake and Media Locations tabs, Support tab.
+//
 
 import Cocoa
 

@@ -4,6 +4,10 @@
 //
 //  Created by Damiano Galassi on 13/06/2018.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Minor changes (pasteboard and archiver API updates).
+//
 
 import Cocoa
 import AVFoundation

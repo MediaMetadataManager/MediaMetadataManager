@@ -4,6 +4,11 @@
 //
 //  Created by Damiano Galassi on 10/08/2017.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Overwrite/Append existing metadata options, Fill Series Description moved
+//  to this tab, Providers text, editor for the genres you have typed.
+//
 
 import Cocoa
 import MP42Foundation
@@ -144,12 +149,34 @@ class MetadataPrefsViewController : NSViewController, NSTableViewDelegate, NSTab
         checkbox.toolTip = NSLocalizedString("When the title ends in a number or \u{201c}Part/Chapter \u{2026}\u{201d} (e.g. \u{201c}John Wick 2\u{201d}), sets Series Description to the title with that removed (\u{201c}John Wick\u{201d}). Always overwrites Series Description, and can't tell a real sequel number from one that's just part of a title (\u{201c}Ocean's 11\u{201d}).", comment: "")
         view.addSubview(checkbox)
 
+        // Opens the editor for the genres typed into the Genre box.
+        let genresButton = NSButton(title: NSLocalizedString("Edit My Genres\u{2026}", comment: "Metadata prefs button"),
+                                    target: self, action: #selector(editGenres(_:)))
+        genresButton.bezelStyle = .rounded
+        genresButton.translatesAutoresizingMaskIntoConstraints = false
+        genresButton.toolTip = NSLocalizedString("Correct or remove the genres you have typed into the Genre box. They are kept so they show up in its list.", comment: "Metadata prefs button tooltip")
+        view.addSubview(genresButton)
+
         NSLayoutConstraint.activate([
             checkbox.leadingAnchor.constraint(equalTo: appendButton.leadingAnchor),
             checkbox.topAnchor.constraint(equalTo: appendButton.bottomAnchor, constant: 8),
             view.trailingAnchor.constraint(greaterThanOrEqualTo: checkbox.trailingAnchor, constant: 20),
-            view.bottomAnchor.constraint(equalTo: checkbox.bottomAnchor, constant: 20)
+            genresButton.leadingAnchor.constraint(equalTo: appendButton.leadingAnchor),
+            genresButton.topAnchor.constraint(equalTo: checkbox.bottomAnchor, constant: 10),
+            view.bottomAnchor.constraint(equalTo: genresButton.bottomAnchor, constant: 20)
         ])
+    }
+
+    private var genreEditor: GenreEditorWindowController?
+
+    @objc private func editGenres(_ sender: Any?) {
+        guard let parent = view.window else { return }
+        let editor = GenreEditorWindowController()
+        guard let sheet = editor.window else { return }
+        genreEditor = editor
+        parent.beginSheet(sheet) { [weak self] _ in
+            self?.genreEditor = nil
+        }
     }
 
     private func updateControlsState() {
@@ -281,4 +308,171 @@ class MetadataPrefsViewController : NSViewController, NSTableViewDelegate, NSTab
         save()
     }
 
+}
+
+/// A small sheet to correct or remove the genres typed into the Genre box
+/// (see GenreList). Double-click a genre to change its spelling.
+final class GenreEditorWindowController: NSWindowController, NSTableViewDataSource, NSTableViewDelegate, NSTextFieldDelegate {
+
+    private var genres: [String]
+    private let tableView = NSTableView()
+    private var removeButton: NSButton!
+    private var hintLabel: NSTextField!
+
+    init() {
+        genres = GenreList.custom()
+
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 380, height: 340),
+                              styleMask: [.titled],
+                              backing: .buffered,
+                              defer: false)
+        window.title = NSLocalizedString("My Genres", comment: "Genre editor -> title")
+        super.init(window: window)
+
+        let intro = NSTextField(wrappingLabelWithString: NSLocalizedString("These are the genres you typed into the Genre box. Double-click one to correct it, or remove it. The standard genres cannot be changed here.", comment: "Genre editor -> description"))
+        intro.translatesAutoresizingMaskIntoConstraints = false
+        intro.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        intro.textColor = .secondaryLabelColor
+
+        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("genre"))
+        column.title = NSLocalizedString("Genre", comment: "Genre editor -> column")
+        tableView.addTableColumn(column)
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.usesAlternatingRowBackgroundColors = true
+
+        let scroll = NSScrollView()
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        scroll.documentView = tableView
+        scroll.hasVerticalScroller = true
+        scroll.borderType = .bezelBorder
+
+        hintLabel = NSTextField(labelWithString: NSLocalizedString("No genres of your own yet.", comment: "Genre editor -> empty list"))
+        hintLabel.translatesAutoresizingMaskIntoConstraints = false
+        hintLabel.textColor = .tertiaryLabelColor
+
+        let addButton = NSButton(title: "+", target: self, action: #selector(add(_:)))
+        addButton.bezelStyle = .smallSquare
+        addButton.translatesAutoresizingMaskIntoConstraints = false
+        addButton.toolTip = NSLocalizedString("Add a genre", comment: "Genre editor -> tooltip")
+        removeButton = NSButton(title: "\u{2212}", target: self, action: #selector(remove(_:)))
+        removeButton.bezelStyle = .smallSquare
+        removeButton.translatesAutoresizingMaskIntoConstraints = false
+        removeButton.toolTip = NSLocalizedString("Remove the selected genre", comment: "Genre editor -> tooltip")
+
+        let cancelButton = NSButton(title: NSLocalizedString("Cancel", comment: ""), target: self, action: #selector(cancel(_:)))
+        cancelButton.keyEquivalent = "\u{1b}"
+        cancelButton.translatesAutoresizingMaskIntoConstraints = false
+        let doneButton = NSButton(title: NSLocalizedString("Done", comment: ""), target: self, action: #selector(done(_:)))
+        doneButton.keyEquivalent = "\r"
+        doneButton.translatesAutoresizingMaskIntoConstraints = false
+
+        let content = NSView()
+        [intro, scroll, hintLabel, addButton, removeButton, cancelButton, doneButton].forEach { content.addSubview($0) }
+        window.contentView = content
+
+        NSLayoutConstraint.activate([
+            intro.topAnchor.constraint(equalTo: content.topAnchor, constant: 16),
+            intro.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 20),
+            intro.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -20),
+
+            scroll.topAnchor.constraint(equalTo: intro.bottomAnchor, constant: 12),
+            scroll.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 20),
+            scroll.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -20),
+            scroll.bottomAnchor.constraint(equalTo: addButton.topAnchor, constant: -6),
+
+            hintLabel.centerXAnchor.constraint(equalTo: scroll.centerXAnchor),
+            hintLabel.centerYAnchor.constraint(equalTo: scroll.centerYAnchor),
+
+            addButton.leadingAnchor.constraint(equalTo: scroll.leadingAnchor),
+            addButton.widthAnchor.constraint(equalToConstant: 28),
+            removeButton.leadingAnchor.constraint(equalTo: addButton.trailingAnchor, constant: 4),
+            removeButton.widthAnchor.constraint(equalToConstant: 28),
+            addButton.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -56),
+            removeButton.centerYAnchor.constraint(equalTo: addButton.centerYAnchor),
+
+            doneButton.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -20),
+            doneButton.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -16),
+            cancelButton.trailingAnchor.constraint(equalTo: doneButton.leadingAnchor, constant: -8),
+            cancelButton.centerYAnchor.constraint(equalTo: doneButton.centerYAnchor)
+        ])
+
+        updateControls()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func updateControls() {
+        removeButton.isEnabled = tableView.selectedRow != -1
+        hintLabel.isHidden = genres.isEmpty == false
+    }
+
+    // MARK: Actions
+
+    @objc private func add(_ sender: Any?) {
+        window?.makeFirstResponder(nil)
+        genres.append(NSLocalizedString("New Genre", comment: "Genre editor -> new row"))
+        tableView.reloadData()
+        let row = genres.count - 1
+        tableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        tableView.editColumn(0, row: row, with: nil, select: true)
+        updateControls()
+    }
+
+    @objc private func remove(_ sender: Any?) {
+        window?.makeFirstResponder(nil)
+        let rows = tableView.selectedRowIndexes
+        for row in rows.reversed() where genres.indices.contains(row) { genres.remove(at: row) }
+        tableView.reloadData()
+        updateControls()
+    }
+
+    @objc private func cancel(_ sender: Any?) {
+        end(with: .cancel)
+    }
+
+    @objc private func done(_ sender: Any?) {
+        window?.makeFirstResponder(nil)
+        GenreList.setCustom(genres)
+        end(with: .OK)
+    }
+
+    private func end(with response: NSApplication.ModalResponse) {
+        guard let window = window else { return }
+        window.sheetParent?.endSheet(window, returnCode: response)
+    }
+
+    // MARK: Table
+
+    func numberOfRows(in tableView: NSTableView) -> Int {
+        return genres.count
+    }
+
+    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        let identifier = NSUserInterfaceItemIdentifier("genreCell")
+        let field = tableView.makeView(withIdentifier: identifier, owner: self) as? NSTextField ?? {
+            let field = NSTextField()
+            field.identifier = identifier
+            field.isBordered = false
+            field.drawsBackground = false
+            field.isEditable = true
+            field.delegate = self
+            return field
+        }()
+        field.stringValue = genres[row]
+        return field
+    }
+
+    func tableViewSelectionDidChange(_ notification: Notification) {
+        updateControls()
+    }
+
+    func controlTextDidEndEditing(_ notification: Notification) {
+        guard let field = notification.object as? NSTextField else { return }
+        let row = tableView.row(for: field)
+        guard genres.indices.contains(row) else { return }
+        genres[row] = field.stringValue
+    }
 }

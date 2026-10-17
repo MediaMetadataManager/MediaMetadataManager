@@ -4,8 +4,39 @@
 //
 //  Created by Damiano Galassi on 28/03/2018.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Movies and TV Shows queues remember their options separately; provider,
+//  language and artwork options.
+//
 
 import Foundation
+
+/// What the Queue's metadata search does with tags a file already has.
+/// "Use Preferences" follows Preferences > Metadata (Overwrite / Append);
+/// the other three choose for the Queue alone, whatever the preferences say.
+enum ExistingTagsMode: Int {
+    case usePreferences = 0
+    case fillMissing = 1
+    case append = 2
+    case overwrite = 3
+
+    /// The flags for `MP42Metadata.merge(_:overwrite:append:)`.
+    func mergeFlags(preferencesOverwrite: Bool, preferencesAppend: Bool) -> (overwrite: Bool, append: Bool) {
+        switch self {
+        case .usePreferences: return (preferencesOverwrite, preferencesAppend)
+        case .fillMissing: return (false, false)
+        case .append: return (false, true)
+        case .overwrite: return (true, false)
+        }
+    }
+
+    /// Whether blank tags a search found are kept: the Preferences setting
+    /// for "Use Preferences", otherwise the Queue's own checkbox.
+    func keepsEmpty(queueSetting: Bool, preferencesSetting: Bool) -> Bool {
+        return self == .usePreferences ? preferencesSetting : queueSetting
+    }
+}
 
 final class QueuePreferences: NSObject {
 
@@ -30,6 +61,8 @@ final class QueuePreferences: NSObject {
     static private let SBQueueApplyColorSpaceValue: String = "SBQueueApplyColorSpaceValue"
 
     static private let SBQueueClearExistingMetadata: String = "SBQueueClearExistingMetadata"
+    static private let SBQueueExistingTags: String = "SBQueueExistingTags"
+    static private let SBQueueKeepEmptyAnnotations: String = "SBQueueKeepEmptyAnnotations"
 
     static private let SBQueueMovieProvider: String = "SBQueueMovieProvider"
     static private let SBQueueTVShowProvider: String = "SBQueueTVShowProvider"
@@ -47,6 +80,21 @@ final class QueuePreferences: NSObject {
     static private let SBQueueChangeSubtitleLanguageValue: String = "SBQueueChangeSubtitleLanguageValue"
 
     @objc dynamic var clearExistingMetadata: Bool
+
+    /// ExistingTagsMode raw value: how a search treats tags a file already has.
+    @objc dynamic var existingTags: Int
+    /// Queue's own "Keep empty annotations"; only used when existingTags is
+    /// not "Use Preferences".
+    @objc dynamic var keepEmptyAnnotations: Bool
+
+    /// The checkbox is only meaningful when the Queue decides for itself.
+    @objc dynamic var keepEmptyIsEditable: Bool {
+        return searchMetadata && existingTags != ExistingTagsMode.usePreferences.rawValue
+    }
+
+    @objc class func keyPathsForValuesAffectingKeepEmptyIsEditable() -> Set<String> {
+        return ["searchMetadata", "existingTags"]
+    }
 
     @objc dynamic var searchMetadata: Bool
     @objc dynamic var movieProvider: String
@@ -107,6 +155,9 @@ final class QueuePreferences: NSObject {
         let ud = UserDefaults.standard
 
         self.clearExistingMetadata = ud.bool(forKey: QueuePreferences.SBQueueClearExistingMetadata)
+        self.existingTags = ExistingTagsMode(rawValue: ud.integer(forKey: QueuePreferences.SBQueueExistingTags))?.rawValue
+            ?? ExistingTagsMode.usePreferences.rawValue
+        self.keepEmptyAnnotations = ud.bool(forKey: QueuePreferences.SBQueueKeepEmptyAnnotations)
 
         self.searchMetadata = ud.bool(forKey: QueuePreferences.SBQueueMetadata)
         self.movieProvider = ud.string(forKey: QueuePreferences.SBQueueMovieProvider) ?? "TheMovieDB"
@@ -195,6 +246,8 @@ final class QueuePreferences: NSObject {
                      QueuePreferences.SBQueueOptimize: false,
                      QueuePreferences.SBQueueShowDoneNotification: true,
                      QueuePreferences.SBQueueClearExistingMetadata: false,
+                     QueuePreferences.SBQueueExistingTags: 0,
+                     QueuePreferences.SBQueueKeepEmptyAnnotations: false,
                      QueuePreferences.SBQueueMovieProvider: "TheMovieDB",
                      QueuePreferences.SBQueueTVShowProvider: "TheTVDB",
                      QueuePreferences.SBQueueMovieProviderLanguage: "en",
@@ -237,6 +290,8 @@ final class QueuePreferences: NSObject {
 
     private func writeValues() {
         put(clearExistingMetadata, QueuePreferences.SBQueueClearExistingMetadata)
+        put(existingTags, QueuePreferences.SBQueueExistingTags)
+        put(keepEmptyAnnotations, QueuePreferences.SBQueueKeepEmptyAnnotations)
 
         put(searchMetadata, QueuePreferences.SBQueueMetadata)
         put(movieProvider, QueuePreferences.SBQueueMovieProvider)

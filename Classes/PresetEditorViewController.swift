@@ -4,6 +4,10 @@
 //
 //  Created by Damiano Galassi on 29/08/17.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  A Set's edits are saved immediately instead of only at quit.
+//
 
 import Cocoa
 

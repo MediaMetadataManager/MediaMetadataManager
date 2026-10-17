@@ -1,6 +1,9 @@
 //
 //  SingleFileMetadataReviewWindowController.swift
-//  Subler
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 10/01/2026.
 //
 //  Addresses the "Single-Movie vs. Multi-Movie Interface Architecture"
 //  design doc's gap #1 ("single-file curation has no dedicated review

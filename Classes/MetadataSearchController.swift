@@ -4,6 +4,12 @@
 //
 //  Created by Damiano Galassi on 31/07/2017.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Shows full metadata before Add and flags fields a merge changed; never
+//  searches on an empty title; uses the real file name for merged files;
+//  sturdier results table.
+//
 
 import Cocoa
 import MP42Foundation

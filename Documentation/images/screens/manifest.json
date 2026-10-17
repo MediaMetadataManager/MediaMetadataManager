@@ -1,300 +1,361 @@
 {
-  "about": "Screenshot manifest for the M3 documentation. One entry per screenshot. Save each PNG in Documentation/images/screens/ under exactly the name given in 'file'. apply_screenshots.py inserts the image into the guides at the 'after' anchor when the file exists, and the rebuild step regenerates the Word and PDF copies.",
-  "screens": [
+ "about": "Screenshot manifest for the M3 documentation. One entry per screenshot. Save each PNG in Documentation/images/screens/ under exactly the name given in 'file'. apply_screenshots.py inserts the image into the guides at the 'after' anchor when the file exists, and the rebuild step regenerates the Word and PDF copies.",
+ "screens": [
+  {
+   "file": "welcome-window.png",
+   "show": "The Welcome window as it appears at launch, with Tag One File, Tag Many Files and Scan Library for Missing Metadata visible.",
+   "setup": "Launch M3 with no files open. Window at its default size.",
+   "placements": [
     {
-      "file": "welcome-window.png",
-      "show": "The Welcome window as it appears at launch, with Tag One File, Tag Many Files and Scan Library for Missing Metadata visible.",
-      "setup": "Launch M3 with no files open. Window at its default size.",
-      "placements": [
-        {
-          "doc": "Getting-Started",
-          "after": "1. On the Welcome window choose",
-          "caption": "The Welcome window. Choose Tag One File to tag a single file."
-        },
-        {
-          "doc": "User-Guide",
-          "after": "On first launch you will see the **Welcome window**",
-          "caption": "The Welcome window."
-        }
-      ],
-      "sources": [
-        "Classes/WelcomeWindowController*"
-      ]
+     "doc": "Getting-Started",
+     "after": "1. On the Welcome window choose",
+     "caption": "The Welcome window. Choose Tag One File to tag a single file."
     },
     {
-      "file": "queue-movies-tab.png",
-      "show": "The Queue window on the Movies tab with four or five rows showing different states (Waiting for naming, Waiting for merge order, Ready, Done) and the Name, Status, Size and Type columns. Toolbar visible.",
-      "setup": "Use generic demo files (see the privacy rules). Include one folder row.",
-      "placements": [
-        {
-          "doc": "Getting-Started",
-          "after": "M3 has four places you will use:",
-          "caption": "The Queue window. Each row is one file or folder waiting for you."
-        },
-        {
-          "doc": "User-Guide",
-          "after": "Choose **Window → Show Movies Queue**",
-          "caption": "The Queue window with its Movies and TV Shows tabs, toolbar and columns."
-        }
-      ],
-      "sources": [
-        "Classes/Queue*",
-        "Base.lproj/Queue*"
-      ]
-    },
-    {
-      "file": "queue-tv-tab.png",
-      "show": "The TV Shows tab with two or three episode rows, ideally right after episodes were added on the Movies tab, with the status line at the bottom reading that TV episodes were added to the TV Shows tab.",
-      "setup": "Drag two files named like S01E01 and S01E02 onto the Movies tab, then switch to the TV Shows tab.",
-      "placements": [
-        {
-          "doc": "User-Guide",
-          "after": "**Handle TV episodes.**",
-          "caption": "TV episodes added on the Movies tab are moved to the TV Shows tab, and the status line says so."
-        }
-      ],
-      "sources": [
-        "Classes/Queue*",
-        "Base.lproj/Queue*"
-      ]
-    },
-    {
-      "file": "queue-folder-expanded.png",
-      "show": "A folder row opened with its disclosure triangle so the files inside are listed, one of them showing Merging with a percentage if you can catch it.",
-      "setup": "Add a folder holding two or three parts of one movie, then click the triangle.",
-      "placements": [
-        {
-          "doc": "User-Guide",
-          "after": "**Folders.** A folder that is still waiting",
-          "caption": "A folder row opened to show the files inside."
-        }
-      ],
-      "sources": [
-        "Classes/Queue*",
-        "Base.lproj/Queue*"
-      ]
-    },
-    {
-      "file": "queue-options-panel.png",
-      "show": "The Queue window with the Settings (Queue Options) panel revealed.",
-      "setup": "Click Settings in the Queue toolbar.",
-      "placements": [
-        {
-          "doc": "User-Guide",
-          "after": "The **Settings** button reveals the options",
-          "caption": "The Queue Options panel."
-        }
-      ],
-      "sources": [
-        "Base.lproj/QueueOptions.xib",
-        "Classes/QueuePreferences*",
-        "Classes/QueuePreset*"
-      ]
-    },
-    {
-      "file": "naming-review-sheet.png",
-      "show": "The Naming Review sheet open over the Queue with a suggested name filled in, plus the Approve and Reject buttons.",
-      "setup": "Double-click a row that is Waiting for naming.",
-      "placements": [
-        {
-          "doc": "Getting-Started",
-          "after": "3. **Double-click the row.**",
-          "caption": "The Naming Review sheet."
-        },
-        {
-          "doc": "User-Guide",
-          "after": "**Naming Review.** Shows the original folder name",
-          "caption": "The Naming Review sheet."
-        }
-      ],
-      "sources": [
-        "Classes/NamingReviewWindowController*",
-        "Classes/NamingRules*"
-      ]
-    },
-    {
-      "file": "metadata-review-sheet.png",
-      "show": "The Metadata Review sheet with a result selected, the preview on the right and the Search with menu visible.",
-      "setup": "Double-click a row that is Waiting for metadata review.",
-      "placements": [
-        {
-          "doc": "User-Guide",
-          "after": "**Metadata Review.** Appears for a single-file release",
-          "caption": "The Metadata Review sheet."
-        }
-      ],
-      "sources": [
-        "Classes/SingleFileMetadataReviewWindowController*",
-        "Classes/MultiProviderSearchResultsWindowController*"
-      ]
-    },
-    {
-      "file": "merge-review-sheet.png",
-      "show": "The Merge Review sheet listing three parts with their tick boxes, in play order.",
-      "setup": "Double-click a row that is Waiting for merge order.",
-      "placements": [
-        {
-          "doc": "Getting-Started",
-          "after": "   - **Several parts of one movie:**",
-          "caption": "The Merge Review sheet: drag the parts into play order."
-        },
-        {
-          "doc": "User-Guide",
-          "after": "**Merge Review.** Lists the parts.",
-          "caption": "The Merge Review sheet."
-        }
-      ],
-      "sources": [
-        "Classes/FileMerge/MergeReorder*"
-      ]
-    },
-    {
-      "file": "editor-window.png",
-      "show": "The Editor (single-file window) with a file open on the Metadata tab and the toolbar showing Open, Save, Save & Close, Search Metadata, Send to Queue and Queue.",
-      "setup": "File > Open a demo file.",
-      "placements": [
-        {
-          "doc": "Getting-Started",
-          "after": "2. In the editor, click **Search Metadata**",
-          "caption": "The Editor. Search Metadata is in the toolbar."
-        },
-        {
-          "doc": "User-Guide",
-          "after": "Opening a file with **File → Open…**",
-          "caption": "The Editor window."
-        }
-      ],
-      "sources": [
-        "Classes/DocumentWindowController*",
-        "Classes/DocumentToolbarDelegate*"
-      ]
-    },
-    {
-      "file": "editor-search-metadata.png",
-      "show": "The Search Metadata sheet with a result selected and its full metadata and artwork shown on the right.",
-      "setup": "In the Editor click Search Metadata and pick a result.",
-      "placements": [
-        {
-          "doc": "User-Guide",
-          "after": "### Searching for metadata",
-          "caption": "The Search Metadata sheet with a result previewed."
-        }
-      ],
-      "sources": [
-        "Classes/MetadataSearchViewController*",
-        "Classes/MetadataSearchController*",
-        "Base.lproj/MetadataSearch.xib"
-      ]
-    },
-    {
-      "file": "prefs-media-intake.png",
-      "show": "Preferences > Sources > Media Intake showing the Incoming Folders list, the option checkboxes, Scan Now and Reset Scan.",
-      "setup": "Use a neutral demo folder path, not your home folder.",
-      "placements": [
-        {
-          "doc": "Getting-Started",
-          "after": "2. Under **Incoming Folders**",
-          "caption": "Preferences > Sources > Media Intake."
-        },
-        {
-          "doc": "User-Guide",
-          "after": "All of these are in **Preferences → Sources → Media Intake**",
-          "caption": "Preferences > Sources > Media Intake."
-        }
-      ],
-      "sources": [
-        "Classes/MediaIntake*"
-      ]
-    },
-    {
-      "file": "prefs-media-locations.png",
-      "show": "Preferences > Sources > Media Locations showing the staging folder, Deliver automatically and the rules list.",
-      "setup": "Neutral demo folder paths. Add one example rule if you like.",
-      "placements": [
-        {
-          "doc": "Getting-Started",
-          "after": "3. Open the **Media Locations** sub-tab",
-          "caption": "Preferences > Sources > Media Locations."
-        },
-        {
-          "doc": "User-Guide",
-          "after": "**Preferences → Sources → Media Locations** decides",
-          "caption": "Preferences > Sources > Media Locations."
-        }
-      ],
-      "sources": [
-        "Classes/DestinationsViewController*",
-        "Classes/DeliveryRules*"
-      ]
-    },
-    {
-      "file": "prefs-providers.png",
-      "show": "Preferences > Sources > Providers with the built-in providers ticked for Movies and TV Shows.",
-      "setup": "Take it with NO third-party plugins installed (a Plugins section appears when one is), or crop the plugin rows out.",
-      "placements": [
-        {
-          "doc": "Getting-Started",
-          "after": "5. Still in Preferences, open **Sources → Providers**",
-          "caption": "Preferences > Sources > Providers."
-        },
-        {
-          "doc": "User-Guide",
-          "after": "**Built-in providers.**",
-          "caption": "Preferences > Sources > Providers."
-        }
-      ],
-      "sources": [
-        "Classes/SourcesPrefsViewController*",
-        "Classes/CustomSourcesListViewController*"
-      ]
-    },
-    {
-      "file": "prefs-filename-rules.png",
-      "show": "Preferences > Filename with the rule list for Movies and the rule editor visible.",
-      "setup": "Default rules are fine.",
-      "placements": [
-        {
-          "doc": "User-Guide",
-          "after": "Naming rules decide the output file name.",
-          "caption": "Preferences > Filename: naming rules."
-        }
-      ],
-      "sources": [
-        "Classes/Naming*",
-        "Classes/*Filename*",
-        "Classes/*Rule*"
-      ]
-    },
-    {
-      "file": "library-scan-window.png",
-      "show": "The Library scan window after a scan, listing files with missing metadata.",
-      "setup": "Scan a small demo folder where two files are missing a tag.",
-      "placements": [
-        {
-          "doc": "User-Guide",
-          "after": "Choose **Scan Library for Missing Metadata**",
-          "caption": "The library scan window."
-        }
-      ],
-      "sources": [
-        "Classes/*LibraryScan*",
-        "Classes/*Library*Scan*"
-      ]
-    },
-    {
-      "file": "message-log.png",
-      "show": "The Message Log window with a few ordinary lines.",
-      "setup": "Window > Show Message Log. Make sure no API keys, usernames or full personal paths are visible.",
-      "placements": [
-        {
-          "doc": "User-Guide",
-          "after": "**Window → Show Message Log** shows what M3",
-          "caption": "The Message Log."
-        }
-      ],
-      "sources": [
-        "Classes/Logger*"
-      ]
+     "doc": "User-Guide",
+     "after": "On first launch you will see the **Welcome window**",
+     "caption": "The Welcome window."
     }
-  ]
+   ],
+   "sources": [
+    "Classes/WelcomeWindowController*"
+   ]
+  },
+  {
+   "file": "queue-movies-tab.png",
+   "show": "The Queue window on the Movies tab with four or five rows showing different states (Waiting for naming, Waiting for merge order, Ready, Done) and the Name, Status, Size and Type columns. Toolbar visible.",
+   "setup": "Use generic demo files (see the privacy rules). Include one folder row.",
+   "placements": [
+    {
+     "doc": "Getting-Started",
+     "after": "M3 has four places you will use:",
+     "caption": "The Queue window. Each row is one file or folder waiting for you."
+    },
+    {
+     "doc": "User-Guide",
+     "after": "Choose **Window \u2192 Show Movies Queue**",
+     "caption": "The Queue window with its Movies and TV Shows tabs, toolbar and columns."
+    }
+   ],
+   "sources": [
+    "Classes/Queue*",
+    "Base.lproj/Queue*"
+   ]
+  },
+  {
+   "file": "queue-tv-tab.png",
+   "show": "The TV Shows tab with two or three episode rows, ideally right after episodes were added on the Movies tab, with the status line at the bottom reading that TV episodes were added to the TV Shows tab.",
+   "setup": "Drag two files named like S01E01 and S01E02 onto the Movies tab, then switch to the TV Shows tab.",
+   "placements": [
+    {
+     "doc": "User-Guide",
+     "after": "**Handle TV episodes.**",
+     "caption": "TV episodes added on the Movies tab are moved to the TV Shows tab, and the status line says so."
+    }
+   ],
+   "sources": [
+    "Classes/Queue*",
+    "Base.lproj/Queue*"
+   ]
+  },
+  {
+   "file": "queue-folder-expanded.png",
+   "show": "A folder row opened with its disclosure triangle so the files inside are listed, one of them showing Merging with a percentage if you can catch it.",
+   "setup": "Add a folder holding two or three parts of one movie, then click the triangle.",
+   "placements": [
+    {
+     "doc": "User-Guide",
+     "after": "**Folders.** A folder that is still waiting",
+     "caption": "A folder row opened to show the files inside."
+    }
+   ],
+   "sources": [
+    "Classes/Queue*",
+    "Base.lproj/Queue*"
+   ]
+  },
+  {
+   "file": "queue-options-panel.png",
+   "show": "The Queue window with the Settings (Queue Options) panel revealed.",
+   "setup": "Click Settings in the Queue toolbar.",
+   "placements": [
+    {
+     "doc": "User-Guide",
+     "after": "The **Settings** button reveals the options",
+     "caption": "The Queue Options panel."
+    }
+   ],
+   "sources": [
+    "Base.lproj/QueueOptions.xib",
+    "Classes/QueuePreferences*",
+    "Classes/QueuePreset*"
+   ]
+  },
+  {
+   "file": "naming-review-sheet.png",
+   "show": "The Naming Review sheet open over the Queue with a suggested name filled in, plus the Approve and Reject buttons.",
+   "setup": "Double-click a row that is Waiting for naming.",
+   "placements": [
+    {
+     "doc": "Getting-Started",
+     "after": "3. **Double-click the row.**",
+     "caption": "The Naming Review sheet."
+    },
+    {
+     "doc": "User-Guide",
+     "after": "**Naming Review.** Shows the original folder name",
+     "caption": "The Naming Review sheet."
+    }
+   ],
+   "sources": [
+    "Classes/NamingReviewWindowController*",
+    "Classes/NamingRules*"
+   ]
+  },
+  {
+   "file": "metadata-review-sheet.png",
+   "show": "The Metadata Review sheet with a result selected, the preview on the right and the Search with menu visible.",
+   "setup": "Double-click a row that is Waiting for metadata review.",
+   "placements": [
+    {
+     "doc": "User-Guide",
+     "after": "**Metadata Review.** Appears for a single-file release",
+     "caption": "The Metadata Review sheet."
+    }
+   ],
+   "sources": [
+    "Classes/SingleFileMetadataReviewWindowController*",
+    "Classes/MultiProviderSearchResultsWindowController*"
+   ]
+  },
+  {
+   "file": "merge-review-sheet.png",
+   "show": "The Merge Review sheet listing three parts with their tick boxes, in play order.",
+   "setup": "Double-click a row that is Waiting for merge order.",
+   "placements": [
+    {
+     "doc": "Getting-Started",
+     "after": "   - **Several parts of one movie:**",
+     "caption": "The Merge Review sheet: drag the parts into play order."
+    },
+    {
+     "doc": "User-Guide",
+     "after": "**Merge Review.** Lists the parts.",
+     "caption": "The Merge Review sheet."
+    }
+   ],
+   "sources": [
+    "Classes/FileMerge/MergeReorder*"
+   ]
+  },
+  {
+   "file": "editor-window.png",
+   "show": "The Editor (single-file window) with a file open on the Metadata tab and the toolbar showing Open, Save, Save & Close, Search Metadata, Send to Queue and Queue.",
+   "setup": "File > Open a demo file.",
+   "placements": [
+    {
+     "doc": "Getting-Started",
+     "after": "2. In the editor, click **Search Metadata**",
+     "caption": "The Editor. Search Metadata is in the toolbar."
+    },
+    {
+     "doc": "User-Guide",
+     "after": "Opening a file with **File \u2192 Open\u2026**",
+     "caption": "The Editor window."
+    }
+   ],
+   "sources": [
+    "Classes/DocumentWindowController*",
+    "Classes/DocumentToolbarDelegate*"
+   ]
+  },
+  {
+   "file": "editor-search-metadata.png",
+   "show": "The Search Metadata sheet with a result selected and its full metadata and artwork shown on the right.",
+   "setup": "In the Editor click Search Metadata and pick a result.",
+   "placements": [
+    {
+     "doc": "User-Guide",
+     "after": "### Searching for metadata",
+     "caption": "The Search Metadata sheet with a result previewed."
+    }
+   ],
+   "sources": [
+    "Classes/MetadataSearchViewController*",
+    "Classes/MetadataSearchController*",
+    "Base.lproj/MetadataSearch.xib"
+   ]
+  },
+  {
+   "file": "prefs-media-intake.png",
+   "show": "Preferences > Sources > Media Intake showing the Incoming Folders list, the option checkboxes, Scan Now and Reset Scan.",
+   "setup": "Use a neutral demo folder path, not your home folder.",
+   "placements": [
+    {
+     "doc": "Getting-Started",
+     "after": "2. Under **Incoming Folders**",
+     "caption": "Preferences > Sources > Media Intake."
+    },
+    {
+     "doc": "User-Guide",
+     "after": "All of these are in **Preferences \u2192 Sources \u2192 Media Intake**",
+     "caption": "Preferences > Sources > Media Intake."
+    }
+   ],
+   "sources": [
+    "Classes/MediaIntake*"
+   ]
+  },
+  {
+   "file": "prefs-media-locations.png",
+   "show": "Preferences > Sources > Media Locations showing the staging folder, Deliver automatically and the rules list.",
+   "setup": "Neutral demo folder paths. Add one example rule if you like.",
+   "placements": [
+    {
+     "doc": "Getting-Started",
+     "after": "3. Open the **Media Locations** sub-tab",
+     "caption": "Preferences > Sources > Media Locations."
+    },
+    {
+     "doc": "User-Guide",
+     "after": "**Preferences \u2192 Sources \u2192 Media Locations** decides",
+     "caption": "Preferences > Sources > Media Locations."
+    }
+   ],
+   "sources": [
+    "Classes/DestinationsViewController*",
+    "Classes/DeliveryRules*"
+   ]
+  },
+  {
+   "file": "prefs-providers.png",
+   "show": "Preferences > Sources > Providers with the built-in providers ticked for Movies and TV Shows.",
+   "setup": "Take it with NO third-party plugins installed (a Plugins section appears when one is), or crop the plugin rows out.",
+   "placements": [
+    {
+     "doc": "Getting-Started",
+     "after": "5. Still in Preferences, open **Sources \u2192 Providers**",
+     "caption": "Preferences > Sources > Providers."
+    },
+    {
+     "doc": "User-Guide",
+     "after": "**Built-in providers.**",
+     "caption": "Preferences > Sources > Providers."
+    }
+   ],
+   "sources": [
+    "Classes/SourcesPrefsViewController*",
+    "Classes/CustomSourcesListViewController*"
+   ]
+  },
+  {
+   "file": "prefs-filename-rules.png",
+   "show": "Preferences > Filename with the rule list for Movies and the rule editor visible.",
+   "setup": "Default rules are fine.",
+   "placements": [
+    {
+     "doc": "User-Guide",
+     "after": "Naming rules decide the output file name.",
+     "caption": "Preferences > Filename: naming rules."
+    }
+   ],
+   "sources": [
+    "Classes/Naming*",
+    "Classes/*Filename*",
+    "Classes/*Rule*"
+   ]
+  },
+  {
+   "file": "library-scan-window.png",
+   "show": "The Library scan window after a scan, listing files with missing metadata.",
+   "setup": "Scan a small demo folder where two files are missing a tag.",
+   "placements": [
+    {
+     "doc": "User-Guide",
+     "after": "Choose **Scan Library for Missing Metadata**",
+     "caption": "The library scan window."
+    }
+   ],
+   "sources": [
+    "Classes/*LibraryScan*",
+    "Classes/*Library*Scan*"
+   ]
+  },
+  {
+   "file": "message-log.png",
+   "show": "The Message Log window with a few ordinary lines.",
+   "setup": "Window > Show Message Log. Make sure no API keys, usernames or full personal paths are visible.",
+   "placements": [
+    {
+     "doc": "User-Guide",
+     "after": "**Window \u2192 Show Message Log** shows what M3",
+     "caption": "The Message Log."
+    }
+   ],
+   "sources": [
+    "Classes/Logger*"
+   ]
+  },
+  {
+   "file": "prefs-general.png",
+   "show": "Preferences > General.",
+   "setup": "Default settings.",
+   "placements": [
+    {
+     "doc": "User-Guide",
+     "after": "At-launch behavior, whether the window remembers its size",
+     "caption": "Preferences > General."
+    }
+   ],
+   "sources": [
+    "Classes/GeneralPrefsViewController*"
+   ]
+  },
+  {
+   "file": "prefs-metadata.png",
+   "show": "Preferences > Metadata with the annotation mapping and the Keep empty, Overwrite and Append checkboxes.",
+   "setup": "Movie type selected.",
+   "placements": [
+    {
+     "doc": "User-Guide",
+     "after": "Choose which tags are shown for Movies and TV Shows",
+     "caption": "Preferences > Metadata."
+    }
+   ],
+   "sources": [
+    "Classes/MetadataPrefsViewController*"
+   ]
+  },
+  {
+   "file": "queue-run-time.png",
+   "show": "The Run the queue for how long? sheet over the Queue.",
+   "setup": "Click Start with files waiting.",
+   "placements": [
+    {
+     "doc": "User-Guide",
+     "after": "The toolbar's display mode (icon, icon and text, or text only)",
+     "caption": "Start asks how long to run the Queue."
+    }
+   ],
+   "sources": [
+    "Classes/Queue*"
+   ]
+  },
+  {
+   "file": "queue-library-scan-auto-editing.png",
+   "show": "The Queue working through files sent from the Library scan: finished rows show Edit and Info.",
+   "setup": "Send a few files from the scan and click Start.",
+   "placements": [
+    {
+     "doc": "User-Guide",
+     "after": "To fix the gaps, right-click a tag cell",
+     "caption": "Files sent from the scan are edited where they sit."
+    }
+   ],
+   "sources": [
+    "Classes/Queue*",
+    "Classes/LibraryScan*"
+   ]
+  }
+ ]
 }

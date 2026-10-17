@@ -1,6 +1,9 @@
 //
 //  MP42ConcatImporter.m
-//  MP42Foundation
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 09/21/2026.
 //
 
 #import "MP42ConcatImporter.h"

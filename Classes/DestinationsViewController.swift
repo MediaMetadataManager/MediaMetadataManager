@@ -1,6 +1,10 @@
 //
 //  DestinationsViewController.swift
 //
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 10/10/2026.
+//
 //  The "Media Locations" tab (in Preferences > Sources): where a finished
 //  file is delivered. The default destination is the Automatically Add to
 //  iTunes/TV folder(s); Movies and TV Shows each have their own ordered

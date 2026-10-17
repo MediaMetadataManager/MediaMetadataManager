@@ -21,6 +21,9 @@ This guide gets you from a fresh install to your first finished file in about te
 
 M3 has four places you will use:
 
+<!-- screen:queue-movies-tab.png:Getting-Started -->
+![The Queue window. Each row is one file or folder waiting for you.](images/screens/queue-movies-tab.png)
+
 | Window | What it is for |
 |---|---|
 | **Queue: Movies tab** | The home of your work. Every file or folder waiting for naming, tagging or merging is one row. |
@@ -40,6 +43,15 @@ Work flows in one direction: **Incoming Folder → Queue → (review where neede
 4. Leave the other options at their defaults for now. Every option is off or conservative by default, so nothing happens behind your back.
 5. Still in Preferences, open **Sources → Providers** and make sure the metadata providers you want are ticked for **Movies** and **TV Shows**.
 
+<!-- screen:prefs-media-intake.png:Getting-Started -->
+![Preferences > Sources > Media Intake.](images/screens/prefs-media-intake.png)
+
+<!-- screen:prefs-media-locations.png:Getting-Started -->
+![Preferences > Sources > Media Locations.](images/screens/prefs-media-locations.png)
+
+<!-- screen:prefs-providers.png:Getting-Started -->
+![Preferences > Sources > Providers.](images/screens/prefs-providers.png)
+
 > **Tip:** Hover over any option in the Media Intake tab for a plain-language explanation of what it does.
 
 # Your first file, the quick way (single file)
@@ -50,6 +62,12 @@ Use this when you just want to tag one file.
 2. In the editor, click **Search Metadata** in the toolbar. **Do not skip this step** — a file saved with no title tagged keeps its original name.
 3. Pick the best match from the results. Title, description, cast and artwork appear on the right.
 4. Click **Save**, or **Save & Close** to finish in one click.
+
+<!-- screen:welcome-window.png:Getting-Started -->
+![The Welcome window. Choose Tag One File to tag a single file.](images/screens/welcome-window.png)
+
+<!-- screen:editor-window.png:Getting-Started -->
+![The Editor. Search Metadata is in the toolbar.](images/screens/editor-window.png)
 
 **Good to know:** the file is changed in place and then moved into your Ready for Media Library folder. M3 does not keep the original and nothing goes to the Trash. If you may want the old version back, copy the file first.
 
@@ -65,6 +83,12 @@ Use this for a folder of downloads.
    - **Several parts of one movie:** double-click the row to open the *Merge Review* sheet, drag the parts into play order and confirm. M3 joins them without re-encoding and adds a chapter at each join.
 5. Click **Start** in the Queue toolbar. M3 writes the file, fetches metadata and artwork, tags it, and moves the folder into **Ready for Media Library**.
 6. Open the Ready folder and check the result. That is your final checkpoint before the file goes to Plex, Jellyfin, Apple TV or wherever your library lives.
+
+<!-- screen:naming-review-sheet.png:Getting-Started -->
+![The Naming Review sheet.](images/screens/naming-review-sheet.png)
+
+<!-- screen:merge-review-sheet.png:Getting-Started -->
+![The Merge Review sheet: drag the parts into play order.](images/screens/merge-review-sheet.png)
 
 # Turn on the time-savers (optional)
 

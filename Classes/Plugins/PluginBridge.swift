@@ -1,6 +1,9 @@
 //
 //  PluginBridge.swift
-//  Subler
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 09/20/2026.
 //
 //  See the header comment on M3MetadataPlugin.swift for why this
 //  class exists: a loaded plugin's principal class can never be safely

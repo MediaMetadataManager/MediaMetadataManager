@@ -5,6 +5,11 @@
 //  Created by Damiano Galassi on 06/02/09.
 //  Copyright 2022 Damiano Galassi. All rights reserved.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Merging tags can append cover art instead of skipping it; existing cover
+//  art is kept when not overwriting.
+//
 
 #import "MP42Metadata.h"
 #import "MP42PrivateUtilities.h"

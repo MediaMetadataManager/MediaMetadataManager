@@ -1,6 +1,9 @@
 //
 //  ReleaseFilenameParser.swift
-//  Subler
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 09/26/2026.
 //
 //  Parses scene-style release filenames (the naming convention widely
 //  used by scene/release groups, regardless of how a given file actually
@@ -818,5 +821,40 @@ enum SeriesTitleDetector {
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
         return base.isEmpty ? nil : base
+    }
+}
+
+
+/// Folders named for a TV season ("Season 1", "Series 02", "S03"), the way
+/// store purchases and most libraries lay out a show. Their files often have
+/// no episode marker in the name, so the folder name is the only clue.
+enum SeasonFolderName {
+
+    private static let regex = try! NSRegularExpression(
+        pattern: "^(?:(?:season|series)[ ._-]*|s)0*([0-9]{1,3})(?:\\s*[\\(\\[].*)?$",
+        options: [.caseInsensitive])
+
+    /// The season number if `name` is a season folder name, otherwise nil.
+    static func seasonNumber(in name: String) -> Int? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let range = NSRange(trimmed.startIndex..., in: trimmed)
+        guard let match = regex.firstMatch(in: trimmed, options: [], range: range),
+              let numberRange = Range(match.range(at: 1), in: trimmed) else { return nil }
+        return Int(trimmed[numberRange])
+    }
+
+    /// True when the file sits directly inside a season folder.
+    static func isInsideSeasonFolder(_ fileURL: URL) -> Bool {
+        return seasonNumber(in: fileURL.deletingLastPathComponent().lastPathComponent) != nil
+    }
+
+    /// What the Queue shows for a folder: a season folder is shown with the
+    /// folder above it, so the show's name is visible ("Show - Season 1").
+    static func displayName(forFolder folder: URL) -> String {
+        let name = folder.lastPathComponent
+        guard seasonNumber(in: name) != nil else { return name }
+        let parent = folder.deletingLastPathComponent().lastPathComponent
+        if parent.isEmpty || parent == "/" || parent == name { return name }
+        return parent + " \u{2013} " + name
     }
 }

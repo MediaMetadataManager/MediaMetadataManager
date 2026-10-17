@@ -1,3 +1,11 @@
+//
+//  ArtworkOrientationTests.swift
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 10/11/2026.
+//
+
 import XCTest
 import AppKit
 @testable import M3

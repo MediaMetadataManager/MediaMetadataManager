@@ -1,6 +1,9 @@
 //
 //  QueueRow.swift
-//  Subler
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 09/24/2026.
 //
 //  One row in the Queue's table, wrapping either a plain, already-ready
 //  QueueItem (today's manual drag-and-drop / AppleScript path, completely
@@ -24,6 +27,7 @@
 //
 
 import Cocoa
+import MP42Foundation
 
 @objc(SBQueueRow) final class QueueRow: NSObject, NSSecureCoding {
 
@@ -112,6 +116,9 @@ enum QueueSortColumn: String {
     case status
     case size
     case kind
+    /// One of the tag columns (files sent from the Library scan). Which tag
+    /// is decided by the entries' `tagText`.
+    case tag
 }
 
 /// What the sorter needs to know about one row. Kept free of QueueItem and
@@ -128,6 +135,9 @@ struct QueueSortEntry {
     var added: Int = 0
     /// A folder header and the files added from that folder share this value.
     var group: String?
+    /// The value of the tag being sorted by (see QueueSortColumn.tag); empty
+    /// when the file has none, which sorts first.
+    var tagText: String = ""
 }
 
 enum QueueSorter {
@@ -209,6 +219,14 @@ enum QueueSorter {
             case .orderedDescending: return 1
             case .orderedSame: return byName()
             }
+        case .tag:
+            // A file with no value comes first, so the gaps gather at one end.
+            if x.tagText.isEmpty != y.tagText.isEmpty { return x.tagText.isEmpty ? -1 : 1 }
+            switch x.tagText.localizedStandardCompare(y.tagText) {
+            case .orderedAscending: return -1
+            case .orderedDescending: return 1
+            case .orderedSame: return byName()
+            }
         }
     }
 }
@@ -217,7 +235,7 @@ extension QueueRow {
 
     /// The name the Name column shows.
     var displayName: String {
-        if let folderHeaderURL = folderHeaderURL { return folderHeaderURL.lastPathComponent }
+        if let folderHeaderURL = folderHeaderURL { return SeasonFolderName.displayName(forFolder: folderHeaderURL) }
         if let item = effectiveItem { return item.fileURL.lastPathComponent }
         if let release = release { return release.approvedName ?? release.folderURL.lastPathComponent }
         return ""
@@ -305,7 +323,7 @@ extension QueueRow {
         return item?.sourceFolderURL?.path
     }
 
-    func sortEntry(sizes: [URL: Int64]) -> QueueSortEntry {
+    func sortEntry(sizes: [URL: Int64], tagText: String = "") -> QueueSortEntry {
         let summary = statusSummary
         let urls = sizeSourceURLs
         let total = urls.reduce(Int64(0)) { $0 + max(sizes[$1] ?? 0, 0) }
@@ -316,7 +334,8 @@ extension QueueRow {
                               kind: kindText,
                               isHeader: folderHeaderURL != nil,
                               added: addedNumber,
-                              group: sortGroup)
+                              group: sortGroup,
+                              tagText: tagText)
     }
 }
 
@@ -416,18 +435,24 @@ struct QueueOutlineLayout: Equatable {
     }
 
     private(set) var entries: [Entry] = []
-    private var firstTableRow: [Int] = []
+    private var firstTableRow: [Int?] = []
     private let queueCount: Int
 
     /// - Parameters:
     ///   - rowCount: how many rows the Queue holds.
     ///   - expanded: queue indexes of the folder rows that are open.
+    ///   - hidden: queue indexes of rows that are not shown, such as the
+    ///     files under a folder header that has been closed.
     ///   - fileCount: how many files the folder row at a queue index lists.
-    init(rowCount: Int, expanded: Set<Int>, fileCount: (Int) -> Int) {
+    init(rowCount: Int, expanded: Set<Int>, hidden: Set<Int> = [], fileCount: (Int) -> Int) {
         queueCount = rowCount
         entries.reserveCapacity(rowCount)
         firstTableRow.reserveCapacity(rowCount)
         for index in 0..<rowCount {
+            if hidden.contains(index) {
+                firstTableRow.append(nil)
+                continue
+            }
             firstTableRow.append(entries.count)
             entries.append(.row(queueIndex: index))
             if expanded.contains(index) {
@@ -440,8 +465,8 @@ struct QueueOutlineLayout: Equatable {
 
     var count: Int { return entries.count }
 
-    /// True when at least one folder is open, so table rows and queue
-    /// indexes no longer match.
+    /// True when at least one folder is open or a row is hidden, so table
+    /// rows and queue indexes no longer match.
     var hasExpansions: Bool { return entries.count != queueCount }
 
     func entry(atTableRow row: Int) -> Entry? {
@@ -463,7 +488,8 @@ struct QueueOutlineLayout: Equatable {
         return false
     }
 
-    /// Where a Queue row is drawn. Nil when the index is out of range.
+    /// Where a Queue row is drawn. Nil when the index is out of range or the
+    /// row is hidden.
     func tableRow(forQueueIndex index: Int) -> Int? {
         return firstTableRow.indices.contains(index) ? firstTableRow[index] : nil
     }
@@ -513,6 +539,308 @@ struct QueueOutlineLayout: Equatable {
         switch entries[row] {
         case .row(let index): return index
         case .file(let parent, _): return parent + 1
+        }
+    }
+}
+
+
+/// Folder groups in the Queue: a header row followed by one row per file.
+enum QueueFolderGroups {
+
+    /// Indexes of the file rows that belong to the header at `headerIndex`.
+    static func childIndexes(ofHeaderAt headerIndex: Int, in rows: [QueueRow]) -> [Int] {
+        var result: [Int] = []
+        var j = headerIndex + 1
+        while j < rows.count, rows[j].folderHeaderURL == nil, rows[j].item?.sourceFolderURL != nil {
+            result.append(j)
+            j += 1
+        }
+        return result
+    }
+
+    /// What Remove should take out for the selected rows. Selecting a folder
+    /// header takes its files with it. Rows that cannot be removed right now
+    /// (`keep`, such as a file that is being processed) stay, and a header
+    /// stays while any of its files does. A header whose files are all gone
+    /// is removed too, as before.
+    static func indexesToRemove(selected: IndexSet, rows: [QueueRow], keep: (QueueRow) -> Bool) -> IndexSet {
+        var result = selected
+        for index in selected where rows[index].folderHeaderURL != nil {
+            result.formUnion(IndexSet(childIndexes(ofHeaderAt: index, in: rows)))
+        }
+        for index in Array(result) where keep(rows[index]) {
+            result.remove(index)
+        }
+        for index in Array(result) where rows[index].folderHeaderURL != nil {
+            if childIndexes(ofHeaderAt: index, in: rows).contains(where: { result.contains($0) == false }) {
+                result.remove(index)
+            }
+        }
+        return result
+    }
+}
+
+
+/// Keeps the same file from being queued twice.
+enum QueueDuplicates {
+
+    /// How a file is recognised: its full path, tidied.
+    static func key(for url: URL) -> String {
+        return url.standardizedFileURL.path
+    }
+
+    /// The source files of rows that are still to be processed. A row that is
+    /// already completed does not count, so a finished file can be run again.
+    static func sourcePaths(of rows: [QueueRow]) -> Set<String> {
+        var paths = Set<String>()
+        for row in rows {
+            if let item = row.effectiveItem {
+                if item.status != .completed { paths.insert(key(for: item.fileURL)) }
+            } else if let release = row.release, release.stage != .done {
+                release.sourceFileURLs.forEach { paths.insert(key(for: $0)) }
+            }
+        }
+        return paths
+    }
+}
+
+/// Finds the folders that hold the media files of something dropped or added
+/// by hand. A show folder with Season subfolders ("Show/Season 1/...") holds
+/// no media files itself; the files are one level down, so each Season
+/// folder becomes its own group in the Queue.
+enum QueueMediaFolders {
+
+    /// How many folder levels below the one dropped are searched.
+    static let maxDepth = 3
+
+    /// `folder` itself when it directly holds media files, then every
+    /// subfolder (down to `maxDepth` levels) that does, in natural name order.
+    /// Hidden items and packages are skipped.
+    static func folders(startingAt folder: URL,
+                        maxDepth: Int = QueueMediaFolders.maxDepth,
+                        isMedia: (URL) -> Bool) -> [URL] {
+        var found: [URL] = []
+        collect(folder, depth: 0, maxDepth: maxDepth, isMedia: isMedia, into: &found)
+        return found
+    }
+
+    private static func collect(_ folder: URL, depth: Int, maxDepth: Int, isMedia: (URL) -> Bool, into found: inout [URL]) {
+        let keys: [URLResourceKey] = [.isDirectoryKey, .isPackageKey]
+        guard let children = try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: keys, options: [.skipsHiddenFiles]) else { return }
+
+        var hasMedia = false
+        var subfolders: [URL] = []
+        for child in children {
+            let values = try? child.resourceValues(forKeys: Set(keys))
+            if values?.isDirectory == true {
+                if values?.isPackage != true { subfolders.append(child) }
+            } else if isMedia(child) {
+                hasMedia = true
+            }
+        }
+
+        if hasMedia { found.append(folder) }
+        guard depth < maxDepth else { return }
+
+        subfolders.sort { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
+        for subfolder in subfolders {
+            collect(subfolder, depth: depth + 1, maxDepth: maxDepth, isMedia: isMedia, into: &found)
+        }
+    }
+}
+
+/// Decides which Queue tab a file added by hand belongs on.
+enum QueueTabRouting {
+
+    /// True when `url` belongs on the tab it was added to: episodes on the TV
+    /// Shows tab, everything else on the Movies tab.
+    static func belongs(_ url: URL, onTVShowsTab: Bool) -> Bool {
+        return QueueController.isTVEpisodeFile(url) == onTVShowsTab
+    }
+
+    /// Splits files into those that stay on the tab they were added to and
+    /// those that move to the other tab.
+    static func split(_ files: [URL], addedToTVShowsTab: Bool) -> (stay: [URL], move: [URL]) {
+        var stay: [URL] = []
+        var move: [URL] = []
+        for file in files {
+            if belongs(file, onTVShowsTab: addedToTVShowsTab) { stay.append(file) } else { move.append(file) }
+        }
+        return (stay, move)
+    }
+
+    /// The status line text for `count` files that went to the other tab.
+    static func statusMessage(movedCount count: Int, addedToTVShowsTab: Bool) -> String {
+        if addedToTVShowsTab {
+            return String.localizedStringWithFormat(NSLocalizedString("%lu movie(s) were added to the Movies tab.", comment: "Queue -> files that do not look like TV episodes were put on the Movies tab"), count)
+        }
+        return String.localizedStringWithFormat(NSLocalizedString("%lu TV episode(s) were added to the TV Shows tab.", comment: "Queue -> files that look like TV episodes were put on the TV Shows tab"), count)
+    }
+}
+
+/// Subtitle files that sit next to a video (an .srt beside an .mp4). They are
+/// not parts of the movie: they are never merged, and they are embedded in
+/// the finished file.
+enum SidecarSubtitles {
+
+    static let extensions: Set<String> = ["srt", "ass", "ssa"]
+
+    static func isSubtitle(_ url: URL) -> Bool {
+        return extensions.contains(url.pathExtension.lowercased())
+    }
+
+    /// Splits `files` into the video/audio files and the subtitle files. When
+    /// there is nothing but subtitle files they are all treated as media, as
+    /// before, so a folder of subtitles alone is not silently ignored.
+    static func partition(_ files: [URL]) -> (media: [URL], subtitles: [URL]) {
+        let media = files.filter { isSubtitle($0) == false }
+        if media.isEmpty { return (files, []) }
+        return (media, files.filter(isSubtitle))
+    }
+
+    /// The subtitles among `files` that belong to `video`: their names start
+    /// with the video's name ("Movie.mp4" takes "Movie.srt" and "Movie.en.srt").
+    static func subtitles(for video: URL, among files: [URL]) -> [URL] {
+        let base = video.deletingPathExtension().lastPathComponent
+        return files.filter { isSubtitle($0) && $0.deletingPathExtension().lastPathComponent.hasPrefix(base) }
+    }
+
+    /// Every subtitle file directly inside `folder`, in natural name order.
+    static func files(in folder: URL) -> [URL] {
+        let contents = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsSubdirectoryDescendants, .skipsHiddenFiles])) ?? []
+        return contents
+            .filter { isSubtitle($0) && ((try? $0.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory != true) }
+            .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
+    }
+}
+
+/// What a folder row waiting for a merge becomes when the folder is read again
+/// from disk and now holds a different number of files.
+enum ReleaseRescanStage {
+
+    /// A folder waiting for a merge order (or whose merge failed) that now holds
+    /// a single file has nothing to merge: it goes on as a single-file release,
+    /// waiting for its metadata. Anything else keeps its stage.
+    static func stage(after current: QueueRelease.Stage, fileCount: Int, hasMergedFile: Bool) -> QueueRelease.Stage {
+        switch current {
+        case .pendingMergeSelection, .mergeFailed:
+            return fileCount == 1 && hasMergedFile == false ? .pendingMetadata : current
+        default:
+            return current
+        }
+    }
+}
+
+// MARK: - Tag columns for files sent from the Library scan
+
+/// The values shown in the Queue's tag columns (files sent from the Library
+/// scan). A file starts with the values the scan found, and is read again
+/// when it has been processed, so the columns show the tags the Queue wrote.
+/// Each Queue has its own. Used on the main thread only; the reading itself
+/// is done off it.
+final class QueueTagValues {
+
+    enum Text: Equatable {
+        /// Not read yet.
+        case loading
+        case value(String)
+        /// The file has no value for this tag.
+        case missing
+    }
+
+    private struct Entry {
+        var values: [String: String]
+        /// True once the file has been read after it was processed.
+        var afterCompletion: Bool
+    }
+
+    private var entries: [ObjectIdentifier: Entry] = [:]
+    private var reading: Set<ObjectIdentifier> = []
+    private let readQueue = DispatchQueue(label: "m3.queue-tag-reader", qos: .utility)
+
+    private static let columnPrefix = "tag:"
+
+    static func columnIdentifier(forKey key: String) -> String { columnPrefix + key }
+
+    /// The tag a Queue column shows, or nil for any other column.
+    static func tagKey(ofColumn identifier: String) -> String? {
+        guard identifier.hasPrefix(columnPrefix) else { return nil }
+        return String(identifier.dropFirst(columnPrefix.count))
+    }
+
+    /// Records the values a file had when it was sent (a tag without an
+    /// entry was missing).
+    func seed(_ item: QueueItem, values: [String: String]) {
+        entries[ObjectIdentifier(item)] = Entry(values: values, afterCompletion: false)
+    }
+
+    /// Forgets the files that are no longer in the Queue.
+    func prune(keeping items: [QueueItem]) {
+        let keep = Set(items.map { ObjectIdentifier($0) })
+        entries = entries.filter { keep.contains($0.key) }
+    }
+
+    /// What a tag is, as text, if the file has been read: empty when the file
+    /// has no value, nil when it has not been read yet.
+    func knownText(for item: QueueItem, key: String) -> String? {
+        guard let entry = entries[ObjectIdentifier(item)] else { return nil }
+        return entry.values[key] ?? ""
+    }
+
+    /// Reads the files that are not known yet (all at once, in the
+    /// background) and calls `completion` on the main thread when done, so a
+    /// sort has every value to work with.
+    func load(_ items: [QueueItem], completion: @escaping () -> Void) {
+        let missing = items.filter { entries[ObjectIdentifier($0)] == nil }
+        guard missing.isEmpty == false else { completion(); return }
+        let jobs = missing.map { (id: ObjectIdentifier($0), url: $0.status == .completed ? $0.destURL : $0.fileURL, keys: $0.trackedTagKeys, done: $0.status == .completed) }
+        readQueue.async { [weak self] in
+            let read = jobs.map { job -> (ObjectIdentifier, [String: String]?, Bool) in
+                let metadata = MP42File.readMetadata(ofFileAt: job.url)
+                return (job.id, metadata.map { LibraryScanCell.values(in: $0, keys: job.keys) }, job.done)
+            }
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                for (id, values, done) in read where self.entries[id] == nil {
+                    self.entries[id] = Entry(values: values ?? [:], afterCompletion: done)
+                }
+                completion()
+            }
+        }
+    }
+
+    /// What to show for one tag of one item. A file that is not known yet,
+    /// or that has been processed since it was last read, is read in the
+    /// background and `refreshed` is called when it is done.
+    func text(for item: QueueItem, key: String, refreshed: @escaping () -> Void) -> Text {
+        let id = ObjectIdentifier(item)
+        let done = item.status == .completed
+        let entry = entries[id]
+        if entry == nil || (done && entry?.afterCompletion == false) {
+            startReading(item, id: id, afterCompletion: done, refreshed: refreshed)
+        }
+        guard let known = entry else { return .loading }
+        if let value = known.values[key] { return .value(value) }
+        return .missing
+    }
+
+    private func startReading(_ item: QueueItem, id: ObjectIdentifier, afterCompletion: Bool, refreshed: @escaping () -> Void) {
+        guard reading.contains(id) == false else { return }
+        reading.insert(id)
+        // A processed file may have been renamed, so it is found by its output name.
+        let url = afterCompletion ? item.destURL : item.fileURL
+        let keys = item.trackedTagKeys
+        readQueue.async { [weak self] in
+            let metadata = MP42File.readMetadata(ofFileAt: url)
+            let values = metadata.map { LibraryScanCell.values(in: $0, keys: keys) }
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.reading.remove(id)
+                // A file that could not be read keeps what it had, and is not tried again.
+                let previous = self.entries[id]?.values ?? [:]
+                self.entries[id] = Entry(values: values ?? previous, afterCompletion: afterCompletion)
+                refreshed()
+            }
         }
     }
 }

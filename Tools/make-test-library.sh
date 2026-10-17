@@ -1,4 +1,11 @@
 #!/bin/bash
+#
+#  make-test-library.sh
+#
+#             Media Metadata Manager
+#                       M3
+#  Created by: Hans Hoffmeister on 10/11/2026.
+#
 # Builds a small, throwaway library for testing M3 by hand or with a test agent.
 # Every title, studio and year here is made up. Each video is a one second
 # clip of a few kilobytes, so the whole tree is tiny and can be rebuilt at will.

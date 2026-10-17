@@ -5,6 +5,11 @@
 //  Created by Damiano Galassi on 31/01/10.
 //  Copyright 2022 Damiano Galassi All rights reserved.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  A Matroska file with no embedded title now gets an empty Name field
+//  instead of none.
+//
 
 #import "MP42MkvImporter.h"
 #import "MP42FileImporter+Private.h"

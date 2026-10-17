@@ -57,6 +57,9 @@ M3 never takes updates from the original Subler; it uses this project's own upda
 
 On first launch you will see the **Welcome window** with three actions:
 
+<!-- screen:welcome-window.png:User-Guide -->
+![The Welcome window.](images/screens/welcome-window.png)
+
 - **Tag One File** — open a single file to search for and apply its metadata.
 - **Merge and Tag Files** — combine several files into one in the Queue, then tag the result.
 - **Scan Library for Missing Metadata** — look through a folder for files that still need tagging.
@@ -68,6 +71,9 @@ Untick **Show this window at launch** to stop seeing it. You can choose what M3 
 ## 3.1 The Editor (single-file window)
 
 Opening a file with **File → Open…**, from the Welcome window, or by double-clicking a Queue row's **Edit** button shows the editor. It lists the file's tracks, its chapters and its tags, and lets you change any of them.
+
+<!-- screen:editor-window.png:User-Guide -->
+![The Editor window.](images/screens/editor-window.png)
 
 **Toolbar.** The default toolbar contains:
 
@@ -99,22 +105,31 @@ You can change which buttons are shown, and whether they show icons, text or bot
 
 Choose **Window → Show Movies Queue** or **Window → Show TV Shows Queue**, or click **Queue** in the editor's toolbar. They all open the same Queue window, which has a **Movies** tab and a **TV Shows** tab; the menu item you chose decides which tab is showing. Each tab keeps its own list, the toolbar acts on the tab that is showing, and the window remembers its position and the last tab you used across launches. A TV show added by Intake opens its tab automatically. The Dock badge shows the combined number of waiting items.
 
+<!-- screen:queue-movies-tab.png:User-Guide -->
+![The Queue window with its Movies and TV Shows tabs, toolbar and columns.](images/screens/queue-movies-tab.png)
+
 ![How a Queue row can be a plain item or a release, and what the work loop processes.](images/queue-model.png)
 
 **Toolbar.** The default order, from the left, is **Add Item**, **Merge**, **Start / Stop**, flexible space, **Settings**.
 
 | Button | Action |
 |---|---|
-| **Add Item** | Add files or folders to the Queue by hand. Files added this way become plain items. Files whose names look like TV episodes are put on the TV Shows tab (see **Handle TV episodes** in section 6). |
+| **Add Item** | Add files or folders to the Queue by hand. Files added this way become plain items. Files are put on the tab they belong on: TV episodes on the TV Shows tab, everything else on the Movies tab (see **Handle TV episodes** in section 6). |
 | **Merge** | Enabled when two or more not-yet-processed items are selected. Opens the Merge Review sheet, then asks where to save the merged file. |
-| **Start / Stop** | Run or pause the Queue. |
+| **Start / Stop** | Run or pause the Queue. **Start** asks how long to run: *Until done*, or a number of minutes. The file or merge in progress when the limit is reached always finishes; only the next one waits, and clicking **Start** again picks up where it left off. |
 | **Settings** | Show or hide the Queue Options panel (see 3.3). |
 
 The toolbar's display mode (icon, icon and text, or text only) also controls the **Info** and **Edit** buttons on each row and the progress display at the bottom of the window: with text shown, a percentage; with icons only, a progress bar.
 
-**Columns.** Each tab lists **Name**, **Status**, **Size** and **Type**. Click a column header to sort by it (A to Z, with numbers in names sorted as numbers) and click again to reverse. Sorting changes the order the files are processed in, can be undone with **Edit → Undo**, and rows can still be dragged. Files added from a folder stay under their folder.
+<!-- screen:queue-run-time.png:User-Guide -->
+![Start asks how long to run the Queue.](images/screens/queue-run-time.png)
+
+**Columns.** Each tab lists **Name**, **Status**, **Size** and **Type**. Click a column header to sort by it (A to Z, with numbers in names sorted as numbers) and click again to reverse. Drag the edge of a header to make a column wider or narrower, and drag a header to move the column; **#** stays at the far left and the buttons at the far right. Tag columns from a Library scan sort too, with files that have no value first. Sorting changes the order the files are processed in, can be undone with **Edit → Undo**, and rows can still be dragged. Files added from a folder stay under their folder.
 
 **Folders.** A folder that is still waiting to be named or merged has a disclosure triangle. Click it, or press the Right and Left arrow keys on the selected folder, to list the files inside; Option-click opens or closes every folder at once. The listed files are for looking at only. While a folder is being merged, each of its files shows *Merging* in the Status column with a percentage, and the progress bar and status line at the bottom follow the merge.
+
+<!-- screen:queue-folder-expanded.png:User-Guide -->
+![A folder row opened to show the files inside.](images/screens/queue-folder-expanded.png)
 
 **Rows.** Each row shows a status icon and the name. On the right are two buttons:
 
@@ -140,21 +155,27 @@ Closing an editor window does not remove its row.
 | Ready | A single file is ready to be written. | Click **Start**. |
 | Done | The release has been delivered: to the staging folder, or with automatic delivery on, to its final destination. | Remove it with **Remove completed items**, or turn on **Remove finished items from the Queue automatically**. |
 
-**Context menu.** Right-click a row for **Reveal in Finder**, **Edit…**, **Remove from queue** and **Remove completed items**. You can also drag rows to change their order, and drop files or folders from Finder into the window. A dropped folder is grouped under its own folder row, exactly as with the **Add** button; a dropped file is added as a single row. TV episodes dropped on the Movies tab are moved to the TV Shows tab in the same way as with **Add**.
+**Context menu.** Right-click a row for **Reveal in Finder**, **Edit…**, **Remove from queue** and **Remove completed items**. You can also drag rows to change their order, and drop files or folders from Finder into the window. A dropped folder is grouped under its own folder row, exactly as with the **Add** button; a show folder that holds Season folders gets one group per Season folder. A dropped file is added as a single row. Episodes and movies are put on the tab they belong on, in the same way as with **Add**.
 
 ## 3.3 Queue Options
 
 The **Settings** button reveals the options applied to items you add by hand and to released items as they are processed:
 
+<!-- screen:queue-options-panel.png:User-Guide -->
+![The Queue Options panel.](images/screens/queue-options-panel.png)
+
 - **Global options:** *Auto-Start the queue*; *Show Notification When Done* (macOS asks permission the first time).
 - **Location** and **File Type** (`mp4` or `m4v`) for the output.
-- **Apply Set** (applied after the online search, for hand-added files and Intake releases alike: the tags the Set fills in replace the searched values, and tags it leaves blank keep them), **Fetch Metadata** and the provider language for Movies and TV Shows, **Artwork** shape (Portrait, Landscape, Square or Rectangle), and **Set output filename**.
+- **Apply Set** (applied after the online search, for hand-added files and Intake releases alike: the tags the Set fills in replace the searched values, and tags it leaves blank keep them), **Fetch Metadata** and the provider language for Movies and TV Shows, **Artwork** shape (Portrait, Landscape, Square or Rectangle), **Existing tags** (what the search does with tags a file already has: *Use Preferences*, which follows Preferences > Metadata, *Fill missing only*, *Append (add artwork)* or *Overwrite*; with the last three, *Keep empty annotations* can be ticked), and **Set output filename**.
 - **Track tidy-ups:** *Clear existing metadata*, *Rename chapter titles*, *Organize groups*, *Prettify audio track names*, *Fix audio fallbacks*, *Clear track names*, *Load external subtitles*, *Complete tracks language*, *Enable audio / subtitle track with language*.
 - **Optimize** and the **color space** options. Where a finished file goes is decided by the Media Locations tab (see 5.5), not by the Queue options.
 
 ## 3.4 Review sheets
 
 **Naming Review.** Shows the original folder name, how many files it holds, and an editable suggested name. A local guess appears immediately; a background search of your enabled providers refines it unless you have started typing. Buttons:
+
+<!-- screen:naming-review-sheet.png:User-Guide -->
+![The Naming Review sheet.](images/screens/naming-review-sheet.png)
 
 - **Approve** renames the folder to the approved name.
 - **Reject** parks the row without touching any file.
@@ -164,17 +185,34 @@ If **Automatically approve high-confidence naming matches** is on and the online
 
 **Metadata Review.** Appears for a single-file release whose automatic match was not confident, or when the online search found nothing at all. It shows the match found and an artwork preview, with a **Portrait / Landscape** control that applies only to this release. If the match is wrong or missing, change the words in **Search for** and press **Search** (or Return), then pick the right entry from the list of results. **Use This Match** applies the entry you picked. If nothing can be found, **Continue Without Metadata** delivers the file as it is.
 
+<!-- screen:metadata-review-sheet.png:User-Guide -->
+![The Metadata Review sheet.](images/screens/metadata-review-sheet.png)
+
 **Merge Review.** Lists the parts. Drag them into play order. The sheet starts in the order implied by the files' own numbers (`01`, `02`, `Part 1`, `e1`…). Confirming starts the merge.
+
+<!-- screen:merge-review-sheet.png:User-Guide -->
+![The Merge Review sheet.](images/screens/merge-review-sheet.png)
 
 ## 3.5 Library scan window
 
-Choose **Scan Library for Missing Metadata** on the Welcome window. Pick a folder and click **Scan**. M3 walks the folder for finished `.mp4`, `.m4v` and `.mov` files and lists those missing a Title, Release Date, Rating or Studio. Double-click a file to open it in the editor. The scan only reports; it never changes a file.
+Choose **Scan Library for Missing Metadata** on the Welcome window. Pick a folder and click **Scan**. M3 walks the folder for finished `.mp4`, `.m4v` and `.mov` files and lists those missing a Title or Release Date. The gear button lists other tags (Rating and Studio among them) that you can tick to look for as well. The table has a **File** column and one column for each tag being checked, showing the file's value, or a red *Missing*. Drag the edge of a column heading to resize it, drag a heading to move it, and click a heading to sort by it (an arrow shows the direction; files with a missing value come first). The window can be made larger and remembers its size, and the order, widths and sort of the columns. Double-click a file to open it in the editor. The buttons along the bottom are **Pause**, **Scan** and **Done**. While a scan is running, **Pause** lets it finish the file it is reading and wait, with the files found so far in the list; the button then reads **Resume** and carries on from the same place. **Scan** reads **Stop** while a scan is running and ends it, keeping what was found. **Clear** (or right-click → **Clear List**) empties the list once files are loaded, keeping the folder so you can scan again; no file is changed. It is off while a scan is running, so press **Stop** first.
 
-The scan reads only each file's tags, not its tracks or chapters, so it is light on the drive, and the status line names the file it is reading. The **gear button** next to Scan shows the four tags that are always checked and a list of every other tag from Metadata; tick any of them to have the scan look for those too. Your choice is remembered. A file that cannot be read within 20 seconds is listed as *Unreadable (timed out)* and the scan carries on; if three files in a row cannot be read, the scan stops and tells you to check the drive. Slow reads are written to the message log.
+<!-- screen:library-scan-window.png:User-Guide -->
+![The library scan window.](images/screens/library-scan-window.png)
+
+To fix the gaps, right-click a tag cell and choose **Edit…**, type the value and press Return: it is written straight into that file (M3 keeps a copy of the file until the write has worked). Rating, artwork and other tags that are not plain text, numbers or dates are changed in the editor instead. To let the Queue find the metadata, select the files (**Command-A** selects all) and click **Send Selected to Queue…** (the button reads **Send All to Queue…** when nothing is selected), or right-click and choose **Send to Queue for In-Place Edit…**. M3 asks first. Each file is then edited where it sits: the Queue searches for its metadata and writes the tags into the file, with no copy and no move to your library. If **Set output filename** is on in the Queue options, the file is also renamed from its tags. The Queue shows the scan's tag columns for these files, so you can watch the gaps being filled: each file starts with the values the scan found (a red *Missing* for a gap) and is read again when the Queue has finished it. The columns go away when no such file is left in the Queue. A scan on its own never changes a file; only these two commands do.
+
+<!-- screen:queue-library-scan-auto-editing.png:User-Guide -->
+![Files sent from the scan are edited where they sit.](images/screens/queue-library-scan-auto-editing.png)
+
+The scan reads only each file's tags, not its tracks or chapters, so it is light on the drive, and the status line names the file it is reading. The **gear button** next to Scan shows the two tags that are always checked (Title and Release Date) and a list of every other tag from Metadata; tick any of them to have the scan look for those too. Your choice is remembered. A file that cannot be read within 20 seconds is listed as *Unreadable (timed out)* and the scan carries on; if three files in a row cannot be read, the scan stops and tells you to check the drive. Slow reads are written to the message log.
 
 ## 3.6 Message log
 
 **Window → Show Message Log** shows what M3 has been doing. It is the first place to look, and the thing to attach, when reporting a problem.
+
+<!-- screen:message-log.png:User-Guide -->
+![The Message Log.](images/screens/message-log.png)
 
 # 4. Preferences
 
@@ -184,9 +222,15 @@ Open **Media Metadata Manager → Preferences…** (or the **Settings** toolbar 
 
 At-launch behavior, whether the window remembers its size, the default artwork position (Portrait or Landscape), chapter preview image position, log format, the ratings region to show (USA ratings are always shown), and privacy actions: *Clear recent searches* and *Delete cached metadata*.
 
+<!-- screen:prefs-general.png:User-Guide -->
+![Preferences > General.](images/screens/prefs-general.png)
+
 ## Metadata
 
-Choose which tags are shown for Movies and TV Shows and in what order. **Fill Series Description for sequels/parts** copies the series description when a title ends in a number or in "Part…".
+Choose which tags are shown for Movies and TV Shows and in what order. Below the list, **Keep empty annotations** keeps tags a search found but left blank, **Overwrite existing metadata** lets a search replace tags a file already has, and **Append to existing metadata** adds new cover art next to the art already there (the last two exclude each other; with neither ticked, only gaps are filled). The Queue follows these unless its own **Existing tags** option (see 3.3) says otherwise. **Fill Series Description for sequels/parts** copies the series description when a title ends in a number or in "Part…".
+
+<!-- screen:prefs-metadata.png:User-Guide -->
+![Preferences > Metadata.](images/screens/prefs-metadata.png)
 
 ## Sets
 
@@ -195,6 +239,9 @@ Create and edit Sets: saved groups of settings you can reuse. Metadata sets hold
 ## Filename
 
 Naming rules decide the output file name. There is a rule list for **Movies** and one for **TV Shows**. Each rule is a template built from tokens (title, studio, year and so on) with optional conditions (**If / And / Or** a field has a value). The first matching rule wins; the **Default** rule is used when none matches. A rule can be switched off with its checkbox. Two extra options live here:
+
+<!-- screen:prefs-filename-rules.png:User-Guide -->
+![Preferences > Filename: naming rules.](images/screens/prefs-filename-rules.png)
 
 - **Keep the containing folder named to match** — after saving, rename a folder that holds only this one movie to the same name as the file.
 - **Organize into Show/Season folders (Apple TV style)** — create `Show/Season NN` folders for TV episodes.
@@ -230,6 +277,9 @@ Links to sponsor Media Metadata Manager through GitHub Sponsors and to the origi
 
 All of these are in **Preferences → Sources → Media Intake**. Hover over any option to see its tooltip.
 
+<!-- screen:prefs-media-intake.png:User-Guide -->
+![Preferences > Sources > Media Intake.](images/screens/prefs-media-intake.png)
+
 | Setting | Default | What it does |
 |---|---|---|
 | **Incoming Folders** (+ / −, **Choose…**) | none | The folders M3 looks in. Loose files are wrapped in a folder of their own; folders holding media (up to three levels down) become releases. |
@@ -242,7 +292,6 @@ All of these are in **Preferences → Sources → Media Intake**. Hover over any
 | **Remove empty folders automatically** | off | After each Queue run and each editor save, moves empty folders inside the Incoming and Ready folders to the Trash and logs them. Folders touched in the last two minutes are left alone. The same cleanup can be run by hand with **Window → Clean Up Empty Folders…**. |
 | **Clean up processed files** | off | After a release is moved into Ready for Media Library, moves the original files it was made from (the parts that were merged, or the unconverted source when the Queue converted a file) to the Trash and logs them. The finished file is never touched. This applies to Queue runs only; it does not apply to a file you tag with Edit and Save (see 5.4). |
 | **Remove finished items from the Queue automatically** | off | When a Queue run finishes, the rows with a checkmark are taken off the list. Only the rows are removed, never files. Failed rows and rows still waiting for you stay. |
-| **Send TV episodes to the TV Shows tab when I add files** | on | When you add files by hand (Add button, drag and drop, File → Open) to the Movies tab, any whose names look like TV episodes are put on the TV Shows tab instead, and the status line at the bottom of the Queue says so. Movies added to the TV Shows tab are left where they are. Turn it off to keep every hand-added file on the tab you chose. Files found in the Incoming Folders are always sorted this way, whatever this setting says. |
 | **Run the Movies and TV Shows queues at the same time** | off | Off: the two queues take turns, one file at a time, which is kinder to a single disk. On: each queue works by itself, so two files can be processed at once. Turn it on only if your files are on fast drives such as SSDs. |
 | **Ready for Media Library** | none | Now set on the **Media Locations** tab (see 5.5), where it is the **staging folder**: finished files wait there for you to check them. |
 | **Automatically Add to Apple TV Folders** | | Now on the **Media Locations** tab (see 5.5), where it is the default destination. |
@@ -263,6 +312,8 @@ Joining parts does not re-encode anything. M3 splices the compressed video and a
 
 Parts are merged only when they match: the same number of video, audio and subtitle tracks, the same codecs and time scales, and the same picture size. If they do not match, the merge is refused and the row explains which file differs and how. Nothing is partly merged. Incompatible parts need to be converted first.
 
+**Subtitle files.** A subtitle file beside a video (`.srt`, `.ass` or `.ssa`) is not a part of the movie, so it never counts toward a merge. A folder holding one video and its subtitle file is a single file; the subtitles are embedded in the finished file. With **Clean up processed files** on, the subtitle files that were embedded are moved to the Trash with the other originals.
+
 You can also merge by hand: select two or more items in the Queue and click **Merge**, or choose several files in **File → Open…** and answer **Merge Into One File…**. The merged file is written next to the parts by default.
 
 ## 5.4 Safety guarantees
@@ -276,6 +327,9 @@ You can also merge by hand: select two or more items in the Queue and click **Me
 ## 5.5 Media Locations: where finished files go
 
 **Preferences → Sources → Media Locations** decides where a finished file ends up. It has three parts.
+
+<!-- screen:prefs-media-locations.png:User-Guide -->
+![Preferences > Sources > Media Locations.](images/screens/prefs-media-locations.png)
 
 **Default destination: Apple TV Automatically Add Folders.** The folder the Apple TV app watches and organizes itself. Leave the first row blank and M3 follows the **Media folder location** in the Apple TV app's own settings (Settings → Files), read each time it is needed, so a library you move later is picked up without any change here; the folder it currently resolves to is shown greyed out in the first row. Type or choose a folder in the first row to override it, or add more rows with **+** if you keep several libraries (the first row is the default). If the Apple TV app is not set up, M3 falls back to the Music app's setting and the usual locations. A file delivered straight into one of these folders is left alone instead of being wrapped in a folder of its own, because the app files it from there.
 
@@ -306,7 +360,10 @@ The same choice applies everywhere a finished file is moved: Queue items, whole 
 
 **Merge parts by hand.** Add the parts to the Movies Queue, select them, click **Merge**, drag them into order, confirm, and choose where to save.
 
-**Handle TV episodes.** Episodes found by Intake go to the TV Shows Queue. Turn on **Organize into Show/Season folders** under Preferences → Filename to have them filed as `Show/Season 01/…`. Files you add by hand are sorted the same way: if you drop or add a file whose name has a season and episode marker (such as `S02E05` or `2x05`) on the Movies tab, M3 puts it on the TV Shows tab and says so in the status line. A folder that holds both movies and episodes is split file by file. Movies added to the TV Shows tab stay where you put them, and a name without an episode marker is treated as a movie. If you would rather keep every file on the tab you added it to, untick **Send TV episodes to the TV Shows tab when I add files** under Preferences → Sources → Media Intake.
+**Handle TV episodes.** Episodes found by Intake go to the TV Shows Queue. Turn on **Organize into Show/Season folders** under Preferences → Filename to have them filed as `Show/Season 01/…`. Files you add by hand are sorted the same way: a file whose name has a season and episode marker (such as `S02E05` or `2x05`), or that sits in a Season folder, goes to the TV Shows tab, and any other file goes to the Movies tab, whichever tab you dropped it on. The status line says when files were moved to the other tab. A folder that holds both movies and episodes is split file by file, and a show folder with Season folders is added as one group per season. If M3 gets one wrong (a file named badly, say), open it with **Edit…** and change its media type there.
+
+<!-- screen:queue-tv-tab.png:User-Guide -->
+![TV episodes added on the Movies tab are moved to the TV Shows tab, and the status line says so.](images/screens/queue-tv-tab.png)
 
 **Find files that need tagging.** Welcome window → **Scan Library for Missing Metadata**.
 
@@ -317,6 +374,9 @@ The same choice applies everywhere a finished file is moved: Queue items, whole 
 # 7. Metadata sources
 
 **Built-in providers.** TheMovieDB, TheTVDB, Apple TV and the iTunes Store. Each can be switched on or off separately for movies and TV in Preferences → Sources → Providers. The Queue's automatic lookup searches every enabled provider and merges the results of those that found the same title: the provider chosen in Queue Options is the primary one (its title, date, studio and rating are kept), blanks are filled in from the others, cast, genre and crew lists are combined, the longest description is kept, and artwork from all of them is pooled so the **Artwork** choice in General can be met. A provider that found a different title is ignored. The naming window consults every enabled provider in turn. When you edit a single file you choose the provider yourself.
+
+<!-- screen:prefs-providers.png:User-Guide -->
+![Preferences > Sources > Providers.](images/screens/prefs-providers.png)
 
 **Custom Sources.** In Preferences → Sources → Custom Sources, click **+** to define a source from a web API: a base address, a search address, a detail address, and a table that maps the API's fields to M3's tags. Each source opens in its own window. Requests time out rather than hang, and request and response bodies are written to the message log to help you debug a mapping. A new source that you close without entering anything is discarded, so clicking **+** several times never leaves empty "New Source" rows behind.
 

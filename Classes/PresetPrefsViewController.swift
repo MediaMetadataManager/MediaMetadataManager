@@ -4,6 +4,11 @@
 //
 //  Created by Damiano Galassi on 20/08/2017.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Sets tab heading and description, Settings tool, usability fixes. Includes
+//  later upstream undo/redo changes ported by hand.
+//
 
 import Cocoa
 

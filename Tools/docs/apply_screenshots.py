@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+#
+#  apply_screenshots.py
+#
+#             Media Metadata Manager
+#                       M3
+#  Created by: Hans Hoffmeister on 10/16/2026.
+#
 """Insert the screenshots named in manifest.json into the guides.
 
 Usage: apply_screenshots.py <Documentation dir> [--ocr patterns.txt]

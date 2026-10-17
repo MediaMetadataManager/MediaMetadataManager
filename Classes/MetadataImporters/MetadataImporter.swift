@@ -4,6 +4,11 @@
 //
 //  Created by Damiano Galassi on 27/07/2017.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Custom and plugin metadata sources, Search All Providers, readable
+//  language names for provider menus.
+//
 
 import Foundation
 import MP42Foundation
@@ -300,4 +305,29 @@ extension MetadataSearch {
         }
     }
 
+}
+
+extension LanguageType {
+
+    /// What a menu shows for one of a service's language codes. A code the app
+    /// has no name for is shown as it is, never as "Undetermined".
+    public func menuName(for code: String) -> String {
+        let name = displayName(language: code)
+        if self == .ISO_639_2, code != "und",
+           name == MP42Languages.defaultManager.localizedLang(forExtendedTag: "und") {
+            return code
+        }
+        return name
+    }
+
+    /// The menu names for a service's language codes, in the same order.
+    public func menuNames(for codes: [String]) -> [String] {
+        return codes.map { menuName(for: $0) }
+    }
+
+    /// The service's own code for a name picked from a menu built from `codes`,
+    /// or nil if no code in the list has that name.
+    public func code(forMenuName name: String, among codes: [String]) -> String? {
+        return codes.first { menuName(for: $0) == name }
+    }
 }

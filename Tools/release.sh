@@ -1,5 +1,12 @@
 #!/bin/bash
 #
+#  release.sh
+#
+#             Media Metadata Manager
+#                       M3
+#  Created by: Hans Hoffmeister on 10/10/2026.
+#
+#
 # One command for a whole release.
 #
 #   Tools/release.sh <version> [public-clone] [--yes] [--from <step>]

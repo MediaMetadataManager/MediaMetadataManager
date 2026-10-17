@@ -4,6 +4,11 @@
 //
 //  Created by Damiano Galassi on 09/10/2017.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Naming and delivery-folder helpers for the Queue and Media Locations; no
+//  rename for a file with no title tagged; ignores the merged-file tag.
+//
 
 import Foundation
 import MP42Foundation

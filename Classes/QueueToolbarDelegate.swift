@@ -4,6 +4,11 @@
 //
 //  Created by Damiano Galassi on 18/07/24.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Toolbar of Add, Merge, Start and Settings; progress follows the display
+//  mode.
+//
 
 import Cocoa
 

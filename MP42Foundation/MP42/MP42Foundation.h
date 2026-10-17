@@ -5,6 +5,10 @@
 //  Created by Andrew Hyatt on 4/19/18.
 //  Copyright © 2022 Damiano Galassi. All rights reserved.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Exports the merge importer (MP42ConcatImporter).
+//
 
 #ifndef MP42Foundation_h
 #define MP42Foundation_h

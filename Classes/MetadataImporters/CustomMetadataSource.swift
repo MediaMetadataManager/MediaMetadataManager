@@ -1,6 +1,9 @@
 //
 //  CustomMetadataSource.swift
-//  Subler
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 09/10/2026.
 //
 
 import Foundation

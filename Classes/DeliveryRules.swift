@@ -1,6 +1,10 @@
 //
 //  DeliveryRules.swift
 //
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 10/10/2026.
+//
 //  Delivery ("Destinations") rules: where a finished file goes once it has
 //  been named, tagged and (if needed) merged. Works like the Filename
 //  tab's naming rules -- an ordered list per media kind, each rule with

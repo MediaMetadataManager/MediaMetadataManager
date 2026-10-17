@@ -1,6 +1,9 @@
 //
 //  PluginSettingsViewController.swift
-//  Subler
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 09/27/2026.
 //
 //  A small, generic "Configure…" popover for plugin-backed metadata
 //  providers that need a manually-entered setting, such as an API key or

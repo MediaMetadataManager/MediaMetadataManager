@@ -1,3 +1,10 @@
+#
+#  build2.py
+#
+#             Media Metadata Manager
+#                       M3
+#  Created by: Hans Hoffmeister on 10/16/2026.
+#
 import sys, copy, subprocess, re, os, collections
 from docx import Document
 from docx.oxml.ns import qn
@@ -5,7 +12,7 @@ from docx.oxml import OxmlElement
 
 name = sys.argv[1]
 PASS = int(sys.argv[2])          # 1 = placeholder TOC numbers, 2 = real numbers from pages.txt
-NEWDATE = 'October 15, 2026'; OLDDATE = 'October 10, 2026'
+NEWDATE = 'October 16, 2026'; OLDDATE = 'October 15, 2026'
 W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
 
 old = Document(f'{name}.docx')
@@ -22,9 +29,22 @@ old_widths = collections.defaultdict(list)
 for t in old.tables[1:]:
     hdr = tuple(c.text.strip() for c in t.rows[0].cells)
     grid = [int(g.get(qn('w:w'))) for g in t._tbl.tblGrid.findall(qn('w:gridCol'))]
-    old_widths[hdr].append(grid)
+    if len(set(grid)) > 1: old_widths[hdr].append(grid)   # equal columns are pandoc's default, not a tuned layout
 
 md = open(f'{name}.md', encoding='utf-8').read()
+# A manual carries its revision in the front matter ("Revision 1.16 — October 17, 2026"); it replaces
+# the revision line on the cover and in the page header, which come from the existing .docx.
+_m = re.search(r'\A---\n.*?^version:\s*"(Revision [^"]+)"', md, flags=re.S | re.M)
+VERSION = _m.group(1) if _m else None
+REVLINE = re.compile(r'Revision [0-9.]+ — [A-Z][a-z]+ \d{1,2}, \d{4}')
+def fix_revision(paragraphs):
+    if not VERSION: return
+    for p in paragraphs:
+        ts = list(p.iter(qn('w:t')))
+        full = ''.join(t.text or '' for t in ts)
+        if ts and REVLINE.search(full):
+            ts[0].text = REVLINE.sub(VERSION, full)
+            for t in ts[1:]: t.text = ''
 md = re.sub(r'\A---\n.*?\n---\n', '', md, flags=re.S)
 import glob
 from PIL import Image
@@ -78,6 +98,19 @@ for tbl in body.iter(qn('w:tbl')):
             ls = [len(cell_text(r.findall(qn('w:tc'))[ci])) for r in rows[1:]] or [10]
             lens.append(max(8.0, min(90.0, sum(ls)/len(ls))) ** 0.75)
         s = sum(lens); widths = [int(TOTAL*x/s) for x in lens]
+        # No column narrower than its longest word, so words and short codes never break mid-word.
+        minw = []
+        for ci in range(ncol):
+            cells = [hdr[ci]] + [cell_text(r.findall(qn('w:tc'))[ci]) for r in rows[1:]]
+            minw.append(min(30, max((len(w) for c in cells for w in c.split()), default=4)) * 104 + 300)
+        for _ in range(4):
+            fixed = [i for i in range(ncol) if widths[i] < minw[i]]
+            if not fixed: break
+            for i in fixed: widths[i] = minw[i]
+            free = [i for i in range(ncol) if i not in fixed]
+            room = TOTAL - sum(widths[i] for i in fixed)
+            tot = sum(widths[i] for i in free) or 1
+            for i in free: widths[i] = int(widths[i] * room / tot)
     sc = TOTAL / sum(widths); widths = [int(w*sc) for w in widths]
     # tblPr
     tblPr = tbl.find(qn('w:tblPr'))
@@ -135,6 +168,17 @@ for p in body.iter(qn('w:p')):
     if s_ is not None and s_.get(qn('w:val')) == 'CaptionedFigure':
         ppr = p.find(qn('w:pPr'))
         if ppr.find(qn('w:keepNext')) is None: s_.addnext(sub('w:keepNext'))
+# keep the paragraph that introduces a figure on the same page as the figure
+_ps = list(body.iter(qn('w:p')))
+for i, p in enumerate(_ps[:-1]):
+    nxt = _ps[i+1].find('.//'+qn('w:pStyle'))
+    if nxt is not None and nxt.get(qn('w:val')) == 'CaptionedFigure':
+        ppr = p.find(qn('w:pPr'))
+        if ppr is None:
+            ppr = OxmlElement('w:pPr'); p.insert(0, ppr)
+        if ppr.find(qn('w:keepNext')) is None:
+            ps_ = ppr.find(qn('w:pStyle'))
+            (ps_.addnext if ps_ is not None else (lambda e: ppr.insert(0, e)))(sub('w:keepNext'))
 WP='http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing'
 A='http://schemas.openxmlformats.org/drawingml/2006/main'
 MAXCY=6900000; MAXCX=6126480
@@ -152,6 +196,7 @@ for sec in new.sections:
     for part in (sec.header, sec.first_page_header):
         for p in part.paragraphs:
             for r in p.runs: r.text = r.text.replace(OLDDATE, NEWDATE)
+        fix_revision([q._p for q in part.paragraphs])
 
 # ---- TOC (static, page numbers from pages.txt in pass 2)
 heads = []
@@ -187,6 +232,7 @@ first = body[0]
 for el in front: first.addprevious(el)
 for t in cover.iter(qn('w:t')):
     if t.text and OLDDATE in t.text: t.text = t.text.replace(OLDDATE, NEWDATE)
+fix_revision(cover.iter(qn('w:p')))
 new.save(f'{name}.new.docx')
 open(f'heads_{name}.txt', 'w', encoding='utf-8').write('\n'.join(t for _, t in heads))
 print('built', name, 'pass', PASS, 'headings', len(heads))

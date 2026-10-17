@@ -1,6 +1,9 @@
 //
 //  NamingReviewWindowController.swift
-//  Subler
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 09/26/2026.
 //
 //  Phase 3 of the Intake/Queue workflow (see the design doc kept in the
 //  Subler claude.ai project, section 4.2): the naming approve/reject

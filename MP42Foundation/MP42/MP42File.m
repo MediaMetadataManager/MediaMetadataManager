@@ -5,6 +5,11 @@
 //  Created by Damiano Galassi on 31/01/09.
 //  Copyright 2022 Damiano Galassi. All rights reserved.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Tag-only read of a file (readMetadata(ofFileAt:)); registers the merge
+//  importer.
+//
 
 #import "MP42File.h"
 #import "MP42FileImporter.h"

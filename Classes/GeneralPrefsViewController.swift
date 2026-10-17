@@ -4,6 +4,11 @@
 //
 //  Created by Damiano Galassi on 06/02/2018.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Artwork position (Portrait/Landscape) setting, TV Shows naming-rule
+//  editor, launch behaviour fixes.
+//
 
 import Cocoa
 import MP42Foundation

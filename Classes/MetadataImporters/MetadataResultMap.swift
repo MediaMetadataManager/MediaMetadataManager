@@ -4,6 +4,10 @@
 //
 //  Created by Damiano Galassi on 09/08/2017.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Grouping is mapped to the series name.
+//
 
 import Foundation
 import MP42Foundation

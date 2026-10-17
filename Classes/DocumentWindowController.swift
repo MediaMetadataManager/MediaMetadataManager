@@ -4,6 +4,12 @@
 //
 //  Created by Damiano Galassi on 03/02/2018.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Search by the approved release name, Queue Edit support (keeps the file's
+//  URL for the search sheet), plugin-declared settings. Includes later
+//  upstream undo/redo changes ported by hand.
+//
 
 import Cocoa
 import MP42Foundation

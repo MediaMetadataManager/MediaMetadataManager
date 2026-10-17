@@ -29,6 +29,11 @@
 //  together instead (see NamingRules.swift's NamingRule.matches(metadata:))
 //  -- a condition row's "And"/"Or" prefix reflects which one applies.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Filename tab with multi-condition naming rules for Movies and TV Shows,
+//  per-movie folder when saving, usability fixes.
+//
 
 import Cocoa
 import MP42Foundation

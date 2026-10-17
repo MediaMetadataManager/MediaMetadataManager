@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+#
+#  flow.py
+#
+#             Media Metadata Manager
+#                       M3
+#  Created by: Hans Hoffmeister on 10/10/2026.
+#
 """
 Single source for M3's flow charts.
 
@@ -49,7 +56,7 @@ NODES = [
  ('REN', 'auto',  'editor', False, 'Name and folder', 'renamed by the Filename rules, Movie or\nShow/Season folders applied (not if no Title is tagged)'),
  ('STQ', 'auto',  'editor', False, 'Send to Queue', 'the open file becomes a Queue item instead'),
 
- ('LS',  'human', 'scan',   False, 'Library scan', 'pick a folder; lists .mp4 / .m4v / .mov files\nmissing Title, Release Date, Rating or Studio.\nReports only, changes nothing'),
+ ('LS',  'human', 'scan',   False, 'Library scan', 'pick a folder; lists .mp4 / .m4v / .mov files\nmissing Title or Release Date.\nRight-click a tag to type a value into\nthe file, or send files to the Queue'),
 
  ('TVH', 'dec',   'hand',   False, 'Name looks like a\nTV episode?', ''),
  ('PI',  'auto',  'hand',   False, 'Plain Queue item', 'one row per file; Queue Options decide which\nactions run. Edit re-reads the file from disk;\nif it was moved: Find...'),
@@ -64,7 +71,7 @@ NODES = [
  ('NR',  'human', 'intake', True,  'Naming Review', 'approve, edit the name, or reject\nSearch All Providers'),
  ('REJ', 'bad',   'intake', True,  'Rejected', 'row stays parked in the Queue'),
  ('REN2','auto',  'intake', True,  'Folder renamed', 'Title Vol N [Studio] (Year)'),
- ('NF',  'dec',   'intake', True,  'One file or several?', ''),
+ ('NF',  'dec',   'intake', True,  'One file or several?', 'a subtitle file beside the video\ndoes not count as a part'),
  ('MT',  'dec',   'intake', True,  'Online match for the\nname, confident?', ''),
  ('MR',  'human', 'intake', True,  'Metadata Review', 'search again with other words, pick a result,\nchoose Portrait or Landscape art,\nor Continue Without Metadata.\nSearch with menu: pick another source'),
  ('AMG', 'dec',   'intake', True,  'Folder already holds\na merged file?', ''),
@@ -77,7 +84,7 @@ NODES = [
  ('RDY', 'auto',  'intake', True,  'Item ready in the Queue', 'metadata search and delivery actions attached'),
 
  ('ST',  'auto',  'run',    True,  'Start', 'Auto-Start, or the Start button.\nMovies and TV Shows tabs take turns, one file\nat a time (or both at once, if you set that)'),
- ('ACT', 'auto',  'run',    True,  'Actions, then write the file', 'clear old tags, search metadata and artwork (a release\nsearches by its approved name), set filename,\nsubtitles, track tidy-ups, optimize'),
+ ('ACT', 'auto',  'run',    True,  'Actions, then write the file', 'clear old tags, search metadata and artwork (a release\nsearches by its approved name), set filename,\nsubtitles (a file beside the video is embedded),\ntrack tidy-ups, optimize'),
 
  ('DEL', 'dec',   'deliver',True,  'Deliver automatically?', ''),
  ('STG', 'auto',  'deliver',True,  'Staging folder', 'Ready for Media Library: your check before the library.\nRules are ignored. No staging folder set: file stays put'),
@@ -99,8 +106,8 @@ NODES = [
 # from, to, label, style('' or 'dashed'), in-pipeline-chart?
 EDGES = [
  ('W','ED','Tag One File','',False), ('W','LS','Scan Library','',False), ('W','MB','Merge and Tag Files','',False),
- ('LS','ED','double-click a file','',False),
- ('DRP','TVH','','',False), ('TVH','PI','no: Movies tab','',False), ('TVH','TVQ','yes: TV Shows tab\n(setting on by default;\na mixed folder is split)','',False), ('DRP','ED','Open a single file','',False),
+ ('LS','ED','double-click a file','',False), ('LS','PI','Send to Queue\n(edited where it sits)','',False),
+ ('DRP','TVH','','',False), ('TVH','PI','no: Movies tab','',False), ('TVH','TVQ','yes: TV Shows tab\n(on either tab; a folder with\nboth kinds is split)','',False), ('DRP','ED','Open a single file','',False),
  ('ED','SV','','',False), ('ED','STQ','','',False), ('STQ','PI','','',False),
  ('SV','REN','','',False), ('REN','DEL','folder sync on','',False),
  ('PI','ST','','',False), ('MB','PI','merged file becomes\na plain item','dashed',False),

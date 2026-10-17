@@ -1,5 +1,12 @@
 #!/bin/bash
 #
+#  make-release.sh
+#
+#             Media Metadata Manager
+#                       M3
+#  Created by: Hans Hoffmeister on 10/10/2026.
+#
+#
 # Build a release zip and (re)generate the Sparkle appcast.
 #
 #   Tools/make-release.sh <version> [public-repo-clone]

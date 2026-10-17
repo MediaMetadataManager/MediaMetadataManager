@@ -4,6 +4,12 @@
 //
 //  Created by Damiano Galassi on 16/02/2018.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  App name and menus changed to M3; Queue window with Movies and TV Shows
+//  tabs, plugin Restart Now/Later, dropped folders grouped like the Add
+//  button, editing library files in place.
+//
 
 import Cocoa
 import MP42Foundation

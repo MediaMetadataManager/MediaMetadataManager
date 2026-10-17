@@ -1,6 +1,9 @@
 //
 //  MergeReorderWindowController.swift
-//  Subler
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 09/24/2026.
 //
 //  A small window that lets the user drag the files chosen for a merge
 //  into the order they should play, before FileMerger actually runs --

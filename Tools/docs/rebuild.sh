@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+#
+#  rebuild.sh
+#
+#             Media Metadata Manager
+#                       M3
+#  Created by: Hans Hoffmeister on 10/16/2026.
+#
 # Rebuild the Word and PDF copies of both guides from the Markdown.
 # Usage: rebuild.sh <workdir>
 # <workdir> must hold User-Guide.md, Getting-Started.md, the existing User-Guide.docx and

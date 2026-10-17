@@ -16,7 +16,7 @@ digraph G {
   }
   subgraph cluster_scan {
     label="Library scan"; fontname="Inter"; fontsize=13; fontcolor="#33414f"; style="rounded"; color="#c4ccd4"; labeljust=l; margin=14;
-    LS [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Library scan</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">pick a folder; lists .mp4 / .m4v / .mov files<BR/>missing Title, Release Date, Rating or Studio.<BR/>Reports only, changes nothing</FONT>>, shape=box, style="rounded,filled", fillcolor="#fff4d6", color="#c79a1c"];
+    LS [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Library scan</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">pick a folder; lists .mp4 / .m4v / .mov files<BR/>missing Title or Release Date.<BR/>Right-click a tag to type a value into<BR/>the file, or send files to the Queue</FONT>>, shape=box, style="rounded,filled", fillcolor="#fff4d6", color="#c79a1c"];
   }
   subgraph cluster_hand {
     label="Queue: items you add by hand"; fontname="Inter"; fontsize=13; fontcolor="#33414f"; style="rounded"; color="#c4ccd4"; labeljust=l; margin=14;
@@ -36,7 +36,7 @@ digraph G {
     NR [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Naming Review</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">approve, edit the name, or reject<BR/>Search All Providers</FONT>>, shape=box, style="rounded,filled", fillcolor="#fff4d6", color="#c79a1c"];
     REJ [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Rejected</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">row stays parked in the Queue</FONT>>, shape=box, style="rounded,filled", fillcolor="#f9dede", color="#b04a4a"];
     REN2 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Folder renamed</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">Title Vol N [Studio] (Year)</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
-    NF [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>One file or several?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+    NF [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>One file or several?</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">a subtitle file beside the video<BR/>does not count as a part</FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
     MT [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Online match for the<BR/>name, confident?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
     MR [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Metadata Review</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">search again with other words, pick a result,<BR/>choose Portrait or Landscape art,<BR/>or Continue Without Metadata.<BR/>Search with menu: pick another source</FONT>>, shape=box, style="rounded,filled", fillcolor="#fff4d6", color="#c79a1c"];
     AMG [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Folder already holds<BR/>a merged file?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
@@ -51,7 +51,7 @@ digraph G {
   subgraph cluster_run {
     label="Queue run"; fontname="Inter"; fontsize=13; fontcolor="#33414f"; style="rounded"; color="#c4ccd4"; labeljust=l; margin=14;
     ST [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Start</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">Auto-Start, or the Start button.<BR/>Movies and TV Shows tabs take turns, one file<BR/>at a time (or both at once, if you set that)</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
-    ACT [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Actions, then write the file</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">clear old tags, search metadata and artwork (a release<BR/>searches by its approved name), set filename,<BR/>subtitles, track tidy-ups, optimize</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    ACT [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Actions, then write the file</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">clear old tags, search metadata and artwork (a release<BR/>searches by its approved name), set filename,<BR/>subtitles (a file beside the video is embedded),<BR/>track tidy-ups, optimize</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
   }
   subgraph cluster_deliver {
     label="Delivery (Preferences > Sources > Media Locations)"; fontname="Inter"; fontsize=13; fontcolor="#33414f"; style="rounded"; color="#c4ccd4"; labeljust=l; margin=14;
@@ -77,9 +77,10 @@ digraph G {
   W -> LS [label="Scan Library"];
   W -> MB [label="Merge and Tag Files"];
   LS -> ED [label="double-click a file"];
+  LS -> PI [label="Send to Queue\n(edited where it sits)"];
   DRP -> TVH;
   TVH -> PI [label="no: Movies tab"];
-  TVH -> TVQ [label="yes: TV Shows tab\n(setting on by default;\na mixed folder is split)"];
+  TVH -> TVQ [label="yes: TV Shows tab\n(on either tab; a folder with\nboth kinds is split)"];
   DRP -> ED [label="Open a single file"];
   ED -> SV;
   ED -> STQ;

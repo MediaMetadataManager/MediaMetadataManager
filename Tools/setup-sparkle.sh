@@ -1,5 +1,12 @@
 #!/bin/bash
 #
+#  setup-sparkle.sh
+#
+#             Media Metadata Manager
+#                       M3
+#  Created by: Hans Hoffmeister on 10/10/2026.
+#
+#
 # One-time Sparkle setup (run at home, on the Mac you build on).
 #
 #   Tools/setup-sparkle.sh <feed-url>

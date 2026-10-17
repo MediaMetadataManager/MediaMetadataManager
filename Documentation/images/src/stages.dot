@@ -22,6 +22,7 @@ digraph S {
   mg -> pm [label="success: merged file\ngets the same check"];
   mg -> mf [label="failure"];
   mf -> ps [label="reopen and retry", style=dashed];
+  ps -> pm [label="only one file left\nwhen the folder is read again", style=dashed];
   pm -> pl [label="confident, or you confirm\n(or continue without metadata)"];
   pl -> dn [label="Queue Start finishes"];
 }

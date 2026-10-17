@@ -4,6 +4,11 @@
 //
 //  Created by Damiano Galassi on 04/02/2020.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Rating choices follow the Show ratings for setting and feed the naming
+//  conditions.
+//
 
 import Foundation
 

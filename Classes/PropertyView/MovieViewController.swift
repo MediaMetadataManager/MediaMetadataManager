@@ -4,6 +4,12 @@
 //
 //  Created by Damiano Galassi on 11/03/2019.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Usability fixes, plugin-declared settings, a full Genre list that also
+//  remembers genres you type. Includes later upstream undo/redo changes
+//  ported by hand.
+//
 
 import Cocoa
 import UniformTypeIdentifiers
@@ -572,6 +578,8 @@ class MovieViewController: PropertyView, NSTableViewDataSource, ExpandedTableVie
         guard let cell = tableView.makeView(withIdentifier: MovieViewController.comboCell, owner: self) as? ComboBoxCellView, let comboBox = cell.comboBox else { fatalError() }
 
         comboBox.stringValue = value ?? NSLocalizedString("Unknown", comment: "")
+        // Cells are reused (Genre and Rating share this one), so start empty.
+        comboBox.removeAllItems()
         comboBox.addItems(withObjectValues: contents)
 
         return cell
@@ -613,11 +621,6 @@ class MovieViewController: PropertyView, NSTableViewDataSource, ExpandedTableVie
                     (title: NSLocalizedString("1080p", comment: ""), value: 2),
                     (title: NSLocalizedString("4k", comment: ""), value: 3)]
 
-    private static let availableGenres: [String] =
-                    ["Animation", "Classic TV", "Comedy", "Drama",
-                     "Fitness & Workout", "Kids", "Non-Fiction",
-                     "Reality TV", "Sci-Fi & Fantasy", "Sports"]
-
     private let keyColumn = NSUserInterfaceItemIdentifier(rawValue: "key")
     private let valueColumn = NSUserInterfaceItemIdentifier(rawValue: "value")
 
@@ -657,7 +660,7 @@ class MovieViewController: PropertyView, NSTableViewDataSource, ExpandedTableVie
 
             case .string:
                 if item.identifier == MP42MetadataKeyUserGenre {
-                    return comboBoxCell(contents: MovieViewController.availableGenres, value: item.stringValue, tableView: tableView)
+                    return comboBoxCell(contents: GenreList.all(including: item.stringValue), value: item.stringValue, tableView: tableView)
                 } else if item.identifier == MP42MetadataKeyRating {
                     return comboBoxCell(contents: ratings, value: ratingDisplayValue(item.stringValue), tableView: tableView)
                 } else {
@@ -751,6 +754,10 @@ class MovieViewController: PropertyView, NSTableViewDataSource, ExpandedTableVie
                 }
             } else {
                 value = sender.stringValue
+                // A genre typed by hand is added to the list for next time.
+                if item.identifier == MP42MetadataKeyUserGenre {
+                    GenreList.remember(sender.stringValue)
+                }
             }
 
         case .stringArray:
@@ -1382,4 +1389,69 @@ class MovieViewController: PropertyView, NSTableViewDataSource, ExpandedTableVie
         collectionViewDelete(in: collectionView)
     }
 
+}
+
+/// The genres offered in the Genre drop-down: the movie and TV genres in
+/// common use, plus every genre you have typed in yourself before. The box
+/// still takes any text, so a genre that is not on the list can be typed in
+/// and is added to the list when it is saved.
+enum GenreList {
+
+    static let standard: [String] = [
+        "Action", "Action & Adventure", "Adventure", "Animation", "Anime", "Biography",
+        "Classic TV", "Classics", "Comedy", "Crime", "Documentary", "Drama", "Family",
+        "Fantasy", "Fitness & Workout", "Foreign", "History", "Horror", "Independent",
+        "Kids", "Kids & Family", "Music", "Musical", "Mystery", "Non-Fiction", "Reality TV",
+        "Romance", "Sci-Fi & Fantasy", "Science Fiction", "Short Film", "Special Interest",
+        "Sports", "Thriller", "War", "Western"
+    ]
+
+    static let customKey = "SBCustomGenres"
+
+    /// The genres typed in by hand and kept, in the order they were first typed.
+    static func custom(defaults: UserDefaults = .standard) -> [String] {
+        return defaults.stringArray(forKey: customKey) ?? []
+    }
+
+    /// The whole list, in name order, with no repeats (capital letters do not
+    /// make a new genre). `current` is the genre already on the file, so it is
+    /// always in the list.
+    static func all(including current: String? = nil, defaults: UserDefaults = .standard) -> [String] {
+        var seen = Set<String>()
+        var result: [String] = []
+        for genre in standard + custom(defaults: defaults) + genres(in: current ?? "") {
+            if seen.insert(genre.lowercased()).inserted { result.append(genre) }
+        }
+        return result.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+    }
+
+    /// Replaces the kept genres with `genres` (the Genres editor in the
+    /// Metadata preferences): spaces trimmed, empty ones and repeats left out,
+    /// and any that are already on the standard list not kept twice.
+    static func setCustom(_ genres: [String], defaults: UserDefaults = .standard) {
+        var known = Set(standard.map { $0.lowercased() })
+        var stored: [String] = []
+        for genre in genres.map({ $0.trimmingCharacters(in: .whitespaces) }) where genre.isEmpty == false && known.insert(genre.lowercased()).inserted {
+            stored.append(genre)
+        }
+        if stored.isEmpty { defaults.removeObject(forKey: customKey) } else { defaults.set(stored, forKey: customKey) }
+    }
+
+    /// Keeps the genres in `text` (separate several with commas) so they show
+    /// up in the list from now on. Genres that are already on the list are not
+    /// stored again.
+    static func remember(_ text: String, defaults: UserDefaults = .standard) {
+        var known = Set((standard + custom(defaults: defaults)).map { $0.lowercased() })
+        var stored = custom(defaults: defaults)
+        for genre in genres(in: text) where known.insert(genre.lowercased()).inserted {
+            stored.append(genre)
+        }
+        if stored != custom(defaults: defaults) {
+            defaults.set(stored, forKey: customKey)
+        }
+    }
+
+    private static func genres(in text: String) -> [String] {
+        return text.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { $0.isEmpty == false && $0 != NSLocalizedString("Unknown", comment: "") }
+    }
 }

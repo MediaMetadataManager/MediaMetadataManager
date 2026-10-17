@@ -1,6 +1,9 @@
 //
 //  AppRestarter.swift
-//  M3
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 10/10/2026.
 //
 //  "Restart now or later" after something that only takes effect on the next
 //  launch -- today, installing or removing a plugin (see

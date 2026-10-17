@@ -1,6 +1,9 @@
 //
 //  QueueHeaderCell.swift
-//  M3
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 10/11/2026.
 //
 //  The column headers of the Queue tables. They are drawn on a tinted
 //  background with a thin line under them so they stand out from the rows

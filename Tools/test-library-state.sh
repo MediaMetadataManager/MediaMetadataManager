@@ -1,4 +1,11 @@
 #!/bin/bash
+#
+#  test-library-state.sh
+#
+#             Media Metadata Manager
+#                       M3
+#  Created by: Hans Hoffmeister on 10/11/2026.
+#
 # Prints a sorted listing of a folder: relative path, size and a short hash for
 # every file (hidden files included). Save it before and after a test and diff
 # the two to see exactly what changed.

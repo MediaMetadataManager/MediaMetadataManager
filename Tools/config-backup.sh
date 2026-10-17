@@ -1,5 +1,12 @@
 #!/bin/bash
 #
+#  config-backup.sh
+#
+#             Media Metadata Manager
+#                       M3
+#  Created by: Hans Hoffmeister on 10/10/2026.
+#
+#
 # Keep your own settings safe while you test releases and updates.
 # Everything the app remembers lives OUTSIDE the .app:
 #   ~/Library/Preferences/com.quattromeister.M3.plist   (preferences, API keys, folders)

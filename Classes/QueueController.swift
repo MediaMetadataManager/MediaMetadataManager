@@ -4,6 +4,13 @@
 //
 //  Created by Damiano Galassi on 26/01/2019.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Queue window as Movies and TV Shows tabs with folder groups, the intake,
+//  naming, merge, already-merged and metadata-review workflow, sortable
+//  columns, statistics, time-limited runs, TV episode routing, files sent
+//  from the Library scan edited in place, with the scan's tag columns.
+//
 
 import Cocoa
 import UserNotifications
@@ -1226,9 +1233,11 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         return candidate.files.contains { isTVEpisodeFile($0) }
     }
 
-    /// True when a file's name carries an episode marker (S01E02, 1x02).
+    /// True when a file's name carries an episode marker (S01E02, 1x02), or
+    /// the file sits in a season folder ("Season 1"), as store purchases do.
     static func isTVEpisodeFile(_ url: URL) -> Bool {
-        return ReleaseFilenameParser.parse(url.lastPathComponent)?.season != nil
+        if ReleaseFilenameParser.parse(url.lastPathComponent)?.season != nil { return true }
+        return SeasonFolderName.isInsideSeasonFolder(url)
     }
 
     /// Returns how many items were added. With `force` (Scan Now) nothing
@@ -1318,6 +1327,10 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             do {
                 try fileManager.createDirectory(at: wrapper, withIntermediateDirectories: false)
                 try fileManager.moveItem(at: file, to: wrapper.appendingPathComponent(file.lastPathComponent))
+                // Its subtitle files go in the same folder.
+                for companion in candidate.companions {
+                    try? fileManager.moveItem(at: companion, to: wrapper.appendingPathComponent(companion.lastPathComponent))
+                }
             } catch {
                 try? fileManager.removeItem(at: wrapper)
                 rememberIngested(candidate.key)
@@ -1381,15 +1394,23 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
 
         // A file already sitting in the staging folder (or another delivery
         // destination) is scanned and tagged where it is -- no second copy.
+        // A file sent from the Library scan is treated the same way.
         let editInPlace = MediaIntakePrefs.shouldEditInPlace(url)
+            || QueueController.inPlaceSourcePaths.contains(url.standardizedFileURL.path)
         let destURL = editInPlace ? url : destination(for: url)
         let item = QueueItem(fileURL: url, destination: destURL, sourceFolderURL: sourceFolderURL)
+        item.editsInPlace = editInPlace
+        // A file sent from the Library scan brings the scan's tag columns.
+        if editInPlace, let seed = QueueController.inPlaceSeedValues[url.standardizedFileURL.path] {
+            item.trackedTagKeys = QueueController.inPlaceTagKeys
+            tagValues.seed(item, values: seed)
+        }
 
         if prefs.clearExistingMetadata {
             item.addAction(QueueClearExistingMetadataAction())
         }
         if prefs.searchMetadata {
-            item.addAction(QueueMetadataAction(movieLanguage: prefs.movieProviderLanguage,tvShowLanguage: prefs.tvShowProviderLanguage, movieProvider: prefs.movieProvider, tvShowProvider: prefs.tvShowProvider, preferredArtwork: prefs.providerArtwork, preferredArtworkSize: prefs.providerArtworkSize))
+            item.addAction(QueueMetadataAction(movieLanguage: prefs.movieProviderLanguage,tvShowLanguage: prefs.tvShowProviderLanguage, movieProvider: prefs.movieProvider, tvShowProvider: prefs.tvShowProvider, preferredArtwork: prefs.providerArtwork, preferredArtworkSize: prefs.providerArtworkSize, existingTags: prefs.existingTags, keepEmptyAnnotations: prefs.keepEmptyAnnotations))
         }
         if prefs.setOutputFilename {
             item.addAction(QueueSetOutputFilenameAction())
@@ -1531,7 +1552,9 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         // With folder rows open the table has more rows than the Queue, so the
         // animated insert below would put the new rows in the wrong place:
         // redraw instead.
-        let foldersOpen = rebuildLayout().hasExpansions
+        // An animated insert into a table that is not on screen (the other
+        // tab) can leave rows without their cells, so redraw it instead.
+        let foldersOpen = rebuildLayout().hasExpansions || canAnimateRowChanges == false
         if foldersOpen == false { table.beginUpdates() }
 
         // Forward
@@ -1604,6 +1627,19 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         return result
     }
 
+    /// True when the table is on screen, so inserting and removing rows can
+    /// be animated. A table on the tab that is not showing is simply redrawn.
+    private var canAnimateRowChanges: Bool {
+        guard let table = table else { return false }
+        return table.window != nil && table.isHiddenOrHasHiddenAncestor == false
+    }
+
+    /// Redraws every row. Used when this tab is brought to the front, so rows
+    /// added while it was out of sight are shown properly.
+    func reloadTable() {
+        table?.reloadData()
+    }
+
     private func removeRows(at requestedIndexes: IndexSet) {
         if requestedIndexes.isEmpty {
             return
@@ -1611,7 +1647,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
 
         let indexes = indexesIncludingOrphanedFolderHeaders(requestedIndexes)
 
-        let foldersOpen = rebuildLayout().hasExpansions
+        let foldersOpen = rebuildLayout().hasExpansions || canAnimateRowChanges == false
         if foldersOpen == false { table.beginUpdates() }
 
         let removedRows = queue.rows(at: indexes)
@@ -1723,19 +1759,33 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         let supportedFileFormats = MP42FileImporter.supportedFileFormats()
 
         let value = try? url.resourceValues(forKeys: [URLResourceKey.isDirectoryKey])
+        let queued = QueueDuplicates.sourcePaths(of: queue.allRows)
 
         if let isDirectory = value?.isDirectory, isDirectory == true,
             let directoryEnumerator = FileManager.default.enumerator(at: url, includingPropertiesForKeys: [URLResourceKey.nameKey, URLResourceKey.isDirectoryKey], options: [.skipsSubdirectoryDescendants, .skipsHiddenFiles], errorHandler: nil) {
 
+            var found: [URL] = []
             for case let fileURL as URL in directoryEnumerator {
                 let fileValue = try? fileURL.resourceValues(forKeys: [URLResourceKey.isDirectoryKey])
                 if fileValue?.isDirectory != true, supportedFileFormats.contains(fileURL.pathExtension.lowercased()) {
-                    items.append(createItem(url: fileURL))
+                    found.append(fileURL)
                 }
+            }
+            // A subtitle file beside a video is loaded into it, not a row of its own.
+            for fileURL in SidecarSubtitles.partition(found).media {
+                if queued.contains(QueueDuplicates.key(for: fileURL)) {
+                    duplicatesSkipped += 1
+                    continue
+                }
+                items.append(createItem(url: fileURL))
             }
             items.sort { return $0.fileURL.lastPathComponent.localizedStandardCompare($1.fileURL.lastPathComponent) == ComparisonResult.orderedAscending }
         } else if supportedFileFormats.contains(url.pathExtension.lowercased()) {
-            items.append(createItem(url: url))
+            if queued.contains(QueueDuplicates.key(for: url)) {
+                duplicatesSkipped += 1
+            } else {
+                items.append(createItem(url: url))
+            }
         }
 
         return items
@@ -1753,46 +1803,103 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     /// row. Used by the Add panel, Finder drag-and-drop, and File > Open
     /// of a folder so all of them behave identically.
     ///
-    /// On the Movies tab, files whose names carry an episode marker go to the
-    /// TV Shows tab instead (unless the user turned that off in the Media
-    /// Intake settings); a folder holding both kinds is split file by file.
-    /// Nothing is ever moved off the TV Shows tab.
+    /// A folder is searched a few levels down, so a show folder holding
+    /// Season folders adds one group per Season folder.
+    ///
+    /// Each file goes to the tab it belongs on: files whose names carry an episode
+    /// marker (or that sit in a Season folder) to the TV Shows tab, all
+    /// others to the Movies tab, whichever tab they were added to. A folder
+    /// holding both kinds is split file by file.
     func insertGrouped(_ urls: [URL], at index: Int) {
         let sortedURLs = urls.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == ComparisonResult.orderedAscending }
         var insertionIndex = min(max(index, 0), queue.count)
-        let sendEpisodesToTVTab = isTVShowQueue == false && MediaIntakePrefs.sendEpisodesToTVTab
-        let tvQueue = QueueController.tvShows
-        var sentToTV = 0
+        let other = isTVShowQueue ? QueueController.shared : QueueController.tvShows
+        let supportedFileFormats = MP42FileImporter.supportedFileFormats()
+        var sentToOther = 0
+        duplicatesSkipped = 0
+        other.duplicatesSkipped = 0
+
+        // True when the file belongs on this tab.
+        let belongsHere: (URL) -> Bool = { [unowned self] in
+            return QueueTabRouting.belongs($0, onTVShowsTab: self.isTVShowQueue)
+        }
 
         for url in sortedURLs {
             let isDirectory = (try? url.resourceValues(forKeys: [URLResourceKey.isDirectoryKey]))?.isDirectory ?? false
-            var include: (URL) -> Bool = { _ in true }
 
-            if sendEpisodesToTVTab {
-                if isDirectory {
-                    sentToTV += tvQueue.insertFolder(url, at: tvQueue.count, include: QueueController.isTVEpisodeFile)
-                    include = { QueueController.isTVEpisodeFile($0) == false }
-                } else if QueueController.isTVEpisodeFile(url) {
-                    let countBefore = tvQueue.count
-                    tvQueue.insert(contentOf: [url], at: tvQueue.count)
-                    sentToTV += tvQueue.count - countBefore
-                    continue
+            guard isDirectory else {
+                if belongsHere(url) {
+                    let countBefore = queue.count
+                    insert(contentOf: [url], at: insertionIndex)
+                    insertionIndex += queue.count - countBefore
+                } else {
+                    let countBefore = other.count
+                    other.insert(contentOf: [url], at: other.count)
+                    sentToOther += other.count - countBefore
                 }
+                continue
             }
 
-            let countBefore = queue.count
-            if isDirectory {
-                insertFolder(url, at: insertionIndex, include: include)
-            } else {
-                insert(contentOf: [url], at: insertionIndex)
+            let folders = QueueMediaFolders.folders(startingAt: url) { supportedFileFormats.contains($0.pathExtension.lowercased()) }
+            for folder in folders {
+                sentToOther += other.insertFolder(folder, at: other.count, include: { belongsHere($0) == false })
+                let countBefore = queue.count
+                insertFolder(folder, at: insertionIndex, include: belongsHere)
+                insertionIndex += queue.count - countBefore
             }
-            insertionIndex += queue.count - countBefore
         }
 
-        if sentToTV > 0 {
-            statusLabel.stringValue = String.localizedStringWithFormat(NSLocalizedString("%lu TV episode(s) were added to the TV Shows tab.", comment: "Queue -> files that look like TV episodes were put on the TV Shows tab"), sentToTV)
+        var messages: [String] = []
+        if sentToOther > 0 {
+            messages.append(QueueTabRouting.statusMessage(movedCount: sentToOther, addedToTVShowsTab: isTVShowQueue))
+        }
+        let skipped = duplicatesSkipped + other.duplicatesSkipped
+        if skipped > 0 {
+            messages.append(String.localizedStringWithFormat(NSLocalizedString("%lu file(s) were already in the Queue and were not added again.", comment: "Queue -> files skipped because they are already queued"), skipped))
+        }
+        if messages.isEmpty == false {
+            statusLabel.stringValue = messages.joined(separator: " ")
         }
     }
+
+    /// The paths of files being added by addForInPlaceEdit(_:) right now,
+    /// so createItem(url:) edits them where they are.
+    private static var inPlaceSourcePaths: Set<String> = []
+    /// The Library scan's tag columns, and each file's values at the moment
+    /// it was sent, for the files being added by addForInPlaceEdit(_:tagKeys:).
+    private static var inPlaceTagKeys: [String] = []
+    private static var inPlaceSeedValues: [String: [String: String]] = [:]
+
+    /// Adds files from the Library scan: each goes to the Movies or TV Shows
+    /// Queue as usual, but is edited where it sits (tags written into the
+    /// file, no copy and no move to the library). Returns how many went
+    /// to each Queue and how many were skipped as already queued.
+    ///
+    /// `tagKeys` are the Library scan's tag columns; each file brings its
+    /// values from the scan (a tag with no entry was missing). The Queue
+    /// shows them as columns and reads each file again when it is done.
+    @discardableResult
+    func addForInPlaceEdit(_ files: [(url: URL, values: [String: String])], tagKeys: [String]) -> (movies: Int, tvShows: Int, skipped: Int) {
+        let moviesBefore = QueueController.shared.count
+        let tvBefore = QueueController.tvShows.count
+        QueueController.inPlaceSourcePaths = Set(files.map { $0.url.standardizedFileURL.path })
+        QueueController.inPlaceTagKeys = tagKeys
+        QueueController.inPlaceSeedValues = Dictionary(files.map { ($0.url.standardizedFileURL.path, $0.values) }, uniquingKeysWith: { first, _ in first })
+        defer {
+            QueueController.inPlaceSourcePaths = []
+            QueueController.inPlaceTagKeys = []
+            QueueController.inPlaceSeedValues = [:]
+        }
+        QueueController.shared.insertGrouped(files.map { $0.url }, at: QueueController.shared.count)
+        QueueController.shared.syncTagColumns()
+        QueueController.tvShows.syncTagColumns()
+        let skipped = QueueController.shared.duplicatesSkipped + QueueController.tvShows.duplicatesSkipped
+        return (QueueController.shared.count - moviesBefore, QueueController.tvShows.count - tvBefore, skipped)
+    }
+
+    /// Files skipped by the latest add because they were already in this
+    /// Queue and not yet completed.
+    private(set) var duplicatesSkipped = 0
 
     /// Direct children of folderURL (same non-recursive convention as
     /// makeRelease(contentOf:)) that are in a format this app can queue,
@@ -1806,11 +1913,21 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         }
 
         var items: [QueueItem] = []
+        let queued = QueueDuplicates.sourcePaths(of: queue.allRows)
+        var found: [URL] = []
         for case let fileURL as URL in directoryEnumerator {
             let value = try? fileURL.resourceValues(forKeys: [URLResourceKey.isDirectoryKey])
             if value?.isDirectory != true, supportedFileFormats.contains(fileURL.pathExtension.lowercased()), include(fileURL) {
-                items.append(createItem(url: fileURL, sourceFolderURL: folderURL))
+                found.append(fileURL)
             }
+        }
+        // A subtitle file beside a video is loaded into it, not a row of its own.
+        for fileURL in SidecarSubtitles.partition(found).media {
+            if queued.contains(QueueDuplicates.key(for: fileURL)) {
+                duplicatesSkipped += 1
+                continue
+            }
+            items.append(createItem(url: fileURL, sourceFolderURL: folderURL))
         }
         items.sort { return $0.fileURL.lastPathComponent.localizedStandardCompare($1.fileURL.lastPathComponent) == ComparisonResult.orderedAscending }
         return items
@@ -1898,7 +2015,8 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             }
         }
         fileURLs.sort { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == ComparisonResult.orderedAscending }
-        return fileURLs
+        // A subtitle file beside a video is not a part of the movie.
+        return SidecarSubtitles.partition(fileURLs).media
     }
 
     // MARK: Files changed outside the app
@@ -1932,6 +2050,8 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         if fresh.sourceFileURLs != release.sourceFileURLs {
             release.sourceFileURLs = fresh.sourceFileURLs
             changed = true
+            // Files taken out of the folder since: one left needs no merge.
+            if adoptSingleFileStage(release) { changed = true }
         }
         // The merged file that held a folder back may have been moved or
         // deleted since (or turned up since).
@@ -1949,6 +2069,20 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             table.reloadData()
         }
         return changed
+    }
+
+    /// A folder waiting for a merge order whose files were taken out in Finder,
+    /// leaving just one, has nothing to merge any more: it becomes a
+    /// single-file release (see ReleaseRescanStage). Returns true when its
+    /// stage changed.
+    private func adoptSingleFileStage(_ release: QueueRelease) -> Bool {
+        let stage = ReleaseRescanStage.stage(after: release.stage, fileCount: release.sourceFileURLs.count, hasMergedFile: release.mergedFileURL != nil)
+        guard stage != release.stage else { return false }
+        pendingAutoMerges.removeValue(forKey: release.id)?.cancel()
+        release.stage = stage
+        release.mergeErrorMessage = nil
+        release.mergeOrder = nil
+        return true
     }
 
     /// Re-reads from disk what the list shows: every file's size, and the
@@ -1982,6 +2116,9 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
                 for (release, files) in zip(folders, listings) where files.isEmpty == false && files != release.sourceFileURLs && self.canRescan(release) {
                     release.sourceFileURLs = files
                     changed = true
+                    if self.adoptSingleFileStage(release) {
+                        self.attemptAutoResolveMetadata(for: release)
+                    }
                 }
                 for (url, size) in sizes where self.sizeCache[url] != size {
                     self.sizeCache[url] = size
@@ -2143,6 +2280,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         }
         refreshStats()
         updateDockTile()
+        syncTagColumns()
     }
 
     /// Set while a Start-time "run for a time limit" choice is active;
@@ -2376,7 +2514,10 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
 
     /// Folder rows currently open, by identity (so a sort or drag keeps them
     /// open), and the table-row numbering that goes with them.
-    private var expandedRows = Set<ObjectIdentifier>()
+    /// Folder rows start open, so what is remembered is the ones the user
+    /// closed. That way every folder, new or restored, shows its files
+    /// until it is closed.
+    private var collapsedRows = Set<ObjectIdentifier>()
     private var layout = QueueOutlineLayout(rowCount: 0, expanded: [], fileCount: { _ in 0 })
 
     private let nameColumn = NSUserInterfaceItemIdentifier(rawValue: "nameColumn")
@@ -2446,6 +2587,10 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         nameCol.sortDescriptorPrototype = NSSortDescriptor(key: QueueSortColumn.name.rawValue, ascending: true)
         // Name takes up whatever room the window has; the others keep their width.
         nameCol.resizingMask = [.autoresizingMask, .userResizingMask]
+        nameCol.minWidth = 160
+        // With many tag columns the table can be wider than the window.
+        table.enclosingScrollView?.hasHorizontalScroller = true
+        table.enclosingScrollView?.autohidesScrollers = true
 
         func add(_ identifier: NSUserInterfaceItemIdentifier, title: String, width: CGFloat, minWidth: CGFloat = 40, key: QueueSortColumn?) {
             let column = NSTableColumn(identifier: identifier)
@@ -2480,13 +2625,115 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             column.headerCell = header
         }
 
-        table.allowsColumnReordering = false
+        // Columns can be dragged into a new order (see shouldReorderColumn:
+        // "#" stays first and Actions last) and dragged wider or narrower.
+        table.allowsColumnReordering = true
         table.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
         table.headerView = NSTableHeaderView(frame: NSRect(x: 0, y: 0, width: 100, height: 23))
         // ".v2": the saved column layout from before "#" and Actions existed
         // would put them in the wrong place, so a new layout name starts fresh.
         table.autosaveName = isTVShowQueue ? "SBTVQueueTable.v2" : "SBQueueTable.v2"
         table.autosaveTableColumns = true
+    }
+
+    // MARK: Tag columns (files sent from the Library scan)
+
+    /// The values shown in this Queue's tag columns.
+    private let tagValues = QueueTagValues()
+
+    /// Adds a column for each tag tracked by the Queue's items (files sent
+    /// from the Library scan), and removes them when no item needs them any
+    /// more. The columns sit just before Actions.
+    func syncTagColumns() {
+        guard let table = table else { return }
+        var keys: [String] = []
+        var items: [QueueItem] = []
+        for row in queue.allRows {
+            guard let item = row.effectiveItem, item.trackedTagKeys.isEmpty == false else { continue }
+            items.append(item)
+            for key in item.trackedTagKeys where keys.contains(key) == false { keys.append(key) }
+        }
+        tagValues.prune(keeping: items)
+
+        let wanted = keys.map { QueueTagValues.columnIdentifier(forKey: $0) }
+        let current = table.tableColumns.map { $0.identifier.rawValue }.filter { QueueTagValues.tagKey(ofColumn: $0) != nil }
+        guard wanted != current else { return }
+
+        for column in table.tableColumns where QueueTagValues.tagKey(ofColumn: column.identifier.rawValue) != nil && wanted.contains(column.identifier.rawValue) == false {
+            // A column that is going away cannot stay the sort column.
+            if table.sortDescriptors.first?.key == column.identifier.rawValue {
+                ignoreSortChange = true
+                table.sortDescriptors = []
+                ignoreSortChange = false
+            }
+            table.removeTableColumn(column)
+        }
+        for key in keys {
+            let id = QueueTagValues.columnIdentifier(forKey: key)
+            guard table.tableColumns.contains(where: { $0.identifier.rawValue == id }) == false else { continue }
+            let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(id))
+            column.title = LibraryScanCell.title(forKey: key)
+            column.width = 120
+            column.minWidth = 50
+            column.maxWidth = 400
+            column.resizingMask = .userResizingMask
+            // Clicking the heading sorts the Queue by this tag.
+            column.sortDescriptorPrototype = NSSortDescriptor(key: id, ascending: true)
+            let header = QueueHeaderCell(textCell: column.title)
+            header.sortKey = id
+            header.alignment = .left
+            column.headerCell = header
+            table.addTableColumn(column)
+            if let actions = table.tableColumns.firstIndex(where: { $0.identifier == actionsColumn }),
+               let added = table.tableColumns.firstIndex(where: { $0 === column }), added != actions - 1 {
+                table.moveColumn(added, toColumn: actions)
+            }
+        }
+        fitNameColumn()
+        table.reloadData()
+    }
+
+    /// Gives the Name column whatever width the other columns leave, so a
+    /// column added after the window was laid out is not pushed off the
+    /// right edge. When the columns are wider than the window, Name keeps its
+    /// minimum width and the table scrolls sideways.
+    private func fitNameColumn() {
+        guard let table = table, let nameCol = table.tableColumn(withIdentifier: nameColumn) else { return }
+        let visible = table.enclosingScrollView?.contentView.bounds.width ?? table.bounds.width
+        let others = table.tableColumns.filter { $0 !== nameCol }.reduce(CGFloat(0)) { $0 + $1.width }
+        let spacing = table.intercellSpacing.width * CGFloat(table.numberOfColumns)
+        nameCol.width = max(nameCol.minWidth, visible - others - spacing)
+    }
+
+    private func tagCell(in tableView: NSTableView, identifier: NSUserInterfaceItemIdentifier, row queueRow: QueueRow) -> NSTableCellView {
+        let cell = infoCell(in: tableView, identifier: identifier)
+        cell.toolTip = nil
+        cell.textField?.textColor = .secondaryLabelColor
+        cell.textField?.stringValue = ""
+        guard let key = QueueTagValues.tagKey(ofColumn: identifier.rawValue),
+              let item = queueRow.effectiveItem, item.trackedTagKeys.contains(key) else { return cell }
+
+        let reload: () -> Void = { [weak self, weak queueRow] in
+            guard let self = self, let table = self.table, let queueRow = queueRow else { return }
+            let index = self.queue.index(of: queueRow)
+            guard index >= 0 else { return }
+            let column = table.column(withIdentifier: identifier)
+            guard column >= 0 else { return }
+            table.reloadData(forRowIndexes: self.tableRows(forQueueIndexes: IndexSet(integer: index)), columnIndexes: IndexSet(integer: column))
+        }
+
+        switch tagValues.text(for: item, key: key, refreshed: reload) {
+        case .loading:
+            cell.textField?.stringValue = "\u{2014}"
+        case .value(let text):
+            cell.textField?.stringValue = text
+            cell.textField?.textColor = .labelColor
+            cell.toolTip = text
+        case .missing:
+            cell.textField?.stringValue = LibraryScanCell.missingText
+            cell.textField?.textColor = .systemRed
+        }
+        return cell
     }
 
     private func infoCell(in tableView: NSTableView, identifier: NSUserInterfaceItemIdentifier) -> NSTableCellView {
@@ -2566,28 +2813,53 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     func tableView(_ tableView: NSTableView, sortDescriptorsDidChange oldDescriptors: [NSSortDescriptor]) {
         guard ignoreSortChange == false,
               let descriptor = tableView.sortDescriptors.first,
-              let key = descriptor.key,
-              let column = QueueSortColumn(rawValue: key)
+              let key = descriptor.key
         else { return }
-        sortQueue(by: column, ascending: descriptor.ascending)
+        if let tag = QueueTagValues.tagKey(ofColumn: key) {
+            sortQueue(by: .tag, tagKey: tag, ascending: descriptor.ascending)
+        }
+        else if let column = QueueSortColumn(rawValue: key), column != .tag {
+            sortQueue(by: column, ascending: descriptor.ascending)
+        }
+    }
+
+    /// "#" always stays at the far left and Actions at the far right; the
+    /// columns in between can be dragged anywhere.
+    func tableView(_ tableView: NSTableView, shouldReorderColumn columnIndex: Int, toColumn newColumnIndex: Int) -> Bool {
+        let columns = tableView.tableColumns
+        guard columns.indices.contains(columnIndex) else { return false }
+        let moving = columns[columnIndex].identifier
+        if moving == numberColumn || moving == actionsColumn { return false }
+        return newColumnIndex >= 1 && newColumnIndex <= columns.count - 2
     }
 
     /// Reorders the Queue itself, which is also the order files are processed
     /// in. Can be undone, and rows can still be dragged afterwards.
-    private func sortQueue(by column: QueueSortColumn, ascending: Bool) {
+    private func sortQueue(by column: QueueSortColumn, tagKey: String? = nil, ascending: Bool) {
         let apply: () -> Void = { [weak self] in
             guard let self = self else { return }
             let before = self.queue.allRows
             let selected = self.selectedQueueIndexes.filter { $0 < before.count }.map { before[$0] }
             let sizes = self.sizeCache
+            let tagValues = self.tagValues
 
             self.queue.reorder { current in
-                let entries = current.map { $0.sortEntry(sizes: sizes) }
+                let entries = current.map { row -> QueueSortEntry in
+                    var text = ""
+                    if let key = tagKey, let item = row.effectiveItem { text = tagValues.knownText(for: item, key: key) ?? "" }
+                    return row.sortEntry(sizes: sizes, tagText: text)
+                }
                 return QueueSorter.order(of: entries, by: column, ascending: ascending).map { current[$0] }
             }
             self.finishReorder(restoring: before, selected: selected, clearSortIndicator: false, actionName: NSLocalizedString("Sort Queue", comment: "Queue -> sort undo action name"))
         }
 
+        if column == .tag, let key = tagKey {
+            // Every file's value is needed first; unread files are read now.
+            let items = queue.allRows.compactMap { $0.effectiveItem }.filter { $0.trackedTagKeys.contains(key) }
+            tagValues.load(items, completion: apply)
+            return
+        }
         if column == .size {
             let urls = queue.allRows.flatMap { $0.sizeSourceURLs }
             if urls.contains(where: { sizeCache[$0] == nil }) {
@@ -2657,6 +2929,10 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             queueRow = queue.row(at: queueIndex)
         }
 
+        if let identifier = tableColumn?.identifier, QueueTagValues.tagKey(ofColumn: identifier.rawValue) != nil {
+            return tagCell(in: tableView, identifier: identifier, row: queueRow)
+        }
+
         if let identifier = tableColumn?.identifier,
            identifier == statusColumn || identifier == sizeColumn || identifier == kindColumn || identifier == numberColumn {
             let cell = infoCell(in: tableView, identifier: identifier)
@@ -2691,9 +2967,10 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             var disclosure = FolderTriangle.none
             if let folderHeaderURL = queueRow.folderHeaderURL {
                 // The group label for the item rows right after it.
-                cell?.textField?.stringValue = folderHeaderURL.lastPathComponent
+                cell?.textField?.stringValue = SeasonFolderName.displayName(forFolder: folderHeaderURL)
                 cell?.textField?.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
                 cell?.imageView?.image = NSWorkspace.shared.icon(forFile: folderHeaderURL.path)
+                disclosure = collapsedRows.contains(ObjectIdentifier(queueRow)) ? .collapsed : .expanded
             } else if let item = queueRow.effectiveItem {
                 // A plain item, or a release that has resolved to a real
                 // mux job -- today's logic, unchanged either way, plus the
@@ -2712,7 +2989,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
                     cell?.toolTip = String(format: NSLocalizedString("A folder with %ld media file(s). Double-click to review it.", comment: "Queue release row tooltip"), release.sourceFileURLs.count)
                 }
                 if canExpand(queueRow) {
-                    disclosure = expandedRows.contains(ObjectIdentifier(queueRow)) ? .expanded : .collapsed
+                    disclosure = collapsedRows.contains(ObjectIdentifier(queueRow)) ? .collapsed : .expanded
                 }
             }
 
@@ -2776,9 +3053,11 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     // MARK: Opening and closing folder rows
 
     /// Folder rows still waiting to be merged or named can be opened to list
-    /// the files inside. A row that has become a single file is not a folder
+    /// the files inside, and a folder header can be closed to hide its files. A row that has become a single file is not a folder
     /// any more.
     private func canExpand(_ row: QueueRow) -> Bool {
+        // A folder header always has the files added with it under it.
+        if row.folderHeaderURL != nil { return true }
         guard let release = row.release, release.resolvedItem == nil, release.stage != .done else { return false }
         return release.sourceFileURLs.isEmpty == false
     }
@@ -2790,16 +3069,21 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     private func rebuildLayout() -> QueueOutlineLayout {
         let rows = queue.allRows
         var open = Set<Int>()
+        var hidden = Set<Int>()
         var stillThere = Set<ObjectIdentifier>()
         for (index, row) in rows.enumerated() {
             let id = ObjectIdentifier(row)
-            if expandedRows.contains(id), canExpand(row) {
-                open.insert(index)
-                stillThere.insert(id)
+            guard collapsedRows.contains(id), canExpand(row) else {
+                if row.folderHeaderURL == nil, canExpand(row) { open.insert(index) }
+                continue
+            }
+            stillThere.insert(id)
+            if row.folderHeaderURL != nil {
+                hidden.formUnion(QueueFolderGroups.childIndexes(ofHeaderAt: index, in: rows))
             }
         }
-        expandedRows = stillThere
-        layout = QueueOutlineLayout(rowCount: rows.count, expanded: open, fileCount: { rows[$0].release?.sourceFileURLs.count ?? 0 })
+        collapsedRows = stillThere
+        layout = QueueOutlineLayout(rowCount: rows.count, expanded: open, hidden: hidden, fileCount: { rows[$0].release?.sourceFileURLs.count ?? 0 })
         return layout
     }
 
@@ -2834,7 +3118,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         let row = table.row(for: sender)
         guard let index = queueIndex(forTableRow: row), index < queue.count else { return }
         let id = ObjectIdentifier(queue.row(at: index))
-        let expand = expandedRows.contains(id) == false
+        let expand = collapsedRows.contains(id)
 
         if NSApp.currentEvent?.modifierFlags.contains(.option) == true {
             setAllFolders(expanded: expand)
@@ -2849,24 +3133,41 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         for index in indexes where index < queue.count {
             let queueRow = queue.row(at: index)
             let id = ObjectIdentifier(queueRow)
-            guard canExpand(queueRow), expandedRows.contains(id) != expand else { continue }
+            guard canExpand(queueRow), collapsedRows.contains(id) == expand else { continue }
 
             let before = rebuildLayout()
             guard let parentRow = before.tableRow(forQueueIndex: index) else { continue }
+            let isHeader = queueRow.folderHeaderURL != nil
+            let groupIndexes = isHeader ? IndexSet(QueueFolderGroups.childIndexes(ofHeaderAt: index, in: queue.allRows)) : IndexSet()
             let fileCount = queueRow.release?.sourceFileURLs.count ?? 0
 
-            if expand { expandedRows.insert(id) } else { expandedRows.remove(id) }
-            rebuildLayout()
+            if expand { collapsedRows.remove(id) } else { collapsedRows.insert(id) }
+            let after = rebuildLayout()
+
+            guard canAnimateRowChanges else {
+                table.reloadData()
+                continue
+            }
 
             table.beginUpdates()
-            let lines = IndexSet(integersIn: (parentRow + 1)..<(parentRow + 1 + fileCount))
-            if expand {
-                table.insertRows(at: lines, withAnimation: .slideDown)
+            if isHeader {
+                if expand {
+                    table.insertRows(at: after.tableRows(forQueueIndexes: groupIndexes), withAnimation: .slideDown)
+                } else {
+                    table.removeRows(at: before.tableRows(forQueueIndexes: groupIndexes), withAnimation: .slideUp)
+                }
             } else {
-                table.removeRows(at: lines, withAnimation: .slideUp)
+                let lines = IndexSet(integersIn: (parentRow + 1)..<(parentRow + 1 + fileCount))
+                if expand {
+                    table.insertRows(at: lines, withAnimation: .slideDown)
+                } else {
+                    table.removeRows(at: lines, withAnimation: .slideUp)
+                }
             }
             table.endUpdates()
-            table.reloadData(forRowIndexes: IndexSet(integer: parentRow), columnIndexes: allColumns)
+            if let row = after.tableRow(forQueueIndex: index) {
+                table.reloadData(forRowIndexes: IndexSet(integer: row), columnIndexes: allColumns)
+            }
         }
     }
 
@@ -2875,8 +3176,8 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         var changed = false
         for row in rows where canExpand(row) {
             let id = ObjectIdentifier(row)
-            guard expandedRows.contains(id) != expand else { continue }
-            if expand { expandedRows.insert(id) } else { expandedRows.remove(id) }
+            guard collapsedRows.contains(id) == expand else { continue }
+            if expand { collapsedRows.remove(id) } else { collapsedRows.insert(id) }
             changed = true
         }
         guard changed else { return }
@@ -2926,10 +3227,10 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             rowIndexes.insert(clickedRow)
         }
 
-        let rows = queue.rows(at: rowIndexes)
-
-        for row in rows where row.effectiveItem?.status == .working || row.release?.stage == .merging {
-            rowIndexes.remove(IndexSet.Element(queue.index(of: row)))
+        // Removing a folder row removes the files under it; files that are
+        // being processed stay, and so does their folder row.
+        rowIndexes = QueueFolderGroups.indexesToRemove(selected: rowIndexes, rows: queue.allRows) { row in
+            row.effectiveItem?.status == .working || row.release?.stage == .merging
         }
 
         if rowIndexes.isEmpty == false {
@@ -3326,6 +3627,16 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         let destURL = destination(for: sourceURL)
         let item = QueueItem(fileURL: sourceURL, destination: destURL)
 
+        // Subtitle files in the release folder (an .srt beside the video) are
+        // embedded in the finished file. Not for a merged file: the parts'
+        // subtitles would not line up with it.
+        if release.mergedFileURL == nil {
+            let subtitles = SidecarSubtitles.files(in: sourceURL.deletingLastPathComponent())
+            if subtitles.isEmpty == false {
+                item.addAction(QueueSubtitlesAction(files: subtitles))
+            }
+        }
+
         if prefs.searchMetadata && skipMetadata == false {
             let artwork = artworkOverride ?? ArtworkType(rawValue: prefs.providerArtwork) ?? .poster
             // A provider picked in the review window is searched first, in its
@@ -3338,7 +3649,9 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
                                                 preferredArtworkSize: prefs.providerArtworkSize,
                                                 searchName: release.approvedName ?? release.folderURL.lastPathComponent,
                                                 searchTerm: searchTerm,
-                                                searchResultIndex: searchResultIndex))
+                                                searchResultIndex: searchResultIndex,
+                                                existingTags: prefs.existingTags,
+                                                keepEmptyAnnotations: prefs.keepEmptyAnnotations))
         }
         // The Set chosen in the Queue options, applied after the search so
         // its values win over what the search found.

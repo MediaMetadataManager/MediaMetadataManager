@@ -1,5 +1,12 @@
 #!/bin/bash
 #
+#  publish-appcast.sh
+#
+#             Media Metadata Manager
+#                       M3
+#  Created by: Hans Hoffmeister on 10/10/2026.
+#
+#
 # Publish the Sparkle appcast built by Tools/make-release.sh.
 #
 #   Tools/publish-appcast.sh <version> <public-repo-clone>

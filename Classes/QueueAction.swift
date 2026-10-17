@@ -4,6 +4,11 @@
 //
 //  Created by Damiano Galassi on 28/07/2017.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Search across all providers, portrait-only cover art, output file naming
+//  and delivery to the library, edit in place, rename in place.
+//
 
 import Foundation
 import MP42Foundation
@@ -69,7 +74,7 @@ class QueueSetOutputFilenameAction: NSObject, QueueActionProtocol {
         // destination) is tagged where it is: its destination stays its own
         // path and QueueRenameInPlaceAction renames it afterwards. Writing it
         // to a new folder here is what used to leave a second copy behind.
-        if MediaIntakePrefs.shouldEditInPlace(item.fileURL),
+        if item.editsInPlace || MediaIntakePrefs.shouldEditInPlace(item.fileURL),
            item.destURL.standardizedFileURL == item.fileURL.standardizedFileURL {
             return true
         }
@@ -227,9 +232,20 @@ class QueueSubtitlesAction : NSObject, QueueActionProtocol {
     var localizedDescription: String { return NSLocalizedString("Loading subtitles", comment: "Action localized description.") }
     override var description: String { return NSLocalizedString("Load Subtitles", comment: "Action description.") }
 
+    /// Subtitle files to load, as given (a release folder's subtitle files).
+    /// When empty, the folder of the item is searched for files named like it.
+    private var explicitFiles: [URL] = []
+
     override init() {}
 
+    init(files: [URL]) {
+        explicitFiles = files
+    }
+
     private func loadExternalSubtitles(url: URL) -> [MP42FileImporter] {
+        if explicitFiles.isEmpty == false {
+            return explicitFiles.compactMap { try? MP42FileImporter(url: $0) }
+        }
         let movieFilename = url.deletingPathExtension().lastPathComponent
         var importers: [MP42FileImporter] = []
         if let contents = try? FileManager.default.contentsOfDirectory(at: url.deletingLastPathComponent(), includingPropertiesForKeys: nil, options: [.skipsSubdirectoryDescendants, .skipsHiddenFiles, .skipsPackageDescendants]) {
@@ -262,8 +278,15 @@ class QueueSubtitlesAction : NSObject, QueueActionProtocol {
         return subtitlesImporters.isEmpty == false
     }
 
-    func encode(with aCoder: NSCoder) {}
-    required init?(coder aDecoder: NSCoder) {}
+    func encode(with aCoder: NSCoder) {
+        aCoder.encode(explicitFiles.map { $0.path } as NSArray, forKey: "SBSubtitleFiles")
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        if let paths = aDecoder.decodeObject(of: [NSArray.self, NSString.self], forKey: "SBSubtitleFiles") as? [String] {
+            explicitFiles = paths.map { URL(fileURLWithPath: $0) }
+        }
+    }
     static var supportsSecureCoding: Bool { return true }
 
 }
@@ -404,11 +427,20 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
     /// Review sheet sets this to the result the user picked.
     let searchResultIndex: Int
 
+    /// What to do with tags the file already has, and whether blank tags
+    /// the search found are kept (see ExistingTagsMode). The defaults follow
+    /// Preferences > Metadata.
+    let existingTags: ExistingTagsMode
+    let keepEmptyAnnotations: Bool
+
     var type: QueueActionType { return .pre }
     var localizedDescription: String { return NSLocalizedString("Searching metadata", comment: "Action localized description.") }
     override var description: String { return NSLocalizedString("Search Metadata", comment: "Action description.") }
 
-    init(movieLanguage: String, tvShowLanguage: String, movieProvider: String, tvShowProvider: String, preferredArtwork: Int, preferredArtworkSize: Int, searchName: String? = nil, searchTerm: String? = nil, searchResultIndex: Int = 0) {
+    init(movieLanguage: String, tvShowLanguage: String, movieProvider: String, tvShowProvider: String, preferredArtwork: Int, preferredArtworkSize: Int, searchName: String? = nil, searchTerm: String? = nil, searchResultIndex: Int = 0,
+         existingTags: Int = ExistingTagsMode.usePreferences.rawValue, keepEmptyAnnotations: Bool = false) {
+        self.existingTags = ExistingTagsMode(rawValue: existingTags) ?? .usePreferences
+        self.keepEmptyAnnotations = keepEmptyAnnotations
         self.searchName = searchName
         self.searchTerm = searchTerm
         self.searchResultIndex = max(0, searchResultIndex)
@@ -592,7 +624,17 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
         }
 
         let map = metadata.mediaKind == .movie ? MetadataPrefs.movieResultMap : MetadataPrefs.tvShowResultMap
-        return metadata.mappedMetadata(to: map, keepEmptyKeys: false)
+        let keepEmpty = existingTags.keepsEmpty(queueSetting: keepEmptyAnnotations,
+                                                preferencesSetting: MetadataPrefs.keepEmptyAnnotations)
+        return metadata.mappedMetadata(to: map, keepEmptyKeys: keepEmpty)
+    }
+
+    /// Puts what the search found into the file's metadata the way the
+    /// Existing tags choice says (by default Preferences > Metadata).
+    func merge(_ found: MP42Metadata, into target: MP42Metadata) {
+        let flags = existingTags.mergeFlags(preferencesOverwrite: MetadataPrefs.overwriteExistingAnnotations,
+                                            preferencesAppend: MetadataPrefs.appendExistingAnnotations)
+        target.merge(found, overwrite: flags.overwrite, append: flags.append)
     }
 
     func runAction(_ item: QueueItem) -> Bool {
@@ -617,7 +659,7 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
                                                       extendedLanguageTag: nil))
                 }
 
-                file.metadata.merge(metadata, overwrite: true)
+                merge(metadata, into: file.metadata)
                 return true
             }
         }
@@ -634,6 +676,8 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
         aCoder.encode(searchName, forKey: "_searchName")
         aCoder.encode(searchTerm, forKey: "_searchTerm")
         aCoder.encode(Int32(searchResultIndex), forKey: "_searchResultIndex")
+        aCoder.encode(Int32(existingTags.rawValue), forKey: "_existingTags")
+        aCoder.encode(keepEmptyAnnotations, forKey: "_keepEmptyAnnotations")
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -654,6 +698,9 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
         self.searchName = aDecoder.decodeObject(of: NSString.self, forKey: "_searchName") as String?
         self.searchTerm = aDecoder.decodeObject(of: NSString.self, forKey: "_searchTerm") as String?
         self.searchResultIndex = Int(aDecoder.decodeInt32(forKey: "_searchResultIndex"))
+        // Queues saved before this setting existed decode as 0 = Use Preferences.
+        self.existingTags = ExistingTagsMode(rawValue: Int(aDecoder.decodeInt32(forKey: "_existingTags"))) ?? .usePreferences
+        self.keepEmptyAnnotations = aDecoder.decodeBool(forKey: "_keepEmptyAnnotations")
     }
 
     static var supportsSecureCoding: Bool { return true }
@@ -1037,6 +1084,8 @@ class QueueMoveToLibraryAction: NSObject, QueueActionProtocol {
 
             var originals = release.mergeOrder ?? []
             originals.append(contentsOf: release.sourceFileURLs)
+            // The subtitle files that were embedded are originals too.
+            if release.mergedFileURL == nil { originals.append(contentsOf: SidecarSubtitles.files(in: sourceFolder)) }
             ProcessedFileCleaner.trashOriginals(originals, oldFolder: sourceFolder, newFolder: sourceFolder, keeping: [])
 
             release.stage = .done
@@ -1064,6 +1113,11 @@ class QueueMoveToLibraryAction: NSObject, QueueActionProtocol {
         // single file's source. The finished file keeps its name.
         var originals = release.mergeOrder ?? []
         originals.append(contentsOf: release.sourceFileURLs)
+        // The subtitle files that were embedded are originals too (the folder
+        // has moved, so name them as they were in the source folder).
+        if release.mergedFileURL == nil {
+            originals.append(contentsOf: SidecarSubtitles.files(in: finalFolder).map { sourceFolder.appendingPathComponent($0.lastPathComponent) })
+        }
         let keep: Set<String> = [item.destURL.lastPathComponent]
         // Only once the finished file really exists, and never when a
         // source has the same name as it (an in-place edit).

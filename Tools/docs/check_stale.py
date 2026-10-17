@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+#
+#  check_stale.py
+#
+#             Media Metadata Manager
+#                       M3
+#  Created by: Hans Hoffmeister on 10/16/2026.
+#
 """Report which documentation screenshots may be out of date.
 
 Usage:

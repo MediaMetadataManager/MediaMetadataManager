@@ -1,6 +1,9 @@
 //
 //  MetadataPluginLoader.swift
-//  M3
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 09/14/2026.
 //
 //  Discovers and loads metadata-source plugin bundles. Plugins are
 //  entirely optional -- with none installed, Subler behaves exactly as

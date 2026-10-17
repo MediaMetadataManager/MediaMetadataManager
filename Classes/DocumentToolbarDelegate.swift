@@ -4,6 +4,11 @@
 //
 //  Created by Damiano Galassi on 18/07/24.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Open and Save toolbar button, Settings tool, Save & Close in the editor,
+//  Queue toolbar items.
+//
 
 import Cocoa
 

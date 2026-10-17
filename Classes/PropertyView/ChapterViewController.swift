@@ -4,6 +4,11 @@
 //
 //  Created by Damiano Galassi on 11/11/2017.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Generated chapter titles read "N - Chapter". Includes later upstream
+//  undo/redo changes ported by hand.
+//
 
 import Cocoa
 import MP42Foundation

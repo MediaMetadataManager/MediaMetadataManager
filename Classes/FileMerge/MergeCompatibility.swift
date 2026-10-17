@@ -1,6 +1,9 @@
 //
 //  MergeCompatibility.swift
-//  Subler
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 09/21/2026.
 //
 //  Part of the LosslessCut-inspired file-merge feature -- see the design
 //  doc published to the Subler claude.ai project

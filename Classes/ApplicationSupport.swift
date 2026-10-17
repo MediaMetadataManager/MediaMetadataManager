@@ -1,6 +1,9 @@
 //
 //  ApplicationSupport.swift
-//  M3
+//
+//             Media Metadata Manager
+//                       M3
+//  Created by: Hans Hoffmeister on 09/27/2026.
 //
 //  Centralizes the app's Application Support folder location. Presets,
 //  the queue, OCR language data, custom-source config, the debug log,

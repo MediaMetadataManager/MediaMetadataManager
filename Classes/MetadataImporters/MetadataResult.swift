@@ -4,6 +4,11 @@
 //
 //  Created by Damiano Galassi on 08/08/2017.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Combining results from several providers, portrait cover-art selection by
+//  real pixel size, one fixed field order for the search table.
+//
 
 import Foundation
 import ImageIO

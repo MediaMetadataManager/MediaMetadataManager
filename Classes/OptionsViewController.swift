@@ -4,6 +4,11 @@
 //
 //  Created by Damiano Galassi on 16/03/2018.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Queue options: separate Movies and TV Shows provider and language lists,
+//  usability fixes.
+//
 
 import Cocoa
 import MP42Foundation
@@ -22,6 +27,28 @@ final class OptionsViewController: NSViewController, NSUserInterfaceValidations 
 
     @objc private dynamic var movieLanguages: [String]
     @objc private dynamic var tvShowLanguages: [String]
+
+    // The TV Shows provider's own language codes and how they are written
+    // (TheTVDB uses three-letter codes, TheMovieDB two-letter ones). The popup
+    // shows names; this keeps the code the Queue actually stores.
+    private var tvShowLanguageCodes: [String] = []
+    private var tvShowLanguageType: LanguageType = .ISO
+
+    /// The name shown in the TV Shows language popup for the stored code.
+    @objc private dynamic var tvShowLanguageName: String? {
+        get {
+            return tvShowLanguageType.menuName(for: options.tvShowProviderLanguage)
+        }
+        set {
+            guard let name = newValue,
+                  let code = tvShowLanguageType.code(forMenuName: name, among: tvShowLanguageCodes) else { return }
+            options.tvShowProviderLanguage = code
+        }
+    }
+
+    @objc class func keyPathsForValuesAffectingTvShowLanguageName() -> Set<String> {
+        return ["options.tvShowProviderLanguage"]
+    }
 
     private var moviesObserver: Any?
     private var tvShowObserver: Any?
@@ -82,11 +109,15 @@ final class OptionsViewController: NSViewController, NSUserInterfaceValidations 
             let oldLanguage = s.options.tvShowProviderLanguage
             let service = MetadataSearch.service(name: newProvider)
 
-            s.tvShowLanguages = s.localizedLanguages(service: service)
+            s.willChangeValue(forKey: "tvShowLanguageName")
+            s.tvShowLanguageCodes = service.languages
+            s.tvShowLanguageType = service.languageType
+            s.tvShowLanguages = service.languageType.menuNames(for: service.languages)
 
             if service.languages.contains(oldLanguage) == false {
                 s.options.tvShowProviderLanguage = service.defaultLanguage
             }
+            s.didChangeValue(forKey: "tvShowLanguageName")
         }
 
         prepareDestinationPopUp()
