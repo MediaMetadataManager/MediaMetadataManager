@@ -24,6 +24,21 @@ public struct PluginMetadataService: MetadataService {
     public var defaultLanguage: String { return "en" }
     public var name: String { return plugin.pluginName }
 
+    // MARK: - Library server
+
+    /// True when the plugin declares itself a library server (see
+    /// M3MetadataPlugin.sourceKind) and can list its items.
+    var isLibraryServer: Bool {
+        return PluginSourceKind.isLibraryServer(plugin.sourceKind?() ?? PluginSourceKind.online)
+    }
+
+    /// Everything the server lists, as the Library scan compares it. Slow
+    /// (one or more web requests): call from a background thread.
+    func libraryItems() -> [LibraryServerItem] {
+        guard let listed = plugin.listLibraryItems?() else { return [] }
+        return listed.compactMap { LibraryServerItem(dictionary: $0) }
+    }
+
     // MARK: - Movie search
 
     public func search(movie: String, language: String) -> [MetadataResult] {
@@ -127,6 +142,75 @@ public struct PluginMetadataService: MetadataService {
 
     public func loadTVMetadata(_ metadata: MetadataResult, language: String) -> MetadataResult {
         return metadata
+    }
+}
+
+/// The two kinds of source (see M3MetadataPlugin.sourceKind).
+enum PluginSourceKind {
+    static let online = "online"
+    static let libraryServer = "libraryServer"
+
+    /// Only the exact word "libraryServer" (any letter case) makes a library
+    /// server; anything else, including an empty string, is an online source.
+    static func isLibraryServer(_ kind: String) -> Bool {
+        return kind.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == libraryServer.lowercased()
+    }
+}
+
+/// One item a library server lists: where its file is and the text the
+/// server holds for each tag, by tag key (the keys the Library scan uses). A
+/// tag the server has nothing for has no entry.
+struct LibraryServerItem: Equatable {
+    let id: String
+    let title: String
+    /// The file's path as the server knows it, nil when it did not say.
+    let path: String?
+    var values: [String: String]
+
+    /// Builds an item from a plugin's dictionary (see
+    /// M3MetadataPlugin.listLibraryItems). Nil without an id and a title.
+    init?(dictionary: [String: Any]) {
+        guard let id = dictionary["id"] as? String, id.isEmpty == false,
+              let title = (dictionary["title"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines), title.isEmpty == false
+        else { return nil }
+        self.id = id
+        self.title = title
+        let path = (dictionary["path"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.path = (path?.isEmpty ?? true) ? nil : path
+
+        var values: [String: String] = [MP42MetadataKeyName: title]
+
+        func text(_ key: String) -> String? {
+            guard let string = (dictionary[key] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines), string.isEmpty == false else { return nil }
+            return string
+        }
+        func list(_ key: String) -> String? {
+            guard let strings = dictionary[key] as? [String] else { return nil }
+            let joined = strings.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { $0.isEmpty == false }.joined(separator: ", ")
+            return joined.isEmpty ? nil : joined
+        }
+
+        // A release date is shown by the Library scan as year-month-day.
+        if let date = text("releaseDate") { values[MP42MetadataKeyReleaseDate] = String(date.prefix(10)) }
+        if let studio = text("studio") { values[MP42MetadataKeyStudio] = studio }
+        if let director = text("director") { values[MP42MetadataKeyDirector] = director }
+        if let synopsis = text("synopsis") { values[MP42MetadataKeyLongDescription] = synopsis }
+        if let cast = list("cast") { values[MP42MetadataKeyCast] = cast }
+        if let genre = list("genre") { values[MP42MetadataKeyUserGenre] = genre }
+        if let rating = text("ratingName") { values[MP42MetadataKeyRating] = rating }
+        if (dictionary["hasCover"] as? Bool) == true { values[MP42MetadataKeyCoverArt] = LibraryServerItem.coverText }
+        self.values = values
+    }
+
+    /// What the Library scan shows for a cover picture (the same word it uses
+    /// for a file's own cover, so the two read alike).
+    static let coverText = NSLocalizedString("Artwork", comment: "Library scan -> shown for a tag that holds a picture")
+
+    /// The checked tags (`keys`) that the file lacks (no entry in
+    /// `fileValues`) but this item has: what the server could fill in. In
+    /// the order of `keys`.
+    func gaps(fileValues: [String: String], keys: [String]) -> [String] {
+        return keys.filter { fileValues[$0] == nil && values[$0] != nil }
     }
 }
 

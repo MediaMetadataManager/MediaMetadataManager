@@ -20,6 +20,8 @@
 #      Tools/docs/make-media2-library.sh from the media volume) to /Users/Shared/M3-Media2
 #   2. builds the Debug app (no plugins, nothing from your own settings)
 #   3. saves your settings, starts M3 with clean ones, takes the pictures, quits
+#      (then a second launch with the stand-in library server, Tools/SampleLibraryServer, installed, for
+#      the shots that show a library server; it is removed again afterwards)
 #   4. puts your settings back, even if something fails
 #
 # The pictures go to ~/xCode/M3-Screenshots/new (or --out). They are NOT copied into
@@ -102,21 +104,69 @@ mkdir -p "$OUT"
 [ -z "$ONLY" ] && rm -f "$OUT"/*.png   # a full run starts from an empty folder, so no old picture is mistaken for a new one
 LOG="$OUT/run.log"
 : > "$LOG"
-"$APP/Contents/MacOS/M3" -M3DocsScreenshots YES -M3ScreenshotDir "$OUT" -M3DemoRoot "$DEMO" -M3MediaRoot "$MEDIA" \
-    ${ONLY:+-M3ScreenshotOnly "$ONLY"} > "$LOG" 2>&1 &
-PID=$!
-tail -f "$LOG" 2>/dev/null | grep --line-buffered '^\[screenshots\]' &
-TAILPID=$!
-for _ in $(seq 1 300); do   # up to 10 minutes: the Library scan run edits files for real
-    kill -0 "$PID" 2>/dev/null || break
-    sleep 2
-done
-if kill -0 "$PID" 2>/dev/null; then
-    echo "Took too long; stopping M3. Last lines of the app's output:"
-    tail -15 "$LOG"
-    kill "$PID"
+
+# The shots that show a library server (Tools/SampleLibraryServer). They need that plugin loaded, and
+# the plain Providers tab must be photographed without it, so they run in a second launch.
+SERVER_SHOTS="library-scan-server,prefs-providers-library-servers,prefs-custom-sources-library-servers"
+SAMPLE="/Users/Shared/M3-Sample-Library"        # copy of the made-up demo movies for the stand-in to list
+SERVER_PROJ="$REPO/Tools/SampleLibraryServer/SampleLibraryServer.xcodeproj"
+
+FIRST_ONLY=""; SECOND_ONLY=""; RUN_FIRST=1; RUN_SECOND=1
+if [ -n "$ONLY" ]; then
+    RUN_FIRST=0; RUN_SECOND=0
+    for s in $(echo "$ONLY" | tr ',' ' '); do
+        case ",$SERVER_SHOTS," in
+            *",$s,"*) SECOND_ONLY="${SECOND_ONLY:+$SECOND_ONLY,}$s"; RUN_SECOND=1 ;;
+            *)        FIRST_ONLY="${FIRST_ONLY:+$FIRST_ONLY,}$s"; RUN_FIRST=1 ;;
+        esac
+    done
 fi
-kill "$TAILPID" 2>/dev/null || true
+
+# run_app <shots> [extra arguments]: starts M3 in screenshot mode and waits for it to finish.
+run_app() {
+    local only="$1"; shift
+    "$APP/Contents/MacOS/M3" -M3DocsScreenshots YES -M3ScreenshotDir "$OUT" -M3DemoRoot "$DEMO" -M3MediaRoot "$MEDIA" \
+        ${only:+-M3ScreenshotOnly "$only"} "$@" >> "$LOG" 2>&1 &
+    local pid=$!
+    tail -n 0 -f "$LOG" 2>/dev/null | grep --line-buffered '^\[screenshots\]' &
+    local tailpid=$!
+    for _ in $(seq 1 300); do   # up to 10 minutes: the Library scan run edits files for real
+        kill -0 "$pid" 2>/dev/null || break
+        sleep 2
+    done
+    if kill -0 "$pid" 2>/dev/null; then
+        echo "Took too long; stopping M3. Last lines of the app's output:"
+        tail -15 "$LOG"
+        kill "$pid"
+    fi
+    kill "$tailpid" 2>/dev/null || true
+}
+
+[ "$RUN_FIRST" = 1 ] && run_app "$FIRST_ONLY"
+
+if [ "$RUN_SECOND" = 1 ]; then
+    echo "== Library server shots (second launch, stand-in library server installed)"
+    if [ ! -d "$SERVER_PROJ" ]; then
+        echo "(no stand-in plugin at $SERVER_PROJ: the library server shots are left out)"
+    elif [ ! -d "$DEMO/library" ]; then
+        echo "(no demo library at $DEMO: the library server shots are left out)"
+    else
+        # The made-up demo movies (no TV folder); a copy, so the run before this one cannot have changed them.
+        rm -rf "$SAMPLE"; mkdir -p "$SAMPLE"
+        rsync -a --exclude 'Sample Show' "$DEMO/library/" "$SAMPLE/"
+        # The plugin's own build step copies the bundle to the Plugins folder (clean at this point).
+        if xcodebuild -project "$SERVER_PROJ" -scheme SampleLibraryServer -configuration Release \
+               -derivedDataPath "$DERIVED-sample" \
+               CODE_SIGN_IDENTITY="-" CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="" \
+               build > "$DERIVED-sample.log" 2>&1 && [ -d "$SUPPORT/Plugins/SampleLibraryServer.bundle" ]; then
+            run_app "${SECOND_ONLY:-$SERVER_SHOTS}" -SampleLibraryFolder "$SAMPLE"
+        else
+            grep -E "error:" "$DERIVED-sample.log" | sort -u | head -10
+            echo "Could not build or install the stand-in plugin (log: $DERIVED-sample.log); its shots are left out."
+        fi
+        rm -rf "$SUPPORT/Plugins/SampleLibraryServer.bundle"
+    fi
+fi
 
 echo
 echo "Pictures: $OUT"

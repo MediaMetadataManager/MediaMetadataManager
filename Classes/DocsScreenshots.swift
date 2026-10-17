@@ -194,8 +194,45 @@ enum DocsScreenshots {
             }
         })
 
+        // Only present in the second launch of capture-screenshots.sh, the one with the
+        // stand-in library server (Tools/SampleLibraryServer) installed.
+        list.append(contentsOf: serverSteps())
+
         // The shots with real titles come last: the Message Log is taken after a real run.
         list.append(contentsOf: mediaSteps())
+
+        return list
+    }
+
+    // MARK: Steps with a library server
+
+    /// The shots that show a library server: its scan, and the Sources tabs with their
+    /// "Library Servers" parts. They need a plugin that declares itself a library server, which
+    /// capture-screenshots.sh installs for a second launch (the stand-in in
+    /// Tools/SampleLibraryServer, shown under its neutral name). Without one the list is empty,
+    /// so the first launch, which must show the plain Providers tab, skips them.
+    private static func serverSteps() -> [Step] {
+        guard let server = MetadataSearch.libraryServerServices.first else { return [] }
+        var list: [Step] = []
+
+        list.append(Step(name: "library-scan-server", wait: 1.0) { done in
+            let scan = LibraryScanWindowController.shared
+            guard scan.docsScanServer(named: server.name) else {
+                say("library server \(server.name) is not in the Source pop-up")
+                return done(nil)
+            }
+            waitUntil({ scan.docsIsScanning == false }, timeout: 60) {
+                done(scan.window.map { .window($0) })
+            }
+        })
+
+        list.append(Step(name: "prefs-providers-library-servers", wait: 2.5) { done in
+            done(appDelegate?.docsPrefsController().docsShowTab("TOOLBAR_SOURCES", sub: "providers").map { .window($0) })
+        })
+
+        list.append(Step(name: "prefs-custom-sources-library-servers", wait: 2.5) { done in
+            done(appDelegate?.docsPrefsController().docsShowTab("TOOLBAR_SOURCES", sub: "customSources").map { .window($0) })
+        })
 
         return list
     }

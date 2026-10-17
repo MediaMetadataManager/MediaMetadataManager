@@ -12,6 +12,14 @@ next round of work.
 
 ## Unreleased
 
+## 1.3.1 (2026-10-17)
+
+- New: the Library scan has a Source choice when a plugin for your own media server (a library server) is installed. Scan it and the list shows only the files where the server has something the file lacks, in orange; a movie whose file is not at the server's path shows "File not found".
+- New: **Accept** writes the server's values straight into the files, one tag at a time (right-click an orange cell), for the selected files, or for all of them. A copy of each file is kept until its write works.
+- New: files sent from a library-server scan to the Queue are filled from the server's own item for each file (no search), adding only the tags the file lacks.
+- Improved: **Edit…** on an orange cell starts with the server's value.
+- Changed: **Preferences → Sources** keeps the two kinds of source apart. In Providers, a plugin for your own media server is listed in its own **Library Servers** column (shown only when one is installed) instead of among the movie providers; in Custom Sources, the list has **Online** and **Library Servers** headings (also only when a library server plugin is installed).
+
 ## 1.3.0 (2026-10-17)
 
 - Improved: the screenshots in the User Guide, the Getting Started Guide and the Help window were all retaken from the current version, so each window shown matches what you see: Preferences, the Queue with its review windows (naming, metadata, merge order) and Options panel, the Library scan, the editor and its metadata search, and the Message Log.

@@ -78,13 +78,13 @@ private final class DroppableTextField: NSTextField {
 /// saying so, rather than trying to hot-reload the running plugin list.
 final class CustomSourcesListViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
 
-    /// One row of the unified list -- either a JSON source (by index into
-    /// `sources`) or an installed plugin (by index into `plugins`). JSON
-    /// source rows always come first, so a JSON source's row index in the
-    /// table is always the same as its index into `sources` -- existing
-    /// code that assumed that (openDetailWindow(for:), addSource(_:)'s
-    /// post-add selection) keeps working unchanged.
+    /// One row of the unified list -- a JSON source (by index into
+    /// `sources`), an installed plugin (by index into `plugins`) or, when a
+    /// library server plugin is installed, a group heading. A table row is
+    /// therefore not the same number as a source's index: use
+    /// tableRow(forSource:) to find a source's row.
     private enum SourceRow {
+        case header(String)
         case jsonSource(Int)
         case plugin(Int)
     }
@@ -93,8 +93,34 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
     private var plugins: [InstalledPlugin] = MetadataPluginLoader.installedPluginBundles()
     private var selectedRow: Int?
 
+    /// The list is split by kind: "Online" (the JSON sources and the plugins
+    /// that are searched on the web) and "Library Servers" (plugins that
+    /// declare themselves a library server, see M3MetadataPlugin.sourceKind).
+    /// The two headings only appear when a library server plugin is
+    /// installed, so the list is unchanged for everyone else.
     private var rows: [SourceRow] {
-        sources.indices.map { .jsonSource($0) } + plugins.indices.map { .plugin($0) }
+        let libraryPlugins = plugins.indices.filter { MetadataSearch.isLibraryServerBundle(named: plugins[$0].name) }
+        let onlinePlugins = plugins.indices.filter { MetadataSearch.isLibraryServerBundle(named: plugins[$0].name) == false }
+
+        var result: [SourceRow] = []
+        if libraryPlugins.isEmpty == false {
+            result.append(.header(NSLocalizedString("Online", comment: "Custom Sources list -> group heading")))
+        }
+        result += sources.indices.map { .jsonSource($0) }
+        result += onlinePlugins.map { .plugin($0) }
+        if libraryPlugins.isEmpty == false {
+            result.append(.header(NSLocalizedString("Library Servers", comment: "Custom Sources list -> group heading")))
+            result += libraryPlugins.map { .plugin($0) }
+        }
+        return result
+    }
+
+    /// The table row showing the JSON source at `index` in `sources`.
+    private func tableRow(forSource index: Int) -> Int? {
+        return rows.firstIndex { row in
+            if case .jsonSource(let candidate) = row { return candidate == index }
+            return false
+        }
     }
 
     private var tableView: NSTableView!
@@ -295,6 +321,17 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         guard rows.indices.contains(row) else { return nil }
 
+        if case .header(let title) = rows[row] {
+            let headerIdentifier = NSUserInterfaceItemIdentifier("sourceGroupHeader")
+            let label = (tableView.makeView(withIdentifier: headerIdentifier, owner: self) as? NSTextField)
+                ?? NSTextField(labelWithString: "")
+            label.identifier = headerIdentifier
+            label.stringValue = title
+            label.font = NSFont.boldSystemFont(ofSize: NSFont.smallSystemFontSize)
+            label.textColor = .secondaryLabelColor
+            return label
+        }
+
         let identifier = NSUserInterfaceItemIdentifier("sourceRowCell")
         let cell: NSTableCellView
         let textField: NSTextField
@@ -332,6 +369,8 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
         }
 
         switch rows[row] {
+        case .header:
+            return nil
         case .jsonSource(let index):
             guard sources.indices.contains(index) else { return nil }
             let source = sources[index]
@@ -350,6 +389,20 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
         let row = tableView.selectedRow
         selectedRow = row >= 0 ? row : nil
         updateRemoveButtonState()
+    }
+
+    /// The "Online" / "Library Servers" headings are group rows: drawn as a
+    /// heading and never selectable.
+    func tableView(_ tableView: NSTableView, isGroupRow row: Int) -> Bool {
+        guard rows.indices.contains(row) else { return false }
+        if case .header = rows[row] { return true }
+        return false
+    }
+
+    func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
+        guard rows.indices.contains(row) else { return false }
+        if case .header = rows[row] { return false }
+        return true
     }
 
     // MARK: - Plugin install via drag-and-drop
@@ -465,7 +518,9 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
         // Already have a new source that hasn't been filled in? Go back to it
         // instead of piling up more empty ones.
         if let existing = sources.firstIndex(where: { CustomSourcesListViewController.isUntouched($0) }) {
-            tableView.selectRowIndexes(IndexSet(integer: existing), byExtendingSelection: false)
+            if let existingRow = tableRow(forSource: existing) {
+                tableView.selectRowIndexes(IndexSet(integer: existingRow), byExtendingSelection: false)
+            }
             openDetailWindow(for: existing)
             return
         }
@@ -473,7 +528,9 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
         save()
         tableView.reloadData()
         let newIndex = sources.count - 1
-        tableView.selectRowIndexes(IndexSet(integer: newIndex), byExtendingSelection: false)
+        if let newRow = tableRow(forSource: newIndex) {
+            tableView.selectRowIndexes(IndexSet(integer: newRow), byExtendingSelection: false)
+        }
         openDetailWindow(for: newIndex)
     }
 
@@ -482,6 +539,8 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
     @objc private func removeSource(_ sender: Any) {
         guard let row = selectedRow, rows.indices.contains(row) else { return }
         switch rows[row] {
+        case .header:
+            return
         case .jsonSource(let index):
             removeJSONSource(at: index)
         case .plugin(let index):
@@ -530,6 +589,8 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
         }
         tableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
         switch rows[row] {
+        case .header:
+            return
         case .jsonSource(let index):
             openDetailWindow(for: index)
         case .plugin(let index):

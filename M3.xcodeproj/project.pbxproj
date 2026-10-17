@@ -7,13 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		E7C0DE020000000000000006 /* HelpWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C0DE010000000000000006 /* HelpWindowController.swift */; };
-		E7C0DE020000000000000005 /* HelpIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C0DE010000000000000005 /* HelpIndex.swift */; };
-		E7C0DE020000000000000001 /* M3.help in Resources */ = {isa = PBXBuildFile; fileRef = E7C0DE010000000000000001 /* M3.help */; };
-		E7C0DE020000000000000002 /* User-Guide.pdf in Resources */ = {isa = PBXBuildFile; fileRef = E7C0DE010000000000000002 /* User-Guide.pdf */; };
-		E7C0DE020000000000000003 /* Getting-Started.pdf in Resources */ = {isa = PBXBuildFile; fileRef = E7C0DE010000000000000003 /* Getting-Started.pdf */; };
-		E7C0DE020000000000000004 /* AppHelp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C0DE010000000000000004 /* AppHelp.swift */; };
-		E7C0DE020000000000000007 /* DocsScreenshots.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C0DE010000000000000007 /* DocsScreenshots.swift */; };
 		02026BDE3659E9E627DB7037 /* ReleaseFilenameParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F695DD5A03A57793AC404052 /* ReleaseFilenameParser.swift */; };
 		09A37CF68361D710E6F82A20 /* MetadataPluginLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0C5F7D7ADC08B85CCE23553 /* MetadataPluginLoader.swift */; };
 		0DE02614BE874D87567EDE95 /* IntakeFolderWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 727F27AADF6B03AB0885DAFB /* IntakeFolderWatcher.swift */; };
@@ -179,6 +172,13 @@
 		E79E91123052337A00E6790F /* JSONPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = E79E910F3052337A00E6790F /* JSONPath.swift */; };
 		E79E91133052337A00E6790F /* CustomMetadataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = E79E910D3052337A00E6790F /* CustomMetadataSource.swift */; };
 		E79E91143052337A00E6790F /* CustomSourceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E79E910E3052337A00E6790F /* CustomSourceService.swift */; };
+		E7C0DE020000000000000001 /* M3.help in Resources */ = {isa = PBXBuildFile; fileRef = E7C0DE010000000000000001 /* M3.help */; };
+		E7C0DE020000000000000002 /* User-Guide.pdf in Resources */ = {isa = PBXBuildFile; fileRef = E7C0DE010000000000000002 /* User-Guide.pdf */; };
+		E7C0DE020000000000000003 /* Getting-Started.pdf in Resources */ = {isa = PBXBuildFile; fileRef = E7C0DE010000000000000003 /* Getting-Started.pdf */; };
+		E7C0DE020000000000000004 /* AppHelp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C0DE010000000000000004 /* AppHelp.swift */; };
+		E7C0DE020000000000000005 /* HelpIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C0DE010000000000000005 /* HelpIndex.swift */; };
+		E7C0DE020000000000000006 /* HelpWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C0DE010000000000000006 /* HelpWindowController.swift */; };
+		E7C0DE020000000000000007 /* DocsScreenshots.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C0DE010000000000000007 /* DocsScreenshots.swift */; };
 		ED1C5150FC4E4D86C59DB9A5 /* LibraryScanWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0F853AD853DAA80C329FBAF /* LibraryScanWindowController.swift */; };
 /* End PBXBuildFile section */
 
@@ -238,13 +238,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		E7C0DE010000000000000006 /* HelpWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HelpWindowController.swift; path = Classes/HelpWindowController.swift; sourceTree = "<group>"; };
-		E7C0DE010000000000000005 /* HelpIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HelpIndex.swift; path = Classes/HelpIndex.swift; sourceTree = "<group>"; };
-		E7C0DE010000000000000001 /* M3.help */ = {isa = PBXFileReference; lastKnownFileType = folder; name = M3.help; path = Documentation/HelpBook/M3.help; sourceTree = "<group>"; };
-		E7C0DE010000000000000002 /* User-Guide.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; name = "User-Guide.pdf"; path = Documentation/User-Guide.pdf; sourceTree = "<group>"; };
-		E7C0DE010000000000000003 /* Getting-Started.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; name = "Getting-Started.pdf"; path = Documentation/Getting-Started.pdf; sourceTree = "<group>"; };
-		E7C0DE010000000000000007 /* DocsScreenshots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DocsScreenshots.swift; path = Classes/DocsScreenshots.swift; sourceTree = "<group>"; };
-		E7C0DE010000000000000004 /* AppHelp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppHelp.swift; path = Classes/AppHelp.swift; sourceTree = "<group>"; };
 		0F99E1E8A24AF26DBF97E546 /* NamingReviewWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NamingReviewWindowController.swift; path = Classes/NamingReviewWindowController.swift; sourceTree = "<group>"; };
 		1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		27E67E10BCF816B7B22431FF /* SourcesPrefsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SourcesPrefsViewController.swift; path = Classes/SourcesPrefsViewController.swift; sourceTree = "<group>"; };
@@ -530,6 +523,13 @@
 		E79E910D3052337A00E6790F /* CustomMetadataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CustomMetadataSource.swift; path = Classes/MetadataImporters/CustomMetadataSource.swift; sourceTree = "<group>"; };
 		E79E910E3052337A00E6790F /* CustomSourceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CustomSourceService.swift; path = Classes/MetadataImporters/CustomSourceService.swift; sourceTree = "<group>"; };
 		E79E910F3052337A00E6790F /* JSONPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = JSONPath.swift; path = Classes/MetadataImporters/JSONPath.swift; sourceTree = "<group>"; };
+		E7C0DE010000000000000001 /* M3.help */ = {isa = PBXFileReference; lastKnownFileType = folder; name = M3.help; path = Documentation/HelpBook/M3.help; sourceTree = "<group>"; };
+		E7C0DE010000000000000002 /* User-Guide.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; name = "User-Guide.pdf"; path = "Documentation/User-Guide.pdf"; sourceTree = "<group>"; };
+		E7C0DE010000000000000003 /* Getting-Started.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; name = "Getting-Started.pdf"; path = "Documentation/Getting-Started.pdf"; sourceTree = "<group>"; };
+		E7C0DE010000000000000004 /* AppHelp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppHelp.swift; path = Classes/AppHelp.swift; sourceTree = "<group>"; };
+		E7C0DE010000000000000005 /* HelpIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HelpIndex.swift; path = Classes/HelpIndex.swift; sourceTree = "<group>"; };
+		E7C0DE010000000000000006 /* HelpWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HelpWindowController.swift; path = Classes/HelpWindowController.swift; sourceTree = "<group>"; };
+		E7C0DE010000000000000007 /* DocsScreenshots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DocsScreenshots.swift; path = Classes/DocsScreenshots.swift; sourceTree = "<group>"; };
 		EE44D34071A695DE0A5D8D5D /* WelcomeWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WelcomeWindowController.swift; path = Classes/WelcomeWindowController.swift; sourceTree = "<group>"; };
 		F2D41964ACF4C1D604153CE3 /* FileMerger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FileMerger.swift; path = Classes/FileMerge/FileMerger.swift; sourceTree = "<group>"; };
 		F4B68AD3CF0E4E2B09015426 /* ApplicationSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ApplicationSupport.swift; path = Classes/ApplicationSupport.swift; sourceTree = "<group>"; };
@@ -1630,7 +1630,6 @@
 		C05733C808A9546B00998B17 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -1643,7 +1642,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1.3.0;
+				CURRENT_PROJECT_VERSION = 1.3.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
@@ -1663,7 +1662,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.3.0;
+				MARKETING_VERSION = 1.3.1;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "-Wl,-rpath,@loader_path/../Frameworks";
 				OTHER_SWIFT_FLAGS = "";
@@ -1671,6 +1670,7 @@
 				PRODUCT_NAME = M3;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/MP42Foundation/contrib/mp4v2/";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -1690,7 +1690,7 @@
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.3.0;
+				CURRENT_PROJECT_VERSION = 1.3.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
@@ -1709,7 +1709,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.3.0;
+				MARKETING_VERSION = 1.3.1;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "-Wl,-rpath,@loader_path/../Frameworks";
 				OTHER_SWIFT_FLAGS = "";
@@ -1913,7 +1913,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.3.0;
+				CURRENT_PROJECT_VERSION = 1.3.1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -1925,7 +1925,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				MARKETING_VERSION = 1.3.0;
+				MARKETING_VERSION = 1.3.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mediametadatamanager.M3Tests;
@@ -1960,7 +1960,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1.3.0;
+				CURRENT_PROJECT_VERSION = 1.3.1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -1969,7 +1969,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				MARKETING_VERSION = 1.3.0;
+				MARKETING_VERSION = 1.3.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mediametadatamanager.M3Tests;

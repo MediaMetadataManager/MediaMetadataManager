@@ -93,4 +93,25 @@ final class PluginBridge: NSObject, M3MetadataPlugin {
         }
         return result
     }
+
+    /// sourceKind() is optional too: a plugin that does not implement it is
+    /// an online source.
+    func sourceKind() -> String {
+        let selector = #selector(M3MetadataPlugin.sourceKind)
+        guard target.responds(to: selector),
+              let result = target.perform(selector)?.takeUnretainedValue() as? String else {
+            return PluginSourceKind.online
+        }
+        return result
+    }
+
+    /// listLibraryItems() is optional: only a library-server plugin has it.
+    func listLibraryItems() -> [[String: Any]] {
+        let selector = #selector(M3MetadataPlugin.listLibraryItems)
+        guard target.responds(to: selector),
+              let result = target.perform(selector)?.takeUnretainedValue() as? [[String: Any]] else {
+            return []
+        }
+        return result
+    }
 }

@@ -356,6 +356,55 @@
     "Classes/Queue*",
     "Classes/LibraryScan*"
    ]
+  },
+  {
+   "file": "library-scan-server.png",
+   "show": "The Library scan window with a library server chosen in the Source pop-up, after a scan: files listed with orange \"Missing - server has\" cells.",
+   "setup": "Taken by Tools/docs/capture-screenshots.sh in its second launch, with the stand-in library server (Tools/SampleLibraryServer, shown as \"Sample Library\") listing the made-up demo movies. Never take it with a real server: the Source pop-up and the status line show the plugin's name.",
+   "placements": [
+    {
+     "doc": "User-Guide",
+     "after": "**Scanning a library server.**",
+     "caption": "The library scan with a library server as the Source."
+    }
+   ],
+   "sources": [
+    "Classes/*LibraryScan*",
+    "Classes/Plugins/*",
+    "Tools/SampleLibraryServer/*"
+   ]
+  },
+  {
+   "file": "prefs-providers-library-servers.png",
+   "show": "Preferences > Sources > Providers with a library server plugin installed: the Library Servers column next to Movies and TV Shows.",
+   "setup": "Second launch of capture-screenshots.sh, with the stand-in library server (\"Sample Library\") installed.",
+   "placements": [
+    {
+     "doc": "User-Guide",
+     "after": "**Online and library servers.**",
+     "caption": "Preferences > Sources > Providers with a library server installed."
+    }
+   ],
+   "sources": [
+    "Classes/*SourcesPref*",
+    "Tools/SampleLibraryServer/*"
+   ]
+  },
+  {
+   "file": "prefs-custom-sources-library-servers.png",
+   "show": "Preferences > Sources > Custom Sources with a library server plugin installed: the list has Online and Library Servers headings.",
+   "setup": "Second launch of capture-screenshots.sh, with the stand-in library server installed.",
+   "placements": [
+    {
+     "doc": "User-Guide",
+     "after": "**Plugins.** A plugin is a compiled bundle",
+     "caption": "Preferences > Sources > Custom Sources: the Online and Library Servers lists."
+    }
+   ],
+   "sources": [
+    "Classes/CustomSourcesListViewController*",
+    "Tools/SampleLibraryServer/*"
+   ]
   }
  ]
 }

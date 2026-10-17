@@ -50,10 +50,26 @@ enum MetadataPluginLoader {
                                                                          includingPropertiesForKeys: nil,
                                                                          options: [.skipsHiddenFiles])) ?? []
 
-        return bundleURLs
+        var libraryServerNames = Set<String>()
+        let loaded: [M3MetadataPlugin] = bundleURLs
             .filter { $0.pathExtension == "bundle" }
-            .compactMap { loadPlugin(at: $0) }
+            .compactMap { url in
+                guard let plugin = loadPlugin(at: url) else { return nil }
+                if PluginSourceKind.isLibraryServer(plugin.sourceKind?() ?? PluginSourceKind.online) {
+                    libraryServerNames.insert(url.deletingPathExtension().lastPathComponent)
+                }
+                return plugin
+            }
+        libraryServerBundleNames = libraryServerNames
+        return loaded
     }
+
+    /// File names (without ".bundle") of the loaded plugins that declare
+    /// themselves library servers. Filled in by loadPlugins(), which runs
+    /// once at launch; read it through MetadataSearch.isLibraryServerBundle(named:),
+    /// which makes sure that has happened. The Custom Sources list uses it to
+    /// file each installed bundle under "Online" or "Library Servers".
+    static private(set) var libraryServerBundleNames: Set<String> = []
 
     /// Lists installed plugin bundles without loading any of them -- see
     /// InstalledPlugin. Used only to populate the Custom Sources list's

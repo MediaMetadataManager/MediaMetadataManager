@@ -99,6 +99,25 @@ final class LibraryScanWindowController: NSWindowController {
         let url: URL
         var values: [String: String]
         var unreadable = false
+        /// Library-server scans only: what the server holds for the tags the
+        /// file lacks (by tag key), and the server's id for the item.
+        var serverValues: [String: String] = [:]
+        var serverItemID: String?
+        /// Library-server scans only: the server lists the item but its file
+        /// is not at the listed path.
+        var notFound = false
+
+        /// A file that was read, so it can be sent to the Queue or edited.
+        var isUsable: Bool { return unreadable == false && notFound == false }
+    }
+
+    private static let notFoundLabel = NSLocalizedString("File not found", comment: "Library scan -> shown for a library server's item whose file is not at the listed path")
+
+    /// How a gap is shown when a library server has the value: the word
+    /// Missing, then what the server holds.
+    static func serverHasText(_ value: String) -> String {
+        let flat = value.replacingOccurrences(of: "\n", with: " ")
+        return String(format: NSLocalizedString("Missing \u{2014} server has: %@", comment: "Library scan -> a tag the file lacks and the library server has; the server's value follows"), flat)
     }
 
     /// The cell being edited by the right-click Edit... command.
@@ -130,6 +149,13 @@ final class LibraryScanWindowController: NSWindowController {
         }
     }
 
+    /// The Source choice: "Folder\u{2026}" and each library server. Hidden when no
+    /// library-server plugin is installed, so the window then looks and
+    /// works exactly as it always has.
+    private let sourcePopUp = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let sourceStack = NSStackView()
+    /// The library server being scanned, nil for a folder scan.
+    private var selectedServer: PluginMetadataService?
     private let folderField = NSTextField(labelWithString: "")
     private let chooseFolderButton = NSButton(title: NSLocalizedString("Choose Folder\u{2026}", comment: "Library scan -> button"), target: nil, action: nil)
     private var scanButton: NSButton!
@@ -149,6 +175,8 @@ final class LibraryScanWindowController: NSWindowController {
     private var tagButton: NSButton!
     private var queueButton: NSButton!
     private var clearButton: NSButton!
+    /// Library-server scans only: writes the server's values into the files.
+    private var acceptButton: NSButton!
 
     private var scannedFolderURL: URL?
 
@@ -201,6 +229,19 @@ final class LibraryScanWindowController: NSWindowController {
         chooseFolderButton.action = #selector(chooseFolder(_:))
         chooseFolderButton.translatesAutoresizingMaskIntoConstraints = false
         chooseFolderButton.bezelStyle = .rounded
+
+        sourcePopUp.translatesAutoresizingMaskIntoConstraints = false
+        sourcePopUp.target = self
+        sourcePopUp.action = #selector(sourceChanged(_:))
+        sourcePopUp.toolTip = NSLocalizedString("Where the files come from: a folder on disk, or a library server that already knows them. A server's list shows only the files that lack something the server has.", comment: "Library scan -> Source pop-up tooltip")
+        rebuildSourceMenu()
+
+        // A stack so the pop-up leaves no gap when it is hidden.
+        sourceStack.orientation = .horizontal
+        sourceStack.spacing = 10
+        sourceStack.translatesAutoresizingMaskIntoConstraints = false
+        sourceStack.addArrangedSubview(sourcePopUp)
+        sourceStack.addArrangedSubview(chooseFolderButton)
 
         scanButton = NSButton(title: NSLocalizedString("Scan", comment: "Library scan -> button"), target: self, action: #selector(scanOrStop(_:)))
         scanButton.translatesAutoresizingMaskIntoConstraints = false
@@ -262,6 +303,13 @@ final class LibraryScanWindowController: NSWindowController {
         clearButton.isEnabled = false
         clearButton.toolTip = NSLocalizedString("Empty the list. The folder stays chosen, so Scan starts again from it. No file is changed.", comment: "Library scan -> Clear button tooltip")
 
+        acceptButton = NSButton(title: NSLocalizedString("Accept All\u{2026}", comment: "Library scan -> button that writes the library server's values into the files"), target: self, action: #selector(acceptButtonClicked(_:)))
+        acceptButton.translatesAutoresizingMaskIntoConstraints = false
+        acceptButton.bezelStyle = .rounded
+        acceptButton.isEnabled = false
+        acceptButton.isHidden = true
+        acceptButton.toolTip = NSLocalizedString("Write what the library server holds (the orange entries) straight into the selected files, or into all of them when none is selected. A safety copy of each file is kept until its write succeeds. Entries that cannot be typed (cast, rating, cover) are left for the Queue.", comment: "Library scan -> Accept button tooltip")
+
         optionsButton = NSButton(title: "", target: self, action: #selector(showOptions(_:)))
         optionsButton.translatesAutoresizingMaskIntoConstraints = false
         optionsButton.bezelStyle = .rounded
@@ -281,7 +329,7 @@ final class LibraryScanWindowController: NSWindowController {
         doneButton.keyEquivalent = "\u{1b}"
 
         view.addSubview(folderField)
-        view.addSubview(chooseFolderButton)
+        view.addSubview(sourceStack)
         view.addSubview(scanButton)
         view.addSubview(optionsButton)
         view.addSubview(scrollView)
@@ -292,6 +340,7 @@ final class LibraryScanWindowController: NSWindowController {
         view.addSubview(tagButton)
         view.addSubview(queueButton)
         view.addSubview(clearButton)
+        view.addSubview(acceptButton)
         view.addSubview(doneButton)
 
         let helpButton = HelpAnchorButton(anchor: .libraryScan)
@@ -299,23 +348,23 @@ final class LibraryScanWindowController: NSWindowController {
         view.addSubview(helpButton)
 
         NSLayoutConstraint.activate([
-            chooseFolderButton.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
-            chooseFolderButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            sourceStack.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
+            sourceStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
 
-            folderField.centerYAnchor.constraint(equalTo: chooseFolderButton.centerYAnchor),
-            folderField.leadingAnchor.constraint(equalTo: chooseFolderButton.trailingAnchor, constant: 10),
+            folderField.centerYAnchor.constraint(equalTo: sourceStack.centerYAnchor),
+            folderField.leadingAnchor.constraint(equalTo: sourceStack.trailingAnchor, constant: 10),
             folderField.trailingAnchor.constraint(lessThanOrEqualTo: helpButton.leadingAnchor, constant: -10),
 
             // Only the options (gear) button is at the top right; Pause,
             // Scan (Stop while scanning) and Done sit in the bottom row.
-            optionsButton.centerYAnchor.constraint(equalTo: chooseFolderButton.centerYAnchor),
+            optionsButton.centerYAnchor.constraint(equalTo: sourceStack.centerYAnchor),
             optionsButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
 
             // The "?" opens the help book at this window's section.
             helpButton.centerYAnchor.constraint(equalTo: optionsButton.centerYAnchor),
             helpButton.trailingAnchor.constraint(equalTo: optionsButton.leadingAnchor, constant: -10),
 
-            scrollView.topAnchor.constraint(equalTo: chooseFolderButton.bottomAnchor, constant: 14),
+            scrollView.topAnchor.constraint(equalTo: sourceStack.bottomAnchor, constant: 14),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             scrollView.bottomAnchor.constraint(equalTo: progressIndicator.topAnchor, constant: -10),
@@ -340,6 +389,9 @@ final class LibraryScanWindowController: NSWindowController {
 
             clearButton.leadingAnchor.constraint(equalTo: queueButton.trailingAnchor, constant: 10),
             clearButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
+
+            acceptButton.leadingAnchor.constraint(equalTo: clearButton.trailingAnchor, constant: 10),
+            acceptButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
 
             doneButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             doneButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
@@ -466,6 +518,7 @@ final class LibraryScanWindowController: NSWindowController {
             ? NSLocalizedString("Stop", comment: "Library scan -> button while a scan is running")
             : NSLocalizedString("Scan", comment: "Library scan -> button")
         chooseFolderButton.isEnabled = isScanning == false
+        sourcePopUp.isEnabled = isScanning == false
         pauseButton.isEnabled = isScanning
         pauseButton.title = isPausedUI
             ? NSLocalizedString("Resume", comment: "Library scan -> button")
@@ -481,8 +534,174 @@ final class LibraryScanWindowController: NSWindowController {
         queueButton.title = selectedCount > 0
             ? NSLocalizedString("Send Selected to Queue\u{2026}", comment: "Library scan -> button")
             : NSLocalizedString("Send All to Queue\u{2026}", comment: "Library scan -> button")
-        queueButton.isEnabled = isScanning == false && isWritingTag == false && results.contains { $0.unreadable == false }
+        queueButton.isEnabled = isScanning == false && isWritingTag == false && results.contains { $0.isUsable }
         clearButton.isEnabled = LibraryScanCell.canClear(isScanning: isScanning, isWritingTag: isWritingTag, listedCount: results.count)
+
+        acceptButton.isHidden = selectedServer == nil
+        acceptButton.title = selectedCount > 0
+            ? NSLocalizedString("Accept Selected\u{2026}", comment: "Library scan -> button")
+            : NSLocalizedString("Accept All\u{2026}", comment: "Library scan -> button that writes the library server's values into the files")
+        let target = selectedCount > 0 ? selectedResults : results
+        acceptButton.isEnabled = isScanning == false && isWritingTag == false && target.contains { LibraryScanAccept.hasAcceptable($0.serverValues) && $0.isUsable }
+    }
+
+    // MARK: Source (folder or library server)
+
+    /// "Folder\u{2026}" first, then each library server. With no library server
+    /// installed the pop-up is hidden and the window is the plain folder scan.
+    private func rebuildSourceMenu() {
+        let servers = MetadataSearch.libraryServerServices
+        sourcePopUp.menu?.removeAllItems()
+        // NSMenuItems rather than addItem(withTitle:), which drops duplicate titles.
+        let folderItem = NSMenuItem(title: NSLocalizedString("Folder\u{2026}", comment: "Library scan -> Source pop-up: scan a folder on disk"), action: nil, keyEquivalent: "")
+        sourcePopUp.menu?.addItem(folderItem)
+        for server in servers {
+            let item = NSMenuItem(title: server.name, action: nil, keyEquivalent: "")
+            item.representedObject = server.name
+            sourcePopUp.menu?.addItem(item)
+        }
+        sourcePopUp.isHidden = servers.isEmpty
+    }
+
+    @objc private func sourceChanged(_ sender: Any?) {
+        guard isScanning == false, isWritingTag == false else { return }
+        let name = sourcePopUp.selectedItem?.representedObject as? String
+        selectedServer = name.flatMap { name in MetadataSearch.libraryServerServices.first { $0.name == name } }
+        // The list belongs to the source it was scanned from.
+        if results.isEmpty == false {
+            results = []
+            tableView.reloadData()
+            statusLabel.stringValue = ""
+        }
+        applySourceToControls()
+        updateSelectionControlsState()
+    }
+
+    // MARK: Accepting a library server's values
+
+    @objc private func acceptButtonClicked(_ sender: Any?) {
+        let chosen = selectedResults
+        accept(chosen.isEmpty ? results : chosen, onlyKey: nil)
+    }
+
+    @objc private func acceptContextRows(_ sender: Any?) {
+        accept(contextTargetResults(), onlyKey: nil)
+    }
+
+    @objc private func acceptContextCell(_ sender: Any?) {
+        guard contextRow >= 0, contextRow < results.count, let key = tagKey(ofColumn: contextColumn) else { return }
+        accept([results[contextRow]], onlyKey: key)
+    }
+
+    private var acceptSucceeded = 0
+    private var acceptFailed = 0
+
+    /// Writes the library server's values into the files: every tag the
+    /// server has and the file lacks that can be typed here, or only
+    /// `onlyKey` when one cell was chosen. Asks first unless it is a single
+    /// cell. Cast, rating and cover are not written here (they are left
+    /// orange for the Queue).
+    private func accept(_ rows: [ScanResult], onlyKey: String?) {
+        var jobs: [(url: URL, values: [(key: String, text: String)])] = []
+        for row in rows where row.isUsable {
+            var values = LibraryScanAccept.acceptable(row.serverValues)
+            if let onlyKey = onlyKey { values = values.filter { $0.key == onlyKey } }
+            if values.isEmpty == false { jobs.append((url: row.url, values: values)) }
+        }
+        guard jobs.isEmpty == false, let window = window else { NSSound.beep(); return }
+
+        if onlyKey != nil {
+            runAccept(jobs)
+            return
+        }
+        let alert = NSAlert()
+        alert.messageText = jobs.count == 1
+            ? NSLocalizedString("Write the server\u{2019}s values into 1 file?", comment: "Library scan -> confirm title")
+            : String(format: NSLocalizedString("Write the server\u{2019}s values into %d files?", comment: "Library scan -> confirm title"), jobs.count)
+        alert.informativeText = NSLocalizedString("Each file gets only the tags it lacks and the library server has (the orange entries). Nothing already in a file is changed. A safety copy of each file is kept until its write succeeds. Cast, rating and cover are left for the Queue.", comment: "Library scan -> confirm text")
+        alert.addButton(withTitle: NSLocalizedString("Write to Files", comment: "Library scan -> confirm button"))
+        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "Library scan -> button"))
+        alert.beginSheetModal(for: window) { response in
+            guard response == .alertFirstButtonReturn else { return }
+            self.runAccept(jobs)
+        }
+    }
+
+    private func runAccept(_ jobs: [(url: URL, values: [(key: String, text: String)])]) {
+        isWritingTag = true
+        acceptSucceeded = 0
+        acceptFailed = 0
+        updateSelectionControlsState()
+        let total = jobs.count
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            for (index, job) in jobs.enumerated() {
+                let name = job.url.lastPathComponent
+                DispatchQueue.main.async {
+                    self.statusLabel.stringValue = String(format: NSLocalizedString("Saving %d of %d: \u{201C}%@\u{201D}\u{2026}", comment: "Library scan -> status while the server's values are written into files"), index + 1, total, name)
+                }
+                var items: [MP42MetadataItem] = []
+                for value in job.values {
+                    if case .success(let item) = LibraryScanEdit.makeItem(key: value.key, text: value.text) { items.append(item) }
+                }
+                var failure: Error?
+                if items.isEmpty == false {
+                    do { try LibraryScanEdit.write(items, to: job.url) } catch { failure = error }
+                }
+                DispatchQueue.main.async { self.finishAccept(url: job.url, items: items, error: failure) }
+            }
+            DispatchQueue.main.async { self.finishAcceptAll() }
+        }
+    }
+
+    private func finishAccept(url: URL, items: [MP42MetadataItem], error: Error?) {
+        if let error = error {
+            acceptFailed += 1
+            LibraryScanWindowController.log("Library scan: could not write the server's values into \(url.path): \(error.localizedDescription)")
+            return
+        }
+        acceptSucceeded += 1
+        LibraryScanWindowController.log("Library scan: wrote \(items.map { $0.identifier }.joined(separator: ", ")) from the library server into \(url.path)")
+        guard let index = results.firstIndex(where: { $0.url == url }) else { return }
+        for item in items {
+            let key = item.identifier
+            results[index].values[key] = LibraryScanCell.text(for: item) ?? results[index].serverValues[key]
+            results[index].serverValues.removeValue(forKey: key)
+        }
+        // Gone from the list once the server has nothing more to give it.
+        if results[index].serverValues.isEmpty { results.remove(at: index) }
+        sortAndReload()
+    }
+
+    private func finishAcceptAll() {
+        isWritingTag = false
+        var text = String.localizedStringWithFormat(NSLocalizedString("Saved the server\u{2019}s values into %lu file(s) \u{2014} %lu still listed.", comment: "Library scan -> status after accepting the server's values"), acceptSucceeded, results.count)
+        if acceptFailed > 0 {
+            text += " " + String.localizedStringWithFormat(NSLocalizedString("%lu could not be saved (see the Message Log).", comment: "Library scan -> status, files that failed"), acceptFailed)
+        }
+        statusLabel.stringValue = text
+        updateSelectionControlsState()
+    }
+
+    /// Shows what the chosen source means: a server needs no folder, so Scan
+    /// is ready at once; a folder scan needs one chosen first.
+    private func applySourceToControls() {
+        if let server = selectedServer {
+            chooseFolderButton.isHidden = true
+            folderField.stringValue = String(format: NSLocalizedString("Files listed by %@ that lack something the server has.", comment: "Library scan -> shown beside the Source pop-up when a library server is chosen"), server.name)
+            folderField.textColor = .secondaryLabelColor
+            scanButton.isEnabled = true
+        } else {
+            chooseFolderButton.isHidden = false
+            if let url = scannedFolderURL {
+                folderField.stringValue = url.path
+                folderField.textColor = .labelColor
+            } else {
+                folderField.stringValue = NSLocalizedString("No folder chosen", comment: "Library scan -> no folder placeholder")
+                folderField.textColor = .secondaryLabelColor
+            }
+            scanButton.isEnabled = scannedFolderURL != nil
+        }
     }
 
     // MARK: Actions
@@ -751,19 +970,29 @@ final class LibraryScanWindowController: NSWindowController {
     /// Sends files to the Queue to be edited where they are, after asking:
     /// it is the one place this window leads to changes in the library.
     private func sendToQueue(_ rows: [ScanResult]) {
-        let sendable = rows.filter { $0.unreadable == false }
+        let sendable = rows.filter { $0.isUsable }
         guard sendable.isEmpty == false, let window = window else { NSSound.beep(); return }
 
         let alert = NSAlert()
         alert.messageText = sendable.count == 1
             ? NSLocalizedString("Send 1 file to the Queue?", comment: "Library scan -> confirm title")
             : String(format: NSLocalizedString("Send %d files to the Queue?", comment: "Library scan -> confirm title"), sendable.count)
-        alert.informativeText = NSLocalizedString("Each file is edited where it is: the Queue searches for its metadata and writes the tags into the file, with no copy and no move to the library. If \u{201C}Set output filename\u{201D} is on in the Queue options, the file is also renamed from its tags.", comment: "Library scan -> confirm text")
+        if let server = selectedServer {
+            alert.informativeText = String(format: NSLocalizedString("Each file is edited where it is: the Queue takes the metadata from the item %@ holds for it (no search) and writes the tags the file lacks, with no copy and no move to the library. If \u{201C}Set output filename\u{201D} is on in the Queue options, the file is also renamed from its tags.", comment: "Library scan -> confirm text for a library server's files"), server.name)
+        } else {
+            alert.informativeText = NSLocalizedString("Each file is edited where it is: the Queue searches for its metadata and writes the tags into the file, with no copy and no move to the library. If \u{201C}Set output filename\u{201D} is on in the Queue options, the file is also renamed from its tags.", comment: "Library scan -> confirm text")
+        }
         alert.addButton(withTitle: NSLocalizedString("Send to Queue", comment: "Library scan -> confirm button"))
         alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "Library scan -> button"))
         alert.beginSheetModal(for: window) { response in
             guard response == .alertFirstButtonReturn else { return }
-            let added = QueueController.shared.addForInPlaceEdit(sendable.map { (url: $0.url, values: $0.values) }, tagKeys: self.scanFields.map { $0.key })
+            // Rows from a library server go with the server's item id, so the
+            // Queue loads that item instead of searching by title.
+            var known: [URL: (source: String, id: String)] = [:]
+            if let server = self.selectedServer {
+                for row in sendable { if let id = row.serverItemID { known[row.url] = (source: server.name, id: id) } }
+            }
+            let added = QueueController.shared.addForInPlaceEdit(sendable.map { (url: $0.url, values: $0.values) }, tagKeys: self.scanFields.map { $0.key }, knownItems: known)
             var message = String.localizedStringWithFormat(NSLocalizedString("Sent %lu file(s) to the Queue.", comment: "Library scan -> status after sending files to the Queue"), added.movies + added.tvShows)
             if added.skipped > 0 {
                 message += " " + String.localizedStringWithFormat(NSLocalizedString("%lu file(s) were already in the Queue.", comment: "Library scan -> status, files already queued"), added.skipped)
@@ -790,7 +1019,7 @@ final class LibraryScanWindowController: NSWindowController {
     private func canEditContextCell() -> Bool {
         guard isScanning == false, isWritingTag == false,
               contextRow >= 0, contextRow < results.count,
-              results[contextRow].unreadable == false,
+              results[contextRow].isUsable,
               let key = tagKey(ofColumn: contextColumn) else { return false }
         return LibraryScanEdit.canEdit(key: key)
     }
@@ -807,7 +1036,9 @@ final class LibraryScanWindowController: NSWindowController {
         field.isEditable = true
         field.delegate = self
         field.textColor = .labelColor
-        field.stringValue = editingOriginal
+        // A tag the library server has starts out with the server's value, so
+        // Return accepts it and typing changes it.
+        field.stringValue = result.values[key] ?? result.serverValues[key] ?? ""
         window?.makeFirstResponder(field)
         field.currentEditor()?.selectAll(nil)
     }
@@ -857,8 +1088,13 @@ final class LibraryScanWindowController: NSWindowController {
         LibraryScanWindowController.log("Library scan: wrote \(key) into \(url.path)")
         if let index = results.firstIndex(where: { $0.url == url }) {
             results[index].values[key] = LibraryScanCell.text(for: item) ?? text
-            // A file with nothing left missing no longer belongs in the list.
-            if results[index].values.count >= scanFields.count {
+            results[index].serverValues.removeValue(forKey: key)
+            // A file with nothing left missing no longer belongs in the list
+            // (for a library server's file: nothing left that the server has).
+            let finished = results[index].serverItemID != nil
+                ? results[index].serverValues.isEmpty
+                : results[index].values.count >= scanFields.count
+            if finished {
                 results.remove(at: index)
             }
         }
@@ -915,7 +1151,9 @@ final class LibraryScanWindowController: NSWindowController {
         let box = TagReadBox()
         let finished = DispatchSemaphore(value: 0)
 
-        DispatchQueue.global(qos: .utility).async {
+        // Same class as the scan thread that waits for it below (a lower class
+        // would make that thread wait on a slower one: a priority inversion).
+        DispatchQueue.global(qos: .userInitiated).async {
             box.set(MP42File.readMetadata(ofFileAt: url))
             finished.signal()
         }
@@ -934,7 +1172,9 @@ final class LibraryScanWindowController: NSWindowController {
     }
 
     private func beginScan() {
-        guard let folderURL = scannedFolderURL else { return }
+        let server = selectedServer
+        guard server != nil || scannedFolderURL != nil else { return }
+        let folderURL = scannedFolderURL
 
         results = []
         scanFields = LibraryScanWindowController.fieldsToCheck()
@@ -949,20 +1189,45 @@ final class LibraryScanWindowController: NSWindowController {
         isScanning = true
         progressIndicator.startAnimation(nil)
         currentFileName = ""
-        statusLabel.stringValue = NSLocalizedString("Scanning\u{2026}", comment: "Library scan -> status")
+        statusLabel.stringValue = server.map { String(format: NSLocalizedString("Asking %@ for its library\u{2026}", comment: "Library scan -> status while a library server lists its items"), $0.name) }
+            ?? NSLocalizedString("Scanning\u{2026}", comment: "Library scan -> status")
 
         let fields = scanFields
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
 
-            let fileManager = FileManager.default
-            guard let enumerator = fileManager.enumerator(at: folderURL,
-                                                           includingPropertiesForKeys: [.isRegularFileKey],
-                                                           options: [.skipsHiddenFiles, .skipsPackageDescendants],
-                                                           errorHandler: nil) else {
-                DispatchQueue.main.async { self.finishScan(scannedCount: 0) }
-                return
+            // What to look at next: a file found in the folder, or an item the
+            // library server listed (its file may be missing).
+            let nextTarget: () -> (url: URL, item: LibraryServerItem?)?
+
+            if let server = server {
+                let items = server.libraryItems()
+                if items.isEmpty {
+                    DispatchQueue.main.async { self.finishScan(scannedCount: 0, emptyServer: server.name) }
+                    return
+                }
+                var index = 0
+                nextTarget = {
+                    guard index < items.count else { return nil }
+                    let item = items[index]
+                    index += 1
+                    // An item with no path cannot be found; the title stands in as its name.
+                    return (url: URL(fileURLWithPath: item.path ?? item.title), item: item)
+                }
+            } else {
+                guard let folderURL = folderURL,
+                      let enumerator = FileManager.default.enumerator(at: folderURL,
+                                                                      includingPropertiesForKeys: [.isRegularFileKey],
+                                                                      options: [.skipsHiddenFiles, .skipsPackageDescendants],
+                                                                      errorHandler: nil) else {
+                    DispatchQueue.main.async { self.finishScan(scannedCount: 0) }
+                    return
+                }
+                nextTarget = {
+                    guard let url = enumerator.nextObject() as? URL else { return nil }
+                    return (url: url, item: nil)
+                }
             }
 
             var scannedCount = 0
@@ -971,7 +1236,8 @@ final class LibraryScanWindowController: NSWindowController {
             var pendingResults: [ScanResult] = []
             var lastFlush = Date()
 
-            for case let url as URL in enumerator {
+            while let target = nextTarget() {
+                let url = target.url
                 if self.cancelRequested { break }
 
                 // Paused: show what has been found, then wait (no file is
@@ -990,7 +1256,12 @@ final class LibraryScanWindowController: NSWindowController {
                     if self.cancelRequested { break }
                 }
 
-                guard LibraryScanWindowController.scannableExtensions.contains(url.pathExtension.lowercased()) else { continue }
+                // The folder walk reads only the formats a library holds; a
+                // library server's items are all looked at (a missing file is
+                // reported, a file of another format is skipped when read).
+                if target.item == nil {
+                    guard LibraryScanWindowController.scannableExtensions.contains(url.pathExtension.lowercased()) else { continue }
+                }
 
                 scannedCount += 1
 
@@ -1004,11 +1275,28 @@ final class LibraryScanWindowController: NSWindowController {
                 }
 
                 let started = Date()
+                if let item = target.item, item.path == nil || FileManager.default.fileExists(atPath: url.path) == false {
+                    // The server lists it, but its file is not at that path.
+                    consecutiveTimeouts = 0
+                    var missing = ScanResult(url: url, values: [:])
+                    missing.serverItemID = item.id
+                    missing.notFound = true
+                    pendingResults.append(missing)
+                } else {
                 switch LibraryScanWindowController.readTags(of: url, timeout: LibraryScanWindowController.readTimeout) {
                 case .tags(let metadata):
                     consecutiveTimeouts = 0
                     let values = LibraryScanWindowController.values(in: metadata, fields: fields)
-                    if values.count < fields.count {
+                    if let item = target.item {
+                        // Listed only when the server has something the file lacks.
+                        let gapKeys = item.gaps(fileValues: values, keys: fields.map { $0.key })
+                        if gapKeys.isEmpty == false {
+                            var found = ScanResult(url: url, values: values)
+                            found.serverItemID = item.id
+                            for key in gapKeys { found.serverValues[key] = item.values[key] }
+                            pendingResults.append(found)
+                        }
+                    } else if values.count < fields.count {
                         pendingResults.append(ScanResult(url: url, values: values))
                     }
                 case .notScannable:
@@ -1017,6 +1305,7 @@ final class LibraryScanWindowController: NSWindowController {
                     consecutiveTimeouts += 1
                     pendingResults.append(ScanResult(url: url, values: [:], unreadable: true))
                     LibraryScanWindowController.log("Library scan: gave up reading \(url.path) after \(Int(LibraryScanWindowController.readTimeout)) seconds")
+                }
                 }
 
                 let elapsed = Date().timeIntervalSince(started)
@@ -1066,12 +1355,24 @@ final class LibraryScanWindowController: NSWindowController {
         refreshStatus(scannedCount: scannedCount)
     }
 
-    private func finishScan(scannedCount: Int, stoppedEarly: Bool = false) {
+    private func finishScan(scannedCount: Int, stoppedEarly: Bool = false, emptyServer: String? = nil) {
         isPausedUI = false
         isScanning = false
         progressIndicator.stopAnimation(nil)
         currentFileName = ""
-        if stoppedEarly {
+        if let serverName = emptyServer {
+            statusLabel.stringValue = String(format: NSLocalizedString("%@ listed no files. Check its address and key (Preferences \u{2192} Sources \u{2192} Providers \u{2192} Configure\u{2026}) and that it is running.", comment: "Library scan -> a library server returned nothing"), serverName)
+        } else if selectedServer != nil, stoppedEarly == false {
+            let name = selectedServer?.name ?? ""
+            let notFound = results.filter { $0.notFound }.count
+            var text = results.isEmpty
+                ? String(format: NSLocalizedString("Checked %d files from %@ \u{2014} the files have everything the server has.", comment: "Library scan -> done status for a library server, nothing to fill"), scannedCount, name)
+                : String(format: NSLocalizedString("Checked %d files from %@ \u{2014} %d lack something the server has.", comment: "Library scan -> done status for a library server"), scannedCount, name, results.count - notFound)
+            if notFound > 0 {
+                text += " " + String(format: NSLocalizedString("%d not found at the listed path.", comment: "Library scan -> library server items whose file is missing"), notFound)
+            }
+            statusLabel.stringValue = text
+        } else if stoppedEarly {
             statusLabel.stringValue = String(format: NSLocalizedString("Stopped after %d files \u{2014} several files in a row could not be read. Check that the drive is responding.", comment: "Library scan -> stopped because reads timed out"), scannedCount)
         } else {
             statusLabel.stringValue = results.isEmpty
@@ -1118,7 +1419,29 @@ extension LibraryScanWindowController: NSMenuDelegate, NSTextFieldDelegate {
                 menu.addItem(.separator())
             }
 
-            let count = contextTargetResults().filter { $0.unreadable == false }.count
+            if selectedServer != nil {
+                let idle = isScanning == false && isWritingTag == false
+                if let cellKey = tagKey(ofColumn: contextColumn) {
+                    let row = results[contextRow]
+                    let acceptable = row.isUsable && row.values[cellKey] == nil
+                        && (row.serverValues[cellKey].map { LibraryScanAccept.hasAcceptable([cellKey: $0]) } ?? false)
+                    let one = NSMenuItem(title: NSLocalizedString("Accept Server Value", comment: "Library scan -> context menu: write the library server's value for this tag into the file"), action: #selector(acceptContextCell(_:)), keyEquivalent: "")
+                    one.target = self
+                    one.isEnabled = acceptable && idle
+                    menu.addItem(one)
+                }
+                let acceptCount = contextTargetResults().filter { $0.isUsable && LibraryScanAccept.hasAcceptable($0.serverValues) }.count
+                let all = NSMenuItem(title: acceptCount > 1
+                    ? String(format: NSLocalizedString("Accept Server Values for %d Files\u{2026}", comment: "Library scan -> context menu"), acceptCount)
+                    : NSLocalizedString("Accept Server Values\u{2026}", comment: "Library scan -> context menu: write all the library server's values into this file"),
+                    action: #selector(acceptContextRows(_:)), keyEquivalent: "")
+                all.target = self
+                all.isEnabled = acceptCount > 0 && idle
+                menu.addItem(all)
+                menu.addItem(.separator())
+            }
+
+            let count = contextTargetResults().filter { $0.isUsable }.count
             let send = NSMenuItem(title: count > 1
                 ? String(format: NSLocalizedString("Send %d Files to Queue for In-Place Edit\u{2026}", comment: "Library scan -> context menu"), count)
                 : NSLocalizedString("Send to Queue for In-Place Edit\u{2026}", comment: "Library scan -> context menu"),
@@ -1191,16 +1514,21 @@ extension LibraryScanWindowController: NSTableViewDataSource, NSTableViewDelegat
         if columnID == LibraryScanWindowController.fileColumnID {
             cell.textField?.stringValue = result.url.lastPathComponent
             cell.textField?.toolTip = result.url.path
-        } else if result.unreadable {
+        } else if result.unreadable || result.notFound {
             // The first tag column carries the explanation; the rest stay blank.
             let isFirstTagColumn = tableColumn === tableView.tableColumns.dropFirst().first
-            cell.textField?.stringValue = isFirstTagColumn ? LibraryScanWindowController.unreadableLabel : "\u{2014}"
+            let label = result.notFound ? LibraryScanWindowController.notFoundLabel : LibraryScanWindowController.unreadableLabel
+            cell.textField?.stringValue = isFirstTagColumn ? label : "\u{2014}"
             cell.textField?.textColor = .secondaryLabelColor
         } else {
             let tag = String(columnID.dropFirst(LibraryScanWindowController.tagColumnPrefix.count))
             if let text = result.values[tag] {
                 cell.textField?.stringValue = text
                 cell.textField?.toolTip = text
+            } else if let serverText = result.serverValues[tag] {
+                cell.textField?.stringValue = LibraryScanWindowController.serverHasText(serverText)
+                cell.textField?.toolTip = serverText
+                cell.textField?.textColor = .systemOrange
             } else {
                 cell.textField?.stringValue = LibraryScanCell.missingText
                 cell.textField?.textColor = .systemRed
@@ -1379,10 +1707,17 @@ enum LibraryScanEdit {
     /// Replaces the tag in the file, keeping a copy of the file until the
     /// write has worked (put back if it fails).
     static func write(_ item: MP42MetadataItem, to url: URL) throws {
+        try write([item], to: url)
+    }
+
+    /// Several tags in one pass (one open, one save, one safety copy).
+    static func write(_ items: [MP42MetadataItem], to url: URL) throws {
         let file = try MP42File(url: url)
         let metadata = file.metadata
-        metadata.removeItems(metadata.metadataItemsFiltered(byIdentifier: item.identifier))
-        metadata.addItem(item)
+        for item in items {
+            metadata.removeItems(metadata.metadataItemsFiltered(byIdentifier: item.identifier))
+            metadata.addItem(item)
+        }
 
         let copy = QueueItem.makeSafetyCopy(of: url)
         do {
@@ -1392,6 +1727,24 @@ enum LibraryScanEdit {
             throw error
         }
         if let copy = copy { QueueItem.discardSafetyCopy(copy) }
+    }
+}
+
+/// Which of a library server's values the Library scan can write straight
+/// into a file (the ones that can be typed; see LibraryScanEdit.canEdit).
+enum LibraryScanAccept {
+
+    /// The tags (by key, in key order) that can be written from `serverValues`.
+    static func acceptable(_ serverValues: [String: String]) -> [(key: String, text: String)] {
+        return serverValues.keys.sorted().compactMap { key -> (key: String, text: String)? in
+            guard let text = serverValues[key] else { return nil }
+            if case .success = LibraryScanEdit.makeItem(key: key, text: text) { return (key: key, text: text) }
+            return nil
+        }
+    }
+
+    static func hasAcceptable(_ serverValues: [String: String]) -> Bool {
+        return acceptable(serverValues).isEmpty == false
     }
 }
 
@@ -1495,11 +1848,22 @@ extension LibraryScanWindowController {
         beginScan()
     }
 
+    /// Chooses the library server with this name in the Source pop-up and scans it. False when
+    /// no such server is installed and switched on.
+    func docsScanServer(named name: String) -> Bool {
+        showWindow(nil)
+        guard let item = sourcePopUp.itemArray.first(where: { ($0.representedObject as? String) == name }) else { return false }
+        sourcePopUp.select(item)
+        sourceChanged(nil)
+        beginScan()
+        return true
+    }
+
     var docsIsScanning: Bool { isScanning }
 
     /// "Send All to Queue" without the confirmation question. Returns how many files were sent.
     func docsSendAllToQueue() -> Int {
-        let sendable = results.filter { $0.unreadable == false }
+        let sendable = results.filter { $0.isUsable }
         guard sendable.isEmpty == false else { return 0 }
         let added = QueueController.shared.addForInPlaceEdit(sendable.map { (url: $0.url, values: $0.values) }, tagKeys: scanFields.map { $0.key })
         return added.movies + added.tvShows

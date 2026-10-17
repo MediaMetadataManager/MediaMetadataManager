@@ -1409,7 +1409,12 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         if prefs.clearExistingMetadata {
             item.addAction(QueueClearExistingMetadataAction())
         }
-        if prefs.searchMetadata {
+        // A file the Library scan matched to a library server's item is filled
+        // from that item (only the tags it lacks), whatever the search setting.
+        let known = editInPlace ? QueueController.inPlaceKnownItems[url.standardizedFileURL.path] : nil
+        if let known = known {
+            item.addAction(QueueMetadataAction(movieLanguage: prefs.movieProviderLanguage,tvShowLanguage: prefs.tvShowProviderLanguage, movieProvider: prefs.movieProvider, tvShowProvider: prefs.tvShowProvider, preferredArtwork: prefs.providerArtwork, preferredArtworkSize: prefs.providerArtworkSize, existingTags: ExistingTagsMode.fillMissing.rawValue, keepEmptyAnnotations: false, knownSource: known.source, knownItemID: known.id))
+        } else if prefs.searchMetadata {
             item.addAction(QueueMetadataAction(movieLanguage: prefs.movieProviderLanguage,tvShowLanguage: prefs.tvShowProviderLanguage, movieProvider: prefs.movieProvider, tvShowProvider: prefs.tvShowProvider, preferredArtwork: prefs.providerArtwork, preferredArtworkSize: prefs.providerArtworkSize, existingTags: prefs.existingTags, keepEmptyAnnotations: prefs.keepEmptyAnnotations))
         }
         if prefs.setOutputFilename {
@@ -1869,6 +1874,10 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     /// it was sent, for the files being added by addForInPlaceEdit(_:tagKeys:).
     private static var inPlaceTagKeys: [String] = []
     private static var inPlaceSeedValues: [String: [String: String]] = [:]
+    /// For files sent from a library-server scan: the source's name and the
+    /// server's item id, by file path. Those files get their metadata from
+    /// that item (no title search).
+    private static var inPlaceKnownItems: [String: (source: String, id: String)] = [:]
 
     /// Adds files from the Library scan: each goes to the Movies or TV Shows
     /// Queue as usual, but is edited where it sits (tags written into the
@@ -1879,16 +1888,18 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     /// values from the scan (a tag with no entry was missing). The Queue
     /// shows them as columns and reads each file again when it is done.
     @discardableResult
-    func addForInPlaceEdit(_ files: [(url: URL, values: [String: String])], tagKeys: [String]) -> (movies: Int, tvShows: Int, skipped: Int) {
+    func addForInPlaceEdit(_ files: [(url: URL, values: [String: String])], tagKeys: [String], knownItems: [URL: (source: String, id: String)] = [:]) -> (movies: Int, tvShows: Int, skipped: Int) {
         let moviesBefore = QueueController.shared.count
         let tvBefore = QueueController.tvShows.count
         QueueController.inPlaceSourcePaths = Set(files.map { $0.url.standardizedFileURL.path })
         QueueController.inPlaceTagKeys = tagKeys
         QueueController.inPlaceSeedValues = Dictionary(files.map { ($0.url.standardizedFileURL.path, $0.values) }, uniquingKeysWith: { first, _ in first })
+        QueueController.inPlaceKnownItems = Dictionary(knownItems.map { ($0.key.standardizedFileURL.path, $0.value) }, uniquingKeysWith: { first, _ in first })
         defer {
             QueueController.inPlaceSourcePaths = []
             QueueController.inPlaceTagKeys = []
             QueueController.inPlaceSeedValues = [:]
+            QueueController.inPlaceKnownItems = [:]
         }
         QueueController.shared.insertGrouped(files.map { $0.url }, at: QueueController.shared.count)
         QueueController.shared.syncTagColumns()

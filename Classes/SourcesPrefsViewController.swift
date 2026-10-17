@@ -57,16 +57,21 @@ final class SourcesPrefsViewController: NSViewController, NSTabViewDelegate {
     /// Installed plugins -- see MetadataSearch.pluginMovieProviders.
     /// Usually empty. Folded into allMovieProviders below rather than
     /// listed under a section of their own.
-    private let pluginProviders: [String] = MetadataSearch.pluginMovieProviders
+    private let pluginProviders: [String] = MetadataSearch.onlinePluginMovieProviders
 
-    /// Everything shown in the Movies column: Subler's own built-in
-    /// providers followed by any installed plugin. Shares one combined
-    /// checkbox list (and one toggle action, toggleMovieProvider(_:)) with
-    /// no visual distinction between the two, since both are toggled the
-    /// same way and write to the same disabledMovieProviders set -- a
-    /// plugin's name can never collide with a core provider's (see
-    /// MetadataSearch.coreMovieProviders/pluginMovieProviders).
-    private var allMovieProviders: [String] { movieProviders + pluginProviders }
+    /// Installed plugins that are library servers (the user's own Plex,
+    /// Jellyfin, ... server). Listed in a "Library Servers" column of their
+    /// own, and only when at least one is installed, so the tab is unchanged
+    /// for everyone else.
+    private let libraryServerProviders: [String] = MetadataSearch.libraryServerProviderNames
+
+    /// Everything that has a movie checkbox: Subler's own built-in
+    /// providers, then installed online plugins, then library servers.
+    /// Shares one toggle action (toggleMovieProvider(_:), the checkbox's tag
+    /// is the index into this list) and writes to the same
+    /// disabledMovieProviders set -- a plugin's name can never collide with
+    /// a core provider's (see MetadataSearch.coreMovieProviders/pluginMovieProviders).
+    private var allMovieProviders: [String] { movieProviders + pluginProviders + libraryServerProviders }
 
     /// Owns the actual Custom Sources list/detail UI -- see
     /// CustomSourcesListViewController. Kept as a real child view
@@ -267,7 +272,7 @@ final class SourcesPrefsViewController: NSViewController, NSTabViewDelegate {
         headerLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
         headerLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        let descriptionLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Turn the built-in providers on or off, separately for movies and TV shows. A disabled provider is removed from the search provider menu and the Queue options. When the Queue looks up a title on its own, it searches every provider ticked here and merges what the ones that found the same title return, so the result is as complete as possible. When you edit a single file, you choose the provider yourself. Custom sources are always available and are configured on the Custom Sources tab.", comment: ""))
+        let descriptionLabel = NSTextField(wrappingLabelWithString: NSLocalizedString("Turn the built-in providers on or off, separately for movies and TV shows. A disabled provider is removed from the search provider menu and the Queue options. When the Queue looks up a title on its own, it searches every provider ticked here and merges what the ones that found the same title return, so the result is as complete as possible. When you edit a single file, you choose the provider yourself. Custom sources are always available and are configured on the Custom Sources tab. If a library server plugin is installed, it is listed under Library Servers; ticking it also offers it as a Source in the library scan.", comment: ""))
         descriptionLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         descriptionLabel.textColor = .secondaryLabelColor
         descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -288,7 +293,7 @@ final class SourcesPrefsViewController: NSViewController, NSTabViewDelegate {
         allowAdultContentCheckbox.toolTip = NSLocalizedString("Includes TheMovieDB's complete result set in search, including titles it classifies separately as adult content.", comment: "")
 
         let movieSection = makeProviderSection(title: NSLocalizedString("Movies", comment: ""),
-                                                providers: allMovieProviders,
+                                                providers: movieProviders + pluginProviders,
                                                 disabled: MetadataPrefs.disabledMovieProviders,
                                                 action: #selector(toggleMovieProvider(_:)),
                                                 extraControl: { name in name == TheMovieDB().name ? allowAdultContentCheckbox : nil })
@@ -297,7 +302,19 @@ final class SourcesPrefsViewController: NSViewController, NSTabViewDelegate {
                                              disabled: MetadataPrefs.disabledTVProviders,
                                              action: #selector(toggleTVProvider(_:)))
 
-        let sections = NSStackView(views: [movieSection, tvSection])
+        var sectionViews: [NSView] = [movieSection, tvSection]
+        if libraryServerProviders.isEmpty == false {
+            // Library servers are movie sources too (they appear in Search
+            // Metadata), and the Library scan offers the ticked ones as a
+            // Source. Their checkbox tags continue after the Movies column's.
+            sectionViews.append(makeProviderSection(title: NSLocalizedString("Library Servers", comment: ""),
+                                                     providers: libraryServerProviders,
+                                                     disabled: MetadataPrefs.disabledMovieProviders,
+                                                     action: #selector(toggleMovieProvider(_:)),
+                                                     tagOffset: movieProviders.count + pluginProviders.count))
+        }
+
+        let sections = NSStackView(views: sectionViews)
         sections.orientation = .horizontal
         sections.alignment = .top
         sections.distribution = .fillEqually
@@ -329,7 +346,7 @@ final class SourcesPrefsViewController: NSViewController, NSTabViewDelegate {
 
     /// Builds one titled column of provider checkboxes (e.g. "Movies" or
     /// "TV Shows") for the Providers tab.
-    private func makeProviderSection(title: String, providers: [String], disabled: Set<String>, action: Selector, extraControl: (String) -> NSView? = { _ in nil }) -> NSView {
+    private func makeProviderSection(title: String, providers: [String], disabled: Set<String>, action: Selector, tagOffset: Int = 0, extraControl: (String) -> NSView? = { _ in nil }) -> NSView {
         let container = NSView()
         container.translatesAutoresizingMaskIntoConstraints = false
 
@@ -345,7 +362,7 @@ final class SourcesPrefsViewController: NSViewController, NSTabViewDelegate {
 
         for (index, name) in providers.enumerated() {
             let checkbox = NSButton(checkboxWithTitle: name, target: self, action: action)
-            checkbox.tag = index
+            checkbox.tag = tagOffset + index
             checkbox.state = disabled.contains(name) ? .off : .on
 
             var rowViews: [NSView] = [checkbox]

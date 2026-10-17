@@ -7,7 +7,8 @@
 //  Modified for M3 (Media Metadata Manager) by
 //  Hans Hoffmeister, 2026:
 //  Search across all providers, portrait-only cover art, output file naming
-//  and delivery to the library, edit in place, rename in place.
+//  and delivery to the library, edit in place, rename in place, metadata
+//  loaded by id from a library server.
 //
 
 import Foundation
@@ -433,14 +434,25 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
     let existingTags: ExistingTagsMode
     let keepEmptyAnnotations: Bool
 
+    /// A library server's own item for this file (set for files sent from a
+    /// Library scan of a server): the source's name and the server's id for
+    /// the item. The metadata is then loaded from that item directly, with
+    /// no title search and no other provider. When the item cannot be loaded
+    /// (the server is down), the normal search runs instead.
+    let knownSource: String?
+    let knownItemID: String?
+
     var type: QueueActionType { return .pre }
     var localizedDescription: String { return NSLocalizedString("Searching metadata", comment: "Action localized description.") }
     override var description: String { return NSLocalizedString("Search Metadata", comment: "Action description.") }
 
     init(movieLanguage: String, tvShowLanguage: String, movieProvider: String, tvShowProvider: String, preferredArtwork: Int, preferredArtworkSize: Int, searchName: String? = nil, searchTerm: String? = nil, searchResultIndex: Int = 0,
-         existingTags: Int = ExistingTagsMode.usePreferences.rawValue, keepEmptyAnnotations: Bool = false) {
+         existingTags: Int = ExistingTagsMode.usePreferences.rawValue, keepEmptyAnnotations: Bool = false,
+         knownSource: String? = nil, knownItemID: String? = nil) {
         self.existingTags = ExistingTagsMode(rawValue: existingTags) ?? .usePreferences
         self.keepEmptyAnnotations = keepEmptyAnnotations
+        self.knownSource = knownSource
+        self.knownItemID = knownItemID
         self.searchName = searchName
         self.searchTerm = searchTerm
         self.searchResultIndex = max(0, searchResultIndex)
@@ -572,9 +584,32 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
         return (combined, primary.provider)
     }
 
+    /// The library server's own metadata for the item this file was matched
+    /// to, loaded by id; nil when this action has no known item or the
+    /// server cannot supply it.
+    private func loadKnownItem() -> (result: MetadataResult, provider: String)? {
+        guard let source = knownSource, let id = knownItemID, id.isEmpty == false else { return nil }
+        let service = MetadataSearch.service(name: source)
+        // service(name:) answers with a default provider for a name it does not know.
+        guard service.name == source else {
+            Logger.shared.write(toLog: "Library server \u{201C}\(source)\u{201D} is not installed; searching by title instead")
+            return nil
+        }
+        let partial = MetadataResult()
+        partial.mediaKind = .movie
+        partial[.serviceContentID] = id
+        let loaded = service.loadMovieMetadata(partial, language: service.defaultLanguage)
+        guard let name = loaded[.name] as? String, name.isEmpty == false else {
+            Logger.shared.write(toLog: "Library server \u{201C}\(source)\u{201D} did not return item \(id); searching by title instead")
+            return nil
+        }
+        Logger.shared.write(toLog: "Metadata loaded from \(source) by item id (no title search)")
+        return (loaded, source)
+    }
+
     private func searchMetadata(terms: MetadataSearchTerms) -> MP42Metadata? {
 
-        guard let found = searchMetadata(info: terms) else { return nil }
+        guard let found = loadKnownItem() ?? searchMetadata(info: terms) else { return nil }
         let metadata = found.result
 
         let artworks = metadata.remoteArtworks
@@ -640,7 +675,10 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
     func runAction(_ item: QueueItem) -> Bool {
         if let file = item.mp4File {
             let searchTerms: MetadataSearchTerms
-            if let term = searchTerm, term.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
+            if knownSource != nil && knownItemID != nil {
+                // The server's item decides; the terms only say "a movie".
+                searchTerms = .movie(title: "")
+            } else if let term = searchTerm, term.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
                 searchTerms = .movie(title: term.trimmingCharacters(in: .whitespacesAndNewlines))
             } else if let name = searchName, name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
                 searchTerms = MetadataSearchTerms.fromReleaseName(name)
@@ -678,6 +716,8 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
         aCoder.encode(Int32(searchResultIndex), forKey: "_searchResultIndex")
         aCoder.encode(Int32(existingTags.rawValue), forKey: "_existingTags")
         aCoder.encode(keepEmptyAnnotations, forKey: "_keepEmptyAnnotations")
+        aCoder.encode(knownSource, forKey: "_knownSource")
+        aCoder.encode(knownItemID, forKey: "_knownItemID")
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -701,6 +741,9 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
         // Queues saved before this setting existed decode as 0 = Use Preferences.
         self.existingTags = ExistingTagsMode(rawValue: Int(aDecoder.decodeInt32(forKey: "_existingTags"))) ?? .usePreferences
         self.keepEmptyAnnotations = aDecoder.decodeBool(forKey: "_keepEmptyAnnotations")
+        // Queues saved before this existed have no known item.
+        self.knownSource = aDecoder.decodeObject(of: NSString.self, forKey: "_knownSource") as String?
+        self.knownItemID = aDecoder.decodeObject(of: NSString.self, forKey: "_knownItemID") as String?
     }
 
     static var supportsSecureCoding: Bool { return true }

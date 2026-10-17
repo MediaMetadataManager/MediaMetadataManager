@@ -7,7 +7,7 @@
 //  Modified for M3 (Media Metadata Manager) by
 //  Hans Hoffmeister, 2026:
 //  Custom and plugin metadata sources, Search All Providers, readable
-//  language names for provider menus.
+//  language names for provider menus, library-server sources.
 //
 
 import Foundation
@@ -175,6 +175,35 @@ extension MetadataSearch {
     /// SourcesPrefsViewController) with the same kind of checkbox, rather
     /// than on the Custom Sources tab.
     public static var pluginMovieProviders: [String] { return pluginServices.map { $0.name } }
+
+    /// The installed plugins that are searched by title on the web (the
+    /// default kind). Preferences > Sources > Providers lists these in the
+    /// Movies column, next to the built-in providers.
+    static var onlinePluginMovieProviders: [String] {
+        return pluginServices.filter { $0.isLibraryServer == false }.map { $0.name }
+    }
+
+    /// The installed plugins that are library servers, switched on or off
+    /// alike: Preferences > Sources > Providers lists these under "Library
+    /// Servers". (libraryServerServices below is only the switched-on ones.)
+    static var libraryServerProviderNames: [String] {
+        return pluginServices.filter { $0.isLibraryServer }.map { $0.name }
+    }
+
+    /// True when the plugin bundle with this file name (without ".bundle")
+    /// was loaded at launch and declares itself a library server. A bundle
+    /// that did not load, or was installed after launch, counts as online.
+    static func isLibraryServerBundle(named bundleName: String) -> Bool {
+        _ = pluginServices   // makes sure loadPlugins() has run
+        return MetadataPluginLoader.libraryServerBundleNames.contains(bundleName)
+    }
+
+    /// The installed plugins that declare themselves library servers (see
+    /// M3MetadataPlugin.sourceKind) and are not switched off in
+    /// Preferences > Sources > Providers: the Library scan's Source choices.
+    static var libraryServerServices: [PluginMetadataService] {
+        return pluginServices.filter { $0.isLibraryServer && MetadataPrefs.disabledMovieProviders.contains($0.name) == false }
+    }
 
     /// The installed plugin with this provider name, if any. Used by the
     /// Providers tab to ask a plugin which settings it wants shown.

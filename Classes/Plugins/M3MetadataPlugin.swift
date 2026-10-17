@@ -150,4 +150,35 @@ import Foundation
     /// predate it keep working; they simply get no Configure button.
     @objc(settingsFields) optional
     func settingsFields() -> [[String: Any]]
+
+    /// Optional: what kind of source this is. "online" (the default when
+    /// this is not implemented) means a web source searched by title.
+    /// "libraryServer" means the user's own media server, which already
+    /// knows the exact files it holds; such a source must also implement
+    /// listLibraryItems() below. A library-server source still appears in
+    /// Search Metadata like any other, and is additionally offered as a
+    /// Source in the Library scan. Any other value is treated as "online".
+    ///
+    /// Marked `optional` so plugins that predate it keep working as online
+    /// sources.
+    @objc(sourceKind) optional
+    func sourceKind() -> String
+
+    /// Optional (library-server sources): every movie the server holds,
+    /// with where its file is and the metadata the server has for it.
+    /// Each dictionary must contain "id" (String, the same id
+    /// loadMovieMetadata(id:) accepts) and "title" (String). It should
+    /// contain:
+    ///   - "path": String, the file's full path as the server knows it
+    /// and may contain the same keys as a search result (see
+    /// searchMovie(query:)): "releaseDate", "synopsis", "studio",
+    /// "director", "cast", "genre", "ratingName", plus
+    ///   - "hasCover": Bool, true when the server holds a cover picture.
+    /// The call may take a while (it runs on a background thread, never the
+    /// main thread). Return an empty array when the server cannot be
+    /// reached; the app treats that as "nothing to list".
+    ///
+    /// Marked `optional`, like the requirements above.
+    @objc(listLibraryItems) optional
+    func listLibraryItems() -> [[String: Any]]
 }
