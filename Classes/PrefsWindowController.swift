@@ -277,3 +277,19 @@ final class SupportPrefsViewController: NSViewController {
         SupportLinks.open(SupportLinks.originalAuthorSupportURL)
     }
 }
+
+#if DEBUG
+// Used by DocsScreenshots (debug builds only): opens a Preferences tab by its toolbar identifier.
+extension PrefsWindowController {
+    func docsShowTab(_ identifier: String, sub: String?) -> NSWindow? {
+        showWindow(nil)
+        guard let item = window?.toolbar?.items.first(where: { $0.itemIdentifier.rawValue == identifier }) else { return window }
+        window?.toolbar?.selectedItemIdentifier = item.itemIdentifier
+        selectItem(item, animate: true)
+        if let sub = sub {
+            sourcesController.docsSelectTab(sub)
+        }
+        return window
+    }
+}
+#endif

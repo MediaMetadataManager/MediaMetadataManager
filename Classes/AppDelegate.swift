@@ -331,6 +331,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
+        #if DEBUG
+        if DocsScreenshots.isRequested { print("[screenshots] app launching"); fflush(stdout) }
+        #endif
         Prefs.register()
         MetadataPrefs.register()
         MediaIntakePrefs.register()
@@ -355,6 +358,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         addCleanUpEmptyFoldersMenuItem()
+        #if DEBUG
+        DocsScreenshots.startIfRequested()
+        #endif
         //if Prefs.suppressDonationAlert == false {
         //    runDonateAlert()
         //}
@@ -599,3 +605,23 @@ extension AppDelegate {
     }
 
 }
+
+#if DEBUG
+// Used by DocsScreenshots (debug builds only): reaches the private window controllers.
+
+extension AppDelegate {
+    @MainActor func docsWelcomeWindow() -> NSWindow? {
+        welcomeWindowController.showWindow(nil)
+        return welcomeWindowController.window
+    }
+
+    @MainActor func docsPrefsController() -> PrefsWindowController {
+        return prefsController
+    }
+
+    @MainActor func docsLogWindow() -> NSWindow? {
+        activityWindowController.showWindow(nil)
+        return activityWindowController.window
+    }
+}
+#endif

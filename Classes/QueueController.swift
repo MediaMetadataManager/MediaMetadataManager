@@ -4192,3 +4192,45 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         return false
     }
 }
+
+#if DEBUG
+// Used by DocsScreenshots (debug builds only): where the options panel is on screen.
+extension QueueController {
+    var docsPopoverFrame: NSRect? {
+        return popover?.contentViewController?.view.window?.frame
+    }
+
+    /// Adds a release row for a folder, as the intake scan would, but parked at `stage`
+    /// (nothing is renamed, searched or merged until the screenshot step opens its dialog).
+    @discardableResult
+    func docsAddRelease(folder: URL, stage: QueueRelease.Stage, approvedName: String? = nil) -> QueueRelease? {
+        guard let release = makeRelease(contentOf: folder) else { return nil }
+        release.stage = stage
+        release.approvedName = approvedName
+        insertRelease(release, at: count)
+        return release
+    }
+
+    /// Opens the dialog a double-click on this release's row would open.
+    func docsReview(_ release: QueueRelease) {
+        switch release.stage {
+        case .alreadyMerged: reviewAlreadyMerged(for: release)
+        case .pendingNaming, .namingRejected: reviewNaming(for: release)
+        case .pendingMergeSelection, .mergeFailed: reviewMerge(for: release)
+        case .pendingMetadata: reviewMetadata(for: release)
+        default: break
+        }
+    }
+
+    /// Clean settings leave "Search metadata" off; the in-place editing shot needs it on,
+    /// and it has to be on before the files are added (each item gets its actions then).
+    func docsEnableMetadataSearch() {
+        prefs.searchMetadata = true
+    }
+
+    /// True when nothing is running and nothing is waiting to run.
+    var docsIsIdle: Bool {
+        return queue.status != .working && queue.readyCount == 0
+    }
+}
+#endif

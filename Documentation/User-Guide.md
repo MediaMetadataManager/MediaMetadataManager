@@ -96,6 +96,9 @@ You can change which buttons are shown, and whether they show icons, text or bot
 
 ### Searching for metadata
 
+<!-- screen:editor-search-metadata.png:User-Guide -->
+![The Search Metadata sheet with a result previewed.](images/screens/editor-search-metadata.png)
+
 1. Click **Search Metadata**. The title field is pre-filled from the file name, with release codes and quality tags removed.
 2. Results appear in a list. Select one to see its full metadata and artwork on the right. The first result is selected for you.
 3. Choose the artwork you want. **Select All** adds every available image; **Load more artwork…** fetches additional images.

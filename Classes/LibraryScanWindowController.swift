@@ -1482,3 +1482,27 @@ final class ScanPauseGate {
         while paused && stopping() == false { condition.wait() }
     }
 }
+
+#if DEBUG
+// Used by DocsScreenshots (debug builds only): scans a folder without the folder chooser.
+extension LibraryScanWindowController {
+    func docsScan(folder: URL) {
+        showWindow(nil)
+        scannedFolderURL = folder
+        folderField.stringValue = folder.path
+        folderField.textColor = .labelColor
+        scanButton.isEnabled = true
+        beginScan()
+    }
+
+    var docsIsScanning: Bool { isScanning }
+
+    /// "Send All to Queue" without the confirmation question. Returns how many files were sent.
+    func docsSendAllToQueue() -> Int {
+        let sendable = results.filter { $0.unreadable == false }
+        guard sendable.isEmpty == false else { return 0 }
+        let added = QueueController.shared.addForInPlaceEdit(sendable.map { (url: $0.url, values: $0.values) }, tagKeys: scanFields.map { $0.key })
+        return added.movies + added.tvShows
+    }
+}
+#endif

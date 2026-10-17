@@ -12,6 +12,12 @@ next round of work.
 
 ## Unreleased
 
+## 1.3.0 (2026-10-17)
+
+- Improved: the screenshots in the User Guide, the Getting Started Guide and the Help window were all retaken from the current version, so each window shown matches what you see: Preferences, the Queue with its review windows (naming, metadata, merge order) and Options panel, the Library scan, the editor and its metadata search, and the Message Log.
+- New: the User Guide's "Searching for metadata" section now shows the Search Metadata window with a result selected, and the Queue section shows an opened folder and the Library scan editing files in place.
+- Improved: the Word and PDF copies of both guides were rebuilt with the new pictures.
+
 ## 1.2.3 (2026-10-16)
 
 - Changed: in **Preferences → Metadata**, the **Add** menu greys out an annotation that already has a row, so it cannot be added twice. Remove the row and it is offered again. Values stay available to use in any number of cells. The same goes for the tag menu when you edit a **Set**: a tag the Set already has is greyed out until you remove it.

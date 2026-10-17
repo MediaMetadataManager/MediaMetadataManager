@@ -453,3 +453,19 @@ final class SourcesPrefsViewController: NSViewController, NSTabViewDelegate {
         MetadataPrefs.disabledTVProviders = disabled
     }
 }
+
+#if DEBUG
+// Used by DocsScreenshots (debug builds only): picks one of the tabs inside Sources.
+extension SourcesPrefsViewController {
+    func docsSelectTab(_ identifier: String) {
+        func findTabView(in view: NSView) -> NSTabView? {
+            if let tabView = view as? NSTabView { return tabView }
+            for subview in view.subviews {
+                if let found = findTabView(in: subview) { return found }
+            }
+            return nil
+        }
+        findTabView(in: view)?.selectTabViewItem(withIdentifier: identifier)
+    }
+}
+#endif
