@@ -3,8 +3,32 @@
     <channel>
         <title>M3</title>
         <item>
+            <title>1.4.0</title>
+            <pubDate>Mon, 26 Oct 2026 18:48:22 -0700</pubDate>
+            <sparkle:version>1.4.0</sparkle:version>
+            <sparkle:shortVersionString>1.4.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
+            <description><![CDATA[<html><body style="font-family:-apple-system;font-size:13px">
+<h3>Media Metadata Manager 1.4.0</h3><ul>
+<li>Free disk space check: pressing Start now estimates the room the waiting files will take on the disks they are written to. If a disk is short, a dialog offers Change Target…, Skip These Files, Run Anyway or Cancel; a merge checks the same before it starts. It also counts the safety copy and optimize rewrite of files edited where they sit, and a delivery to a library folder on another disk. Edit > Save and Save As stop with a clear message if the disk is too full, and a run started by Auto-Start does not begin if a disk is short (the status line says why; press Start to choose what to do). Turn it off in Settings > Media Intake.</li>
+<li>Review Show for TV folders: double-click a season or show folder heading on the TV Shows tab to say which show and season it is (with a Look Up button that shows what the TV provider finds). Every episode in the folder is then searched with that show and season, and each episode's number is read from its file name.</li>
+<li>Edit no longer drops the row: opening a waiting file for editing from the Queue and then cancelling or closing without saving leaves it in the Queue as it was (it shows *Editing* meanwhile, and is not run). Only a save takes the row out. A row left in *Editing* by a quit comes back as waiting.</li>
+<li>Queue names: a long name is cut in the middle so its ending stays visible, the tooltip shows the full path, and the Name column can be dragged wider.</li>
+<li>Welcome window: *Window > Welcome to M3* brings it back, and clicking the Dock icon with no window open shows it. *File > New* is gone, since nothing in M3 is made from scratch.</li>
+<li>Queue folder rows, files you can pick: the files listed under an open folder row can now be selected (one folder at a time), dragged into a new order, and follow the column you sort by (name, size or kind). With two or more picked, Merge merges just those files, the same way as opening the folder's merge order.</li>
+<li>Queue fixes (loose ends): a stamped name that was numbered on a collision (`..._720p 2`) is read like the original; the finished file's address follows a whole-folder move into the library, so Edit and Save look in the right place; Clean up processed files now also covers a plain Queue item whose finished file is a different file from the one added; naming and tagging search the Queue's chosen movie provider first, so a name approved from one source is tagged from the same one.</li>
+<li>Show and season from folder names: a file with no episode marker in its name, in a season folder (`Show/Season 2/05 - Title.mkv`), now fills the show, season and episode in the metadata search. A waiting Queue item whose file has been moved or deleted shows File missing in the Status column.</li>
+<li>"Preferences" is now "Settings" in the app's own wording: messages, tooltips, the menu item and the guides say Settings, as macOS does since version 13 (macOS 12 and earlier call it Preferences).</li>
+<li>Sets by rule: Settings > Sets has a Set Rules... button. A rule applies a Metadata Set when a file's tags match its conditions (for example Content Rating is Explicit applies your Adult Set). The first enabled matching rule wins; the Queue applies it after the online search.</li>
+<li>Copy in the Trash when saving an edit (optional, off by default): Settings > Sources > Intake can keep a copy of the file as it was in the Trash before an Edit + Save changes it.</li>
+<li>Path mapping for library servers: the Library scan has a Path Mapping... button when a library server is the Source. When the server lists its files by a path that differs from the Mac's (a network drive mounted under another name, a Windows or NAS path), one or more "server path -> folder on this Mac" mappings make the files findable. The sheet shows an example path the server listed.</li>
+</ul></body></html>
+]]></description>
+            <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.4.0/MediaMetadataManager-1.4.0.zip" length="23302363" type="application/octet-stream" sparkle:edSignature="ehAmgZWJUkQhshrUcTNCkwR208bmeL/I2lc6w5/ji6cS7ay7eapLygm6coCGpomM6L/rfdaZ48C8FuVsHCiEBw=="/>
+        </item>
+        <item>
             <title>1.3.1</title>
-            <pubDate>Sat, 17 Oct 2026 16:35:53 -0700</pubDate>
+            <pubDate>Mon, 26 Oct 2026 18:48:36 -0700</pubDate>
             <sparkle:version>1.3.1</sparkle:version>
             <sparkle:shortVersionString>1.3.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
@@ -21,7 +45,7 @@
         </item>
         <item>
             <title>1.3.0</title>
-            <pubDate>Sat, 17 Oct 2026 16:36:09 -0700</pubDate>
+            <pubDate>Mon, 26 Oct 2026 18:48:35 -0700</pubDate>
             <sparkle:version>1.3.0</sparkle:version>
             <sparkle:shortVersionString>1.3.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
@@ -33,20 +57,6 @@
 </ul></body></html>
 ]]></description>
             <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.3.0/MediaMetadataManager-1.3.0.zip" length="22177461" type="application/octet-stream" sparkle:edSignature="e8a3/OhChlyP2pS1txJM54+DCiv6ySglFji/NHux+oYsS/Jh+qVgMX6h0UoO4L6RWLOWLgq276Gke4SbrvsjDg=="/>
-        </item>
-        <item>
-            <title>1.2.3</title>
-            <pubDate>Sat, 17 Oct 2026 16:36:07 -0700</pubDate>
-            <sparkle:version>1.2.3</sparkle:version>
-            <sparkle:shortVersionString>1.2.3</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>10.13</sparkle:minimumSystemVersion>
-            <description><![CDATA[<html><body style="font-family:-apple-system;font-size:13px">
-<h3>Media Metadata Manager 1.2.3</h3><ul>
-<li>Changed: in Preferences → Metadata, the Add menu greys out an annotation that already has a row, so it cannot be added twice. Remove the row and it is offered again. Values stay available to use in any number of cells. The same goes for the tag menu when you edit a Set: a tag the Set already has is greyed out until you remove it.</li>
-<li>New: Help is now a Help window inside the app, built from the guides, with a search box and a list of topics. Help → Media Metadata Manager Help opens it. The Help menu's search box finds help topics as well as menu commands (it points at the command in the menu). The Welcome, Editor, Queue, Message log, Library scan and Preferences windows, the Queue's review windows (naming, metadata, choose a match, merge order) and the Queue Options panel have a ? button that opens the matching section (in the Queue, Editor and Preferences toolbars it is the last item; in the Library scan window it is beside the gear; in Queue Options it is in the top right corner). The Queue and Editor toolbars start from their default layout once, because of the new item. The Help window can be used while a review window is open. The Help menu also opens the Getting Started Guide, the User Guide as a PDF, What's New and Report an Issue. Before, the Help item opened the project's web page.</li>
-</ul></body></html>
-]]></description>
-            <enclosure url="https://github.com/MediaMetadataManager/MediaMetadataManager/releases/download/v1.2.3/MediaMetadataManager-1.2.3.zip" length="21446574" type="application/octet-stream" sparkle:edSignature="aqiNv70OnEnQSVWhhJr1OXQwmy17ZVuuvW4NzZkRMUKXlqX/n2l/icnVjpwvmnRWSEdSIuH47Xtw8+3h8reWCg=="/>
         </item>
     </channel>
 </rss>
