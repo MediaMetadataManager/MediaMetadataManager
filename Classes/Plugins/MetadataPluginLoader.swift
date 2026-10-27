@@ -21,10 +21,14 @@ import Foundation
 /// (CustomSourcesListViewController) needs to show what's installed and let
 /// the user remove it, but loading every plugin just to render a row would
 /// be wasteful and would run each plugin's own code as a side effect of
-/// simply opening Preferences.
+/// simply opening Settings.
 struct InstalledPlugin {
     let name: String
     let url: URL
+    /// True for a plugin that ships inside the app (Contents/PlugIns). It
+    /// can't be removed from Settings; installing a bundle of the same name
+    /// into the user's Plugins folder takes its place.
+    var isBuiltIn: Bool = false
 }
 
 enum MetadataPluginLoader {
@@ -38,29 +42,65 @@ enum MetadataPluginLoader {
         return ApplicationSupport.url?.appendingPathComponent("Plugins", isDirectory: true)
     }
 
+    /// Plugins that ship inside the app itself: Contents/PlugIns. The release
+    /// script puts the paid library-server plugins there; they stay locked
+    /// until a licence key is entered (see PluginLicence).
+    static var builtInPluginsDirectory: URL? {
+        return Bundle.main.builtInPlugInsURL
+    }
+
+    private static func bundleURLs(in directory: URL?) -> [URL] {
+        guard let directory = directory else { return [] }
+        let urls = (try? FileManager.default.contentsOfDirectory(at: directory,
+                                                                  includingPropertiesForKeys: nil,
+                                                                  options: [.skipsHiddenFiles])) ?? []
+        return urls.filter { $0.pathExtension == "bundle" }
+    }
+
+    /// Combines the user's installed bundles with the ones built into the app.
+    /// When both have the same file name the installed one wins, so a plugin
+    /// built from source (or an updated one) overrides the built-in copy and
+    /// the same plugin is never loaded twice.
+    static func mergeBundles(installed: [URL], builtIn: [URL]) -> [InstalledPlugin] {
+        let userPlugins = installed.map { InstalledPlugin(name: $0.deletingPathExtension().lastPathComponent, url: $0) }
+        let taken = Set(userPlugins.map { $0.name.lowercased() })
+        let builtInPlugins = builtIn
+            .map { InstalledPlugin(name: $0.deletingPathExtension().lastPathComponent, url: $0, isBuiltIn: true) }
+            .filter { taken.contains($0.name.lowercased()) == false }
+        return userPlugins + builtInPlugins
+    }
+
+    /// Every plugin bundle to consider: installed first, then built-in.
+    static func pluginBundleLocations() -> [InstalledPlugin] {
+        return mergeBundles(installed: bundleURLs(in: pluginsDirectory), builtIn: bundleURLs(in: builtInPluginsDirectory))
+    }
+
     /// Loads every plugin bundle found in pluginsDirectory. A bundle that
     /// fails to load, or whose principal class doesn't conform to
     /// M3MetadataPlugin, is logged and skipped rather than treated as
     /// fatal -- one broken or incompatible plugin should never keep the
     /// rest of Subler from launching normally.
     static func loadPlugins() -> [M3MetadataPlugin] {
-        guard let directory = pluginsDirectory else { return [] }
-
-        let bundleURLs = (try? FileManager.default.contentsOfDirectory(at: directory,
-                                                                         includingPropertiesForKeys: nil,
-                                                                         options: [.skipsHiddenFiles])) ?? []
-
         var libraryServerNames = Set<String>()
-        let loaded: [M3MetadataPlugin] = bundleURLs
-            .filter { $0.pathExtension == "bundle" }
+        var lockedByBundle: [String: String] = [:]
+        let loaded: [M3MetadataPlugin] = pluginBundleLocations()
+            .map { $0.url }
             .compactMap { url in
                 guard let plugin = loadPlugin(at: url) else { return nil }
                 if PluginSourceKind.isLibraryServer(plugin.sourceKind?() ?? PluginSourceKind.online) {
                     libraryServerNames.insert(url.deletingPathExtension().lastPathComponent)
                 }
+                // A paid plugin without a genuine key for it stays off. It is
+                // listed in lockedPluginIDsByBundle so Settings can ask for the key.
+                guard PluginLicence.isLicensed(pluginName: plugin.pluginName) else {
+                    lockedByBundle[url.deletingPathExtension().lastPathComponent] = PluginLicence.pluginID(forPluginName: plugin.pluginName)
+                    NSLog("[MetadataPluginLoader] %@ needs a licence key; not loaded", url.lastPathComponent)
+                    return nil
+                }
                 return plugin
             }
         libraryServerBundleNames = libraryServerNames
+        lockedPluginIDsByBundle = lockedByBundle
         return loaded
     }
 
@@ -71,21 +111,19 @@ enum MetadataPluginLoader {
     /// file each installed bundle under "Online" or "Library Servers".
     static private(set) var libraryServerBundleNames: Set<String> = []
 
+    /// Installed paid plugins that were NOT loaded because no genuine licence
+    /// key is stored for them: bundle file name (without ".bundle") -> plugin
+    /// id ("plex"). Filled in by loadPlugins(), so it describes this launch;
+    /// the Custom Sources list uses it to mark those rows and take the key.
+    static private(set) var lockedPluginIDsByBundle: [String: String] = [:]
+
     /// Lists installed plugin bundles without loading any of them -- see
     /// InstalledPlugin. Used only to populate the Custom Sources list's
     /// plugin rows and to resolve a row back to a file URL for removal;
     /// the actual, once-per-launch loaded list used for real searches
     /// still comes from loadPlugins() (see MetadataImporter.pluginServices).
     static func installedPluginBundles() -> [InstalledPlugin] {
-        guard let directory = pluginsDirectory else { return [] }
-
-        let bundleURLs = (try? FileManager.default.contentsOfDirectory(at: directory,
-                                                                         includingPropertiesForKeys: nil,
-                                                                         options: [.skipsHiddenFiles])) ?? []
-
-        return bundleURLs
-            .filter { $0.pathExtension == "bundle" }
-            .map { InstalledPlugin(name: $0.deletingPathExtension().lastPathComponent, url: $0) }
+        return pluginBundleLocations()
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
@@ -105,6 +143,63 @@ enum MetadataPluginLoader {
     /// removal of a broken or incompatible bundle.
     static func notifyPluginWillUninstall(at url: URL) {
         loadPlugin(at: url)?.uninstall?()
+    }
+
+    // MARK: - Installing a picked file
+
+    /// Why a picked file could not be turned into a plugin bundle.
+    enum InstallError: LocalizedError {
+        case unzipFailed(String)
+        case notAPlugin(String)
+
+        var errorDescription: String? {
+            switch self {
+            case .unzipFailed(let name):
+                return String(format: NSLocalizedString("\u{201c}%@\u{201d} could not be unpacked.", comment: ""), name)
+            case .notAPlugin(let name):
+                return String(format: NSLocalizedString("\u{201c}%@\u{201d} is not a Media Metadata Manager plugin.", comment: ""), name)
+            }
+        }
+    }
+
+    /// Unpacks a .zip into `directory` and returns the .bundle folders in it
+    /// (at the top or one folder down, where a zip of a folder puts them).
+    static func extractBundles(fromZip zip: URL, into directory: URL) throws -> [URL] {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+        process.arguments = ["-x", "-k", zip.path, directory.path]
+        try process.run()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { throw InstallError.unzipFailed(zip.lastPathComponent) }
+
+        var found = bundleURLs(in: directory)
+        let folders = (try? FileManager.default.contentsOfDirectory(at: directory,
+                                                                     includingPropertiesForKeys: [.isDirectoryKey],
+                                                                     options: [.skipsHiddenFiles])) ?? []
+        for folder in folders where folder.pathExtension != "bundle" {
+            found += bundleURLs(in: folder)
+        }
+        return found
+    }
+
+    /// A cheap check before copying: the folder is a loadable bundle that
+    /// names a principal class. (Whether the class really implements the
+    /// plugin contract is checked when it loads, see loadPlugin.)
+    static func looksLikePlugin(_ url: URL) -> Bool {
+        guard let bundle = Bundle(url: url) else { return false }
+        // Read from Info.plist; asking for principalClass would run the plugin's code.
+        return bundle.object(forInfoDictionaryKey: "NSPrincipalClass") != nil
+    }
+
+    /// A bundle downloaded in a browser carries the quarantine flag; remove it
+    /// from the copy the user chose to install, so it can load.
+    static func clearQuarantine(at url: URL) {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/xattr")
+        process.arguments = ["-dr", "com.apple.quarantine", url.path]
+        try? process.run()
+        process.waitUntilExit()
     }
 
     private static func loadPlugin(at url: URL) -> M3MetadataPlugin? {

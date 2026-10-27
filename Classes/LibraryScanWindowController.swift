@@ -160,6 +160,11 @@ final class LibraryScanWindowController: NSWindowController {
     private let chooseFolderButton = NSButton(title: NSLocalizedString("Choose Folder\u{2026}", comment: "Library scan -> button"), target: nil, action: nil)
     private var scanButton: NSButton!
     private var cancelRequested = false
+    private let pathMappingButton = NSButton(title: NSLocalizedString("Path Mapping\u{2026}", comment: "Library scan -> button"), target: nil, action: nil)
+    /// The first path a library server listed that was not found on this Mac,
+    /// shown as an example in the Path Mapping sheet.
+    private var serverPathSamples: [String] = []
+    private var serverPathSampleCounts: [String: Int] = [:]
 
     // MARK: Pause
     // The scan thread waits on this between files while the scan is paused.
@@ -242,6 +247,14 @@ final class LibraryScanWindowController: NSWindowController {
         sourceStack.translatesAutoresizingMaskIntoConstraints = false
         sourceStack.addArrangedSubview(sourcePopUp)
         sourceStack.addArrangedSubview(chooseFolderButton)
+
+        pathMappingButton.target = self
+        pathMappingButton.action = #selector(showPathMapping(_:))
+        pathMappingButton.bezelStyle = .rounded
+        pathMappingButton.translatesAutoresizingMaskIntoConstraints = false
+        pathMappingButton.isHidden = true
+        pathMappingButton.toolTip = NSLocalizedString("Tell M3 where the server\u{2019}s files are on this Mac, when the server lists them by a different path (for example a network drive mounted under another name).", comment: "Library scan -> Path Mapping button tooltip")
+        sourceStack.addArrangedSubview(pathMappingButton)
 
         scanButton = NSButton(title: NSLocalizedString("Scan", comment: "Library scan -> button"), target: self, action: #selector(scanOrStop(_:)))
         scanButton.translatesAutoresizingMaskIntoConstraints = false
@@ -518,6 +531,7 @@ final class LibraryScanWindowController: NSWindowController {
             ? NSLocalizedString("Stop", comment: "Library scan -> button while a scan is running")
             : NSLocalizedString("Scan", comment: "Library scan -> button")
         chooseFolderButton.isEnabled = isScanning == false
+        pathMappingButton.isEnabled = isScanning == false
         sourcePopUp.isEnabled = isScanning == false
         pauseButton.isEnabled = isScanning
         pauseButton.title = isPausedUI
@@ -575,6 +589,24 @@ final class LibraryScanWindowController: NSWindowController {
         }
         applySourceToControls()
         updateSelectionControlsState()
+    }
+
+    /// Keeps a few not-found paths from each drive the server lists (judged by
+    /// the first three folders of the path), so a server with many drives gets a
+    /// suggestion for every one of them, not just the first.
+    private func noteServerPathSample(_ path: String) {
+        let key = LibraryPathMapping.normalized(path).split(separator: "/").prefix(3).joined(separator: "/")
+        guard serverPathSamples.count < 200, serverPathSampleCounts[key, default: 0] < 3 else { return }
+        serverPathSampleCounts[key, default: 0] += 1
+        serverPathSamples.append(path)
+    }
+
+    @objc private func showPathMapping(_ sender: Any?) {
+        guard let server = selectedServer, let window = window else { return }
+        let controller = PathMappingViewController(serverName: server.name, samplePaths: serverPathSamples)
+        let sheet = NSWindow(contentViewController: controller)
+        sheet.styleMask = [.titled]
+        window.beginSheet(sheet, completionHandler: nil)
     }
 
     // MARK: Accepting a library server's values
@@ -686,6 +718,7 @@ final class LibraryScanWindowController: NSWindowController {
     /// Shows what the chosen source means: a server needs no folder, so Scan
     /// is ready at once; a folder scan needs one chosen first.
     private func applySourceToControls() {
+        pathMappingButton.isHidden = selectedServer == nil
         if let server = selectedServer {
             chooseFolderButton.isHidden = true
             folderField.stringValue = String(format: NSLocalizedString("Files listed by %@ that lack something the server has.", comment: "Library scan -> shown beside the Source pop-up when a library server is chosen"), server.name)
@@ -1177,6 +1210,8 @@ final class LibraryScanWindowController: NSWindowController {
         let folderURL = scannedFolderURL
 
         results = []
+        serverPathSamples = []
+        serverPathSampleCounts = [:]
         scanFields = LibraryScanWindowController.fieldsToCheck()
         rebuildColumns()
         tableView.reloadData()
@@ -1202,6 +1237,7 @@ final class LibraryScanWindowController: NSWindowController {
             let nextTarget: () -> (url: URL, item: LibraryServerItem?)?
 
             if let server = server {
+                let mappingRules = LibraryPathMapping.rules(forServer: server.name)
                 let items = server.libraryItems()
                 if items.isEmpty {
                     DispatchQueue.main.async { self.finishScan(scannedCount: 0, emptyServer: server.name) }
@@ -1213,7 +1249,9 @@ final class LibraryScanWindowController: NSWindowController {
                     let item = items[index]
                     index += 1
                     // An item with no path cannot be found; the title stands in as its name.
-                    return (url: URL(fileURLWithPath: item.path ?? item.title), item: item)
+                    // The path on this Mac, after the server's path mapping (if any).
+                    let local = item.path.map { LibraryPathMapping.map($0, rules: mappingRules) }
+                    return (url: URL(fileURLWithPath: local ?? item.title), item: item)
                 }
             } else {
                 guard let folderURL = folderURL,
@@ -1278,6 +1316,9 @@ final class LibraryScanWindowController: NSWindowController {
                 if let item = target.item, item.path == nil || FileManager.default.fileExists(atPath: url.path) == false {
                     // The server lists it, but its file is not at that path.
                     consecutiveTimeouts = 0
+                    if let listedPath = item.path {
+                        DispatchQueue.main.async { self.noteServerPathSample(listedPath) }
+                    }
                     var missing = ScanResult(url: url, values: [:])
                     missing.serverItemID = item.id
                     missing.notFound = true
@@ -1361,7 +1402,7 @@ final class LibraryScanWindowController: NSWindowController {
         progressIndicator.stopAnimation(nil)
         currentFileName = ""
         if let serverName = emptyServer {
-            statusLabel.stringValue = String(format: NSLocalizedString("%@ listed no files. Check its address and key (Preferences \u{2192} Sources \u{2192} Providers \u{2192} Configure\u{2026}) and that it is running.", comment: "Library scan -> a library server returned nothing"), serverName)
+            statusLabel.stringValue = String(format: NSLocalizedString("%@ listed no files. Check its address and key (Settings \u{2192} Sources \u{2192} Providers \u{2192} Configure\u{2026}) and that it is running.", comment: "Library scan -> a library server returned nothing"), serverName)
         } else if selectedServer != nil, stoppedEarly == false {
             let name = selectedServer?.name ?? ""
             let notFound = results.filter { $0.notFound }.count
@@ -1370,6 +1411,7 @@ final class LibraryScanWindowController: NSWindowController {
                 : String(format: NSLocalizedString("Checked %d files from %@ \u{2014} %d lack something the server has.", comment: "Library scan -> done status for a library server"), scannedCount, name, results.count - notFound)
             if notFound > 0 {
                 text += " " + String(format: NSLocalizedString("%d not found at the listed path.", comment: "Library scan -> library server items whose file is missing"), notFound)
+                text += " " + NSLocalizedString("If the server lists a different path from this Mac\u{2019}s, choose Path Mapping\u{2026}.", comment: "Library scan -> hint when a library server's files are not found")
             }
             statusLabel.stringValue = text
         } else if stoppedEarly {

@@ -102,6 +102,13 @@ extension MP42File {
             let plainURL = URL(fileURLWithPath: sourceURL.path)
             let cleanedName = plainURL.lastPathComponent.replacingOccurrences(of: mergedTag, with: "", options: .caseInsensitive)
             let url = plainURL.deletingLastPathComponent().appendingPathComponent(cleanedName)
+            // A file with no episode marker in its name that sits in a season
+            // folder ("Show/Season 2/05 - Title.mkv"): the folders give the
+            // show and season (L-12).
+            if ReleaseFilenameParser.parse(url.lastPathComponent)?.season == nil,
+               let folderInfo = SeasonFolderName.episodeInfo(for: url) {
+                return MetadataSearchTerms.tvShow(seriesName: folderInfo.show, season: folderInfo.season, episode: folderInfo.episode)
+            }
             // Try ReleaseFilenameParser first, ahead of the bundled Perl
             // parser (Video::Filename) below: it's built specifically
             // for this app's own "Title [Studio] (Year)" naming

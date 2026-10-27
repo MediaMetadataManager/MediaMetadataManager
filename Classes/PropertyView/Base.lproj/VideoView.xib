@@ -6,7 +6,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="VideoViewController" customModule="Subler" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="VideoViewController" customModule="M3" customModuleProvider="target">
             <connections>
                 <outlet property="alternateGroup" destination="8uz-fA-OM4" id="Tpr-cp-mwO"/>
                 <outlet property="colorHeight" destination="bGo-Zw-z0j" id="noF-0q-Gwe"/>

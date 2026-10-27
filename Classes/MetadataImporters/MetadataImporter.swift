@@ -198,6 +198,13 @@ extension MetadataSearch {
         return MetadataPluginLoader.libraryServerBundleNames.contains(bundleName)
     }
 
+    /// The plugin id ("plex") of an installed paid plugin that did not load for
+    /// want of a licence key, or nil if the bundle loaded (or isn't paid).
+    static func lockedPluginID(forBundle bundleName: String) -> String? {
+        _ = pluginServices   // makes sure loadPlugins() has run
+        return MetadataPluginLoader.lockedPluginIDsByBundle[bundleName]
+    }
+
     /// The installed plugins that declare themselves library servers (see
     /// M3MetadataPlugin.sourceKind) and are not switched off in
     /// Preferences > Sources > Providers: the Library scan's Source choices.

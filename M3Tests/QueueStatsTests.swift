@@ -156,6 +156,115 @@ final class QueueOutlineLayoutTests: XCTestCase {
         XCTAssertEqual(l.count, 6)
         XCTAssertEqual(l.tableRow(forQueueIndex: 2), 4)
     }
+
+    // Stage 2: picking and moving the file lines.
+
+    func testFileLinesOfOneFolderAreFound() {
+        let l = layout(3, open: [0])
+        let found = l.fileLines(inTableRows: IndexSet([1, 3]))
+        XCTAssertEqual(found?.parent, 0)
+        XCTAssertEqual(found?.positions, IndexSet([0, 2]))
+    }
+
+    func testFileLinesNilWhenAFolderRowIsIncluded() {
+        let l = layout(3, open: [0])
+        XCTAssertNil(l.fileLines(inTableRows: IndexSet([0, 1])))
+        XCTAssertNil(l.fileLines(inTableRows: IndexSet()))
+    }
+
+    func testFileLinesNilAcrossTwoFolders() {
+        let l = layout(3, open: [0, 1])
+        // rows: 0 folder, 1-3 files, 4 folder, 5-7 files
+        XCTAssertNil(l.fileLines(inTableRows: IndexSet([1, 5])))
+    }
+
+    func testSelectionKeepsFilesOfTheFirstFolderOnly() {
+        let l = layout(3, open: [0, 1])
+        let kept = l.selectionKeepingOneFolder(IndexSet([0, 2, 3, 4, 5])) { _ in true }
+        XCTAssertEqual(kept, IndexSet([2, 3]))
+    }
+
+    func testSelectionWithoutFilesIsUnchanged() {
+        let l = layout(3, open: [])
+        XCTAssertEqual(l.selectionKeepingOneFolder(IndexSet([0, 2])) { _ in true }, IndexSet([0, 2]))
+    }
+
+    func testSelectionDropsFilesOfAFolderThatRefuses() {
+        let l = layout(3, open: [0])
+        XCTAssertEqual(l.selectionKeepingOneFolder(IndexSet([1, 2])) { _ in false }, IndexSet())
+        XCTAssertEqual(l.selectionKeepingOneFolder(IndexSet([0, 1])) { _ in false }, IndexSet([0]))
+    }
+
+    func testDropPositionInsideAFoldersLines() {
+        let l = layout(3, open: [1])
+        // rows: 0 folder, 1 folder (open), 2-4 files, 5 folder
+        XCTAssertEqual(l.filePosition(forDropAtTableRow: 2, inFolder: 1), 0)
+        XCTAssertEqual(l.filePosition(forDropAtTableRow: 4, inFolder: 1), 2)
+        XCTAssertEqual(l.filePosition(forDropAtTableRow: 5, inFolder: 1), 3)
+        XCTAssertNil(l.filePosition(forDropAtTableRow: 1, inFolder: 1))
+        XCTAssertNil(l.filePosition(forDropAtTableRow: 6, inFolder: 1))
+    }
+
+    func testTableRowsOfFilePositions() {
+        let l = layout(3, open: [1])
+        XCTAssertEqual(l.tableRows(forFilePositions: IndexSet([0, 2]), inFolder: 1), IndexSet([2, 4]))
+    }
+}
+
+final class QueueFileOrderTests: XCTestCase {
+
+    private func urls(_ names: [String]) -> [URL] {
+        return names.map { URL(fileURLWithPath: "/Sample/\($0)") }
+    }
+
+    func testMovingOneFileEarlier() {
+        let u = urls(["a.mp4", "b.mp4", "c.mp4", "d.mp4"])
+        XCTAssertEqual(QueueFileOrder.moving(u, positions: IndexSet(integer: 3), to: 1), urls(["a.mp4", "d.mp4", "b.mp4", "c.mp4"]))
+    }
+
+    func testMovingOneFileLater() {
+        let u = urls(["a.mp4", "b.mp4", "c.mp4", "d.mp4"])
+        XCTAssertEqual(QueueFileOrder.moving(u, positions: IndexSet(integer: 0), to: 3), urls(["b.mp4", "c.mp4", "a.mp4", "d.mp4"]))
+    }
+
+    func testMovingToTheEnd() {
+        let u = urls(["a.mp4", "b.mp4", "c.mp4"])
+        XCTAssertEqual(QueueFileOrder.moving(u, positions: IndexSet(integer: 0), to: 3), urls(["b.mp4", "c.mp4", "a.mp4"]))
+    }
+
+    func testMovingSeveralKeepsTheirOrder() {
+        let u = urls(["a.mp4", "b.mp4", "c.mp4", "d.mp4"])
+        XCTAssertEqual(QueueFileOrder.moving(u, positions: IndexSet([0, 2]), to: 4), urls(["b.mp4", "d.mp4", "a.mp4", "c.mp4"]))
+    }
+
+    func testMovingNothingValidChangesNothing() {
+        let u = urls(["a.mp4", "b.mp4"])
+        XCTAssertEqual(QueueFileOrder.moving(u, positions: IndexSet(integer: 9), to: 0), u)
+    }
+
+    func testDragItemRoundTrips() {
+        let value = QueueFileOrder.encode(parent: 12, position: 7)
+        let decoded = QueueFileOrder.decode(value)
+        XCTAssertEqual(decoded.parent, 12)
+        XCTAssertEqual(decoded.position, 7)
+    }
+
+    func testSortByNameUsesNaturalOrder() {
+        let u = urls(["part 10.mp4", "part 2.mp4", "part 1.mp4"])
+        XCTAssertEqual(QueueFileOrder.sorted(u, by: .name, ascending: true, sizes: [:]), urls(["part 1.mp4", "part 2.mp4", "part 10.mp4"]))
+        XCTAssertEqual(QueueFileOrder.sorted(u, by: .name, ascending: false, sizes: [:]), urls(["part 10.mp4", "part 2.mp4", "part 1.mp4"]))
+    }
+
+    func testSortBySize() {
+        let u = urls(["a.mp4", "b.mp4", "c.mp4"])
+        let sizes: [URL: Int64] = [u[0]: 300, u[1]: 100, u[2]: 200]
+        XCTAssertEqual(QueueFileOrder.sorted(u, by: .size, ascending: true, sizes: sizes), [u[1], u[2], u[0]])
+    }
+
+    func testOtherColumnsLeaveTheOrderAlone() {
+        let u = urls(["b.mp4", "a.mp4"])
+        XCTAssertEqual(QueueFileOrder.sorted(u, by: .status, ascending: true, sizes: [:]), u)
+    }
 }
 
 

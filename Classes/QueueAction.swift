@@ -334,7 +334,7 @@ class QueueSetAction : NSObject, QueueActionProtocol {
             return true
         }
 
-        // Preferences > Metadata > "Overwrite existing metadata" wins over
+        // Settings > Metadata > "Overwrite existing metadata" wins over
         // this Set's own replace-annotations/replace-artworks choice, when
         // turned off -- that's the user's explicit promise that applying a
         // Set via the Queue (e.g. right after "Search Metadata" just ran)
@@ -430,7 +430,7 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
 
     /// What to do with tags the file already has, and whether blank tags
     /// the search found are kept (see ExistingTagsMode). The defaults follow
-    /// Preferences > Metadata.
+    /// Settings > Metadata.
     let existingTags: ExistingTagsMode
     let keepEmptyAnnotations: Bool
 
@@ -442,13 +442,22 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
     let knownSource: String?
     let knownItemID: String?
 
+    /// The show (and season) a person confirmed for a whole folder with
+    /// Review Show. When set, the search uses them for every episode, with
+    /// the episode number read from the file's name.
+    let tvShowName: String?
+    let tvSeason: Int?
+
     var type: QueueActionType { return .pre }
     var localizedDescription: String { return NSLocalizedString("Searching metadata", comment: "Action localized description.") }
     override var description: String { return NSLocalizedString("Search Metadata", comment: "Action description.") }
 
     init(movieLanguage: String, tvShowLanguage: String, movieProvider: String, tvShowProvider: String, preferredArtwork: Int, preferredArtworkSize: Int, searchName: String? = nil, searchTerm: String? = nil, searchResultIndex: Int = 0,
          existingTags: Int = ExistingTagsMode.usePreferences.rawValue, keepEmptyAnnotations: Bool = false,
-         knownSource: String? = nil, knownItemID: String? = nil) {
+         knownSource: String? = nil, knownItemID: String? = nil,
+         tvShowName: String? = nil, tvSeason: Int? = nil) {
+        self.tvShowName = tvShowName
+        self.tvSeason = tvSeason
         self.existingTags = ExistingTagsMode(rawValue: existingTags) ?? .usePreferences
         self.keepEmptyAnnotations = keepEmptyAnnotations
         self.knownSource = knownSource
@@ -465,6 +474,18 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
         self.preferredArtwork = ArtworkType(rawValue: preferredArtwork) ?? .poster
         self.preferredArtworkSize = ArtworkSize(rawValue: preferredArtworkSize) ?? .standard
 
+    }
+
+    /// The same action with a confirmed show and season (or none, to go back
+    /// to reading them from each file).
+    func settingShow(_ name: String?, season: Int?) -> QueueMetadataAction {
+        return QueueMetadataAction(movieLanguage: movieLanguage, tvShowLanguage: tvShowLanguage,
+                                   movieProvider: movieProvider, tvShowProvider: tvShowProvider,
+                                   preferredArtwork: preferredArtwork.rawValue, preferredArtworkSize: preferredArtworkSize.rawValue,
+                                   searchName: searchName, searchTerm: searchTerm, searchResultIndex: searchResultIndex,
+                                   existingTags: existingTags.rawValue, keepEmptyAnnotations: keepEmptyAnnotations,
+                                   knownSource: knownSource, knownItemID: knownItemID,
+                                   tvShowName: name, tvSeason: season)
     }
 
     /// Downloads the candidates one by one and returns the first that is
@@ -665,7 +686,7 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
     }
 
     /// Puts what the search found into the file's metadata the way the
-    /// Existing tags choice says (by default Preferences > Metadata).
+    /// Existing tags choice says (by default Settings > Metadata).
     func merge(_ found: MP42Metadata, into target: MP42Metadata) {
         let flags = existingTags.mergeFlags(preferencesOverwrite: MetadataPrefs.overwriteExistingAnnotations,
                                             preferencesAppend: MetadataPrefs.appendExistingAnnotations)
@@ -678,6 +699,8 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
             if knownSource != nil && knownItemID != nil {
                 // The server's item decides; the terms only say "a movie".
                 searchTerms = .movie(title: "")
+            } else if let show = tvShowName?.trimmingCharacters(in: .whitespacesAndNewlines), show.isEmpty == false {
+                searchTerms = TVEpisodeTerms.terms(showName: show, season: tvSeason, fileURL: item.fileURL)
             } else if let term = searchTerm, term.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
                 searchTerms = .movie(title: term.trimmingCharacters(in: .whitespacesAndNewlines))
             } else if let name = searchName, name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
@@ -718,6 +741,9 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
         aCoder.encode(keepEmptyAnnotations, forKey: "_keepEmptyAnnotations")
         aCoder.encode(knownSource, forKey: "_knownSource")
         aCoder.encode(knownItemID, forKey: "_knownItemID")
+        aCoder.encode(tvShowName, forKey: "_tvShowName")
+        aCoder.encode(tvSeason != nil, forKey: "_hasTVSeason")
+        aCoder.encode(Int32(tvSeason ?? 0), forKey: "_tvSeason")
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -738,12 +764,15 @@ class QueueMetadataAction : NSObject, QueueActionProtocol {
         self.searchName = aDecoder.decodeObject(of: NSString.self, forKey: "_searchName") as String?
         self.searchTerm = aDecoder.decodeObject(of: NSString.self, forKey: "_searchTerm") as String?
         self.searchResultIndex = Int(aDecoder.decodeInt32(forKey: "_searchResultIndex"))
-        // Queues saved before this setting existed decode as 0 = Use Preferences.
+        // Queues saved before this setting existed decode as 0 = Use Settings.
         self.existingTags = ExistingTagsMode(rawValue: Int(aDecoder.decodeInt32(forKey: "_existingTags"))) ?? .usePreferences
         self.keepEmptyAnnotations = aDecoder.decodeBool(forKey: "_keepEmptyAnnotations")
         // Queues saved before this existed have no known item.
         self.knownSource = aDecoder.decodeObject(of: NSString.self, forKey: "_knownSource") as String?
         self.knownItemID = aDecoder.decodeObject(of: NSString.self, forKey: "_knownItemID") as String?
+        // Queues saved before Review Show have no confirmed show.
+        self.tvShowName = aDecoder.decodeObject(of: NSString.self, forKey: "_tvShowName") as String?
+        self.tvSeason = aDecoder.decodeBool(forKey: "_hasTVSeason") ? Int(aDecoder.decodeInt32(forKey: "_tvSeason")) : nil
     }
 
     static var supportsSecureCoding: Bool { return true }
@@ -1074,6 +1103,11 @@ class QueueMoveToLibraryAction: NSObject, QueueActionProtocol {
     private let releaseID: UUID
     private let destinationRoot: URL
 
+    /// Where the release folder is expected to go (a delivery rule may pick
+    /// another folder when it runs), and which release it is.
+    var plannedRoot: URL { return destinationRoot }
+    var plannedReleaseID: UUID { return releaseID }
+
     var type: QueueActionType { return .post }
     var localizedDescription: String { return NSLocalizedString("Moving to Ready for Media Library", comment: "Action localized description.") }
     override var description: String { return NSLocalizedString("Move to Ready for Media Library", comment: "Action description.") }
@@ -1169,9 +1203,23 @@ class QueueMoveToLibraryAction: NSObject, QueueActionProtocol {
             ProcessedFileCleaner.trashOriginals(originals, oldFolder: sourceFolder, newFolder: finalFolder, keeping: keep)
         }
 
+        // The whole folder moved, so the finished file's address moves with it
+        // (L-4): otherwise Edit or Save from the row would look in the old
+        // folder.
+        item.destURL = QueueMoveToLibraryAction.movedURL(item.destURL, from: sourceFolder, to: finalFolder)
+
         release.folderURL = finalFolder
         release.stage = .done
         return true
+    }
+
+    /// `url` re-based from `oldFolder` onto `newFolder` when it lies inside
+    /// `oldFolder`; any other URL comes back unchanged.
+    static func movedURL(_ url: URL, from oldFolder: URL, to newFolder: URL) -> URL {
+        let oldParts = oldFolder.standardizedFileURL.pathComponents
+        let parts = url.standardizedFileURL.pathComponents
+        guard parts.count > oldParts.count, Array(parts.prefix(oldParts.count)) == oldParts else { return url }
+        return parts.dropFirst(oldParts.count).reduce(newFolder) { $0.appendingPathComponent($1) }
     }
 
     func encode(with aCoder: NSCoder) {
@@ -1208,6 +1256,10 @@ class QueueMoveFileToLibraryAction: NSObject, QueueActionProtocol {
 
     private let destinationRoot: URL
 
+    /// Where the finished file is expected to go (a delivery rule may pick
+    /// another folder when it runs).
+    var plannedRoot: URL { return destinationRoot }
+
     var type: QueueActionType { return .post }
     var localizedDescription: String { return NSLocalizedString("Moving to Ready for Media Library", comment: "Action localized description.") }
     override var description: String { return NSLocalizedString("Move to Ready for Media Library", comment: "Action description.") }
@@ -1219,6 +1271,7 @@ class QueueMoveFileToLibraryAction: NSObject, QueueActionProtocol {
     func runAction(_ item: QueueItem) -> Bool {
         let fileManager = FileManager.default
         let outputURL = item.destURL
+        let sourceURL = item.fileURL
         guard fileManager.fileExists(atPath: outputURL.path) else { return false }
 
         let destinationRoot = item.mp4File?.deliveryFolder ?? self.destinationRoot
@@ -1236,6 +1289,7 @@ class QueueMoveFileToLibraryAction: NSObject, QueueActionProtocol {
                 try fileManager.createDirectory(at: destinationRoot, withIntermediateDirectories: true)
                 try fileManager.moveItem(at: outputURL, to: target)
                 item.destURL = target
+                trashSource(sourceURL, of: item, output: outputURL)
                 return true
             } catch {
                 NSLog("[FolderSync] FAILED: Queue couldn't move \(outputURL.lastPathComponent) to \(destinationRoot.path): \(error.localizedDescription)")
@@ -1243,6 +1297,7 @@ class QueueMoveFileToLibraryAction: NSObject, QueueActionProtocol {
                     return false
                 }
                 item.destURL = recovered.appendingPathComponent(outputURL.lastPathComponent)
+                trashSource(sourceURL, of: item, output: outputURL)
                 return true
             }
         }
@@ -1266,6 +1321,7 @@ class QueueMoveFileToLibraryAction: NSObject, QueueActionProtocol {
             try fileManager.moveItem(at: outputURL, to: target)
             item.destURL = target
             NSLog("[FolderSync] Queue moved \(outputURL.lastPathComponent) into new Ready for Media Library folder \(folder.lastPathComponent)")
+            trashSource(sourceURL, of: item, output: outputURL)
             return true
         } catch {
             NSLog("[FolderSync] FAILED: Queue couldn't move \(outputURL.lastPathComponent) to Ready for Media Library: \(error.localizedDescription)")
@@ -1273,8 +1329,23 @@ class QueueMoveFileToLibraryAction: NSObject, QueueActionProtocol {
                 return false
             }
             item.destURL = recovered.appendingPathComponent(outputURL.lastPathComponent)
+            trashSource(sourceURL, of: item, output: outputURL)
             return true
         }
+    }
+
+    /// "Clean up processed files" for a plain item (L-5): when the finished file
+    /// is a different file from the one that was added, that source is an
+    /// original and goes to the Trash like a release's originals do. An
+    /// in-place edit (output is the source) is never touched.
+    private func trashSource(_ source: URL, of item: QueueItem, output: URL) {
+        let standardized = source.standardizedFileURL
+        guard standardized != output.standardizedFileURL,
+              standardized != item.destURL.standardizedFileURL,
+              FileManager.default.fileExists(atPath: standardized.path),
+              FileManager.default.fileExists(atPath: item.destURL.path) else { return }
+        let folder = standardized.deletingLastPathComponent()
+        ProcessedFileCleaner.trashOriginals([standardized], oldFolder: folder, newFolder: folder, keeping: [])
     }
 
     func encode(with aCoder: NSCoder) {

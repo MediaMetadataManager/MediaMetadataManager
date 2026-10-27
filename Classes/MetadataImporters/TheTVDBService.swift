@@ -4,6 +4,10 @@
 //
 //  Created by Damiano Galassi on 15/06/2017.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Renamed Subler references to M3.
+//
 
 import Foundation
 import MP42Foundation
@@ -440,8 +444,8 @@ final public class TheTVDBService {
     }
 
     private init() {
-        queue = DispatchQueue(label: "org.subler.TheTVDBQueue")
-        tokenQueue = DispatchQueue(label: "org.subler.TheTVDBTokenQueue")
+        queue = DispatchQueue(label: "com.mediametadatamanager.TheTVDBQueue")
+        tokenQueue = DispatchQueue(label: "com.mediametadatamanager.TheTVDBTokenQueue")
         savedLanguages = []
 
         if let tokenKey = UserDefaults.standard.string(forKey: TheTVDBService.tokenKey) {

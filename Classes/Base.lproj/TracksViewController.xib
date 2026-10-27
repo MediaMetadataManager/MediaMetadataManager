@@ -6,7 +6,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="TracksViewController" customModule="Subler" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="TracksViewController" customModule="M3" customModuleProvider="target">
             <connections>
                 <outlet property="tracksTable" destination="Bpi-e7-pHx" id="oqE-b0-m8c"/>
                 <outlet property="view" destination="Vef-Em-112" id="Aw6-ae-nYo"/>
@@ -24,7 +24,7 @@
                         <rect key="frame" x="1" y="1" width="732" height="279"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" tableStyle="plain" alternatingRowBackgroundColors="YES" autosaveColumns="NO" rowSizeStyle="automatic" headerView="etF-qp-SsT" viewBased="YES" id="Bpi-e7-pHx" customClass="ExpandedTableView" customModule="Subler" customModuleProvider="target">
+                            <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" tableStyle="plain" alternatingRowBackgroundColors="YES" autosaveColumns="NO" rowSizeStyle="automatic" headerView="etF-qp-SsT" viewBased="YES" id="Bpi-e7-pHx" customClass="ExpandedTableView" customModule="M3" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="732" height="256"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="3" height="2"/>
@@ -92,7 +92,7 @@
                                         </buttonCell>
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
-                                            <tableCellView identifier="trackEnabled" id="Gfc-fL-316" customClass="CheckBoxCellView" customModule="Subler" customModuleProvider="target">
+                                            <tableCellView identifier="trackEnabled" id="Gfc-fL-316" customClass="CheckBoxCellView" customModule="M3" customModuleProvider="target">
                                                 <rect key="frame" x="35.5" y="1" width="18" height="17"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
@@ -194,7 +194,7 @@
                                         </comboBoxCell>
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
-                                            <tableCellView identifier="trackLanguage" id="iMB-mM-hYa" customClass="PopUpCellView" customModule="Subler" customModuleProvider="target">
+                                            <tableCellView identifier="trackLanguage" id="iMB-mM-hYa" customClass="PopUpCellView" customModule="M3" customModuleProvider="target">
                                                 <rect key="frame" x="420" y="1" width="150" height="17"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>

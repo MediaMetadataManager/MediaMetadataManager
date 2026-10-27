@@ -25,7 +25,7 @@ def box(ax,x,y,w,h,text,fc='white',ec='#2b5d8a',fs=9,bold=False,tc='#1d2b3a'):
 fig,ax=plt.subplots(figsize=(10,6.4)); ax.set_xlim(0,1); ax.set_ylim(0,1); ax.axis('off')
 layers=[
  ('Interface layer','AppKit windows, sheets, toolbars',0.77,'#e6f0fa','#2b5d8a',
-   ['Welcome\nwindow','Queue window\nMovies and\nTV Shows tabs','Single-file\neditor','Preferences','Review windows\nnaming, metadata,\nmerge order','Library scan\ntag columns, Edit,\nSend to Queue']),
+   ['Welcome\nwindow','Queue window\nMovies and\nTV Shows tabs','Single-file\neditor','Settings','Review windows\nnaming, metadata,\nmerge order','Library scan\ntag columns, Edit,\nSend to Queue']),
  ('Workflow layer','M3-specific logic built on the Queue',0.53,'#fff4d6','#c79a1c',
    ['Intake watching\nwatcher + scanner','QueueController\n(one per tab)','QueueRow /\nQueueRelease','Queue actions\nmetadata, name, move,\ncleanup']),
  ('Service layer','reusable building blocks',0.29,'#e9f5ee','#2f7d4f',

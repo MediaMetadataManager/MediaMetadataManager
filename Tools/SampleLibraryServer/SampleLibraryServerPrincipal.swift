@@ -19,7 +19,7 @@
 //      other library, only the Objective-C selectors below (see Classes/Plugins/
 //      M3MetadataPlugin.swift in the app for what each one means).
 //
-//  Setting (Preferences > Sources > Providers > Configure...): the folder to list. Empty
+//  Setting (Settings > Sources > Providers > Configure...): the folder to list. Empty
 //  means /Users/Shared/M3-Media2, the folder the documentation screenshot run uses.
 //
 

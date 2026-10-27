@@ -206,6 +206,14 @@ enum ReleaseFilenameParser {
         pattern: "^(?:\\d{3,4}[pk]|4k|8k|web[- ]?(?:dl|rip)?|hdtv|blu[- ]?ray|dvd(?:rip|scr)?|x26[45]|h26[45]|hevc|aac(?:\\d(?:\\.\\d)?)?|dts(?:-hd)?|ac3|remux|proper|repack|extended|unrated|limited|internal|retail)$",
         options: .caseInsensitive)
 
+    /// "720p 2" -> "720p": drops the " N" (one or two digits) that
+    /// uniqueFolderDestination(for:) and uniqueFileDestination(for:) add on a
+    /// name collision. Anything without such a suffix comes back unchanged.
+    static func withoutCollisionSuffix(_ name: String) -> String {
+        guard let range = name.range(of: " \\d{1,2}$", options: .regularExpression) else { return name }
+        return String(name[..<range.lowerBound])
+    }
+
     private static func looksLikeQualityTag(_ candidate: String) -> Bool {
         let range = NSRange(candidate.startIndex..., in: candidate)
         return qualityTagRegex.firstMatch(in: candidate, range: range) != nil
@@ -401,7 +409,11 @@ enum ReleaseFilenameParser {
             .filter { $0.isEmpty == false }
 
         var sawQualityTag = false
-        while let last = fields.last, looksLikeQualityTag(last) {
+        // A folder or file that collided on disk gets Finder's " 2" suffix
+        // (QueueController.uniqueFolderDestination), which lands after the
+        // quality tag ("..._720p 2"). Read through that suffix so a numbered
+        // copy of a stamped name still parses like the original.
+        while let last = fields.last, looksLikeQualityTag(last) || looksLikeQualityTag(withoutCollisionSuffix(last)) {
             fields.removeLast()
             sawQualityTag = true
         }
@@ -848,6 +860,36 @@ enum SeasonFolderName {
         return seasonNumber(in: fileURL.deletingLastPathComponent().lastPathComponent) != nil
     }
 
+    /// Show, season and (when the file name gives one) episode for a file that
+    /// sits directly in a season folder and whose own name has no episode marker
+    /// (L-12): `Show/Season 2/05 - Title.mkv` reads as show "Show", season 2,
+    /// episode 5. The show is the folder above the season folder. The episode
+    /// comes from a leading number ("05 - ...", "05.Title") or "Episode 5" /
+    /// "E05" in the name; without one it is nil. Nil result when the file is
+    /// not in a season folder or there is no show folder above it.
+    static func episodeInfo(for fileURL: URL) -> (show: String, season: Int, episode: Int?)? {
+        let seasonFolder = fileURL.deletingLastPathComponent()
+        guard let season = seasonNumber(in: seasonFolder.lastPathComponent) else { return nil }
+        let showFolder = seasonFolder.deletingLastPathComponent().lastPathComponent
+        guard showFolder.isEmpty == false, showFolder != "/", showFolder != seasonFolder.lastPathComponent else { return nil }
+        let show = ReleaseFilenameParser.normalizedDelimiters(showFolder)
+        guard show.isEmpty == false else { return nil }
+        return (show, season, episodeNumber(inFileName: fileURL.deletingPathExtension().lastPathComponent))
+    }
+
+    private static let episodeNumberRegex = try! NSRegularExpression(
+        pattern: "^\\s*(?:(?:episode|ep|e)[ ._-]*)?0*([0-9]{1,3})(?![0-9A-Za-z])|(?:episode|ep)[ ._-]*0*([0-9]{1,3})(?![0-9])",
+        options: [.caseInsensitive])
+
+    static func episodeNumber(inFileName name: String) -> Int? {
+        let range = NSRange(name.startIndex..., in: name)
+        guard let match = episodeNumberRegex.firstMatch(in: name, options: [], range: range) else { return nil }
+        for group in 1...2 {
+            if let r = Range(match.range(at: group), in: name), let n = Int(name[r]), n > 0 { return n }
+        }
+        return nil
+    }
+
     /// What the Queue shows for a folder: a season folder is shown with the
     /// folder above it, so the show's name is visible ("Show - Season 1").
     static func displayName(forFolder folder: URL) -> String {
@@ -858,3 +900,44 @@ enum SeasonFolderName {
         return parent + " \u{2013} " + name
     }
 }
+
+// MARK: - Reviewing a show for a whole folder (L-2)
+
+extension SeasonFolderName {
+
+    /// The starting values for "Review Show" on a folder row. A season
+    /// folder gives its season and, from the folder above it, the show
+    /// ("Show/Season 2" is show "Show", season 2). Any other folder is taken
+    /// to be the show itself, with no season.
+    static func showAndSeason(forFolder folder: URL) -> (show: String, season: Int?) {
+        let name = folder.lastPathComponent
+        if let season = seasonNumber(in: name) {
+            let parent = folder.deletingLastPathComponent().lastPathComponent
+            if parent.isEmpty == false, parent != "/", parent != name {
+                return (ReleaseFilenameParser.normalizedDelimiters(parent), season)
+            }
+            return ("", season)
+        }
+        return (ReleaseFilenameParser.normalizedDelimiters(name), nil)
+    }
+}
+
+/// The search terms for one episode once a person has confirmed the show
+/// (and maybe the season) for its whole folder.
+enum TVEpisodeTerms {
+
+    /// The confirmed show and season win; the episode number comes from the
+    /// file's own name ("S02E05", "2x05", "05 - Title", "Episode 5"). With no
+    /// season confirmed, the season comes from the file name, then from a
+    /// season folder it sits in.
+    static func terms(showName: String, season: Int?, fileURL: URL) -> MetadataSearchTerms {
+        let parsed = ReleaseFilenameParser.parse(fileURL.lastPathComponent)
+        let baseName = fileURL.deletingPathExtension().lastPathComponent
+        let episode = parsed?.episode ?? SeasonFolderName.episodeNumber(inFileName: baseName)
+        let resolvedSeason = season
+            ?? parsed?.season
+            ?? SeasonFolderName.seasonNumber(in: fileURL.deletingLastPathComponent().lastPathComponent)
+        return .tvShow(seriesName: showName, season: resolvedSeason, episode: episode)
+    }
+}
+

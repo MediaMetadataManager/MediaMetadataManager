@@ -47,7 +47,7 @@ final class MergeReorderWindowController: NSWindowController, NSTableViewDataSou
 
     private let tableView = NSTableView()
     private let fileColumn = NSUserInterfaceItemIdentifier("file")
-    private let pasteboardType = NSPasteboard.PasteboardType("SublerMergeReorderRowType")
+    private let pasteboardType = NSPasteboard.PasteboardType("M3MergeReorderRowType")
 
     /// Reflects MergeCompatibility.check(files:) against the current
     /// orderedFiles -- updated on init and after every reorder (see

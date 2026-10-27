@@ -16,8 +16,8 @@ import UniformTypeIdentifiers
 import MP42Foundation
 
 extension NSPasteboard.PasteboardType {
-    static let metadataDragType = NSPasteboard.PasteboardType("org.subler.metadatadragdrop")
-    static let artworkDragType = NSPasteboard.PasteboardType("org.subler.artworkdragdrop")
+    static let metadataDragType = NSPasteboard.PasteboardType("com.mediametadatamanager.metadatadragdrop")
+    static let artworkDragType = NSPasteboard.PasteboardType("com.mediametadatamanager.artworkdragdrop")
 }
 
 class MovieViewController: PropertyView, NSTableViewDataSource, ExpandedTableViewDelegate, NSCollectionViewDataSource, CollectionViewDelegate, NSDraggingDestination, NSFilePromiseProviderDelegate {

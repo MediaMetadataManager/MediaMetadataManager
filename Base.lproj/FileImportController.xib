@@ -6,7 +6,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="FileImportController" customModule="Subler" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="FileImportController" customModule="M3" customModuleProvider="target">
             <connections>
                 <outlet property="importMetadataCheckbox" destination="9TF-SL-Kcx" id="dXp-S3-Ef2"/>
                 <outlet property="tracksTableView" destination="DND-ed-VBj" id="DyK-8J-Yg3"/>
@@ -55,7 +55,7 @@
                         <rect key="frame" x="1" y="1" width="641" height="189"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" tableStyle="plain" alternatingRowBackgroundColors="YES" autosaveColumns="NO" rowSizeStyle="automatic" headerView="sBU-9S-4dG" viewBased="YES" id="DND-ed-VBj" customClass="ExpandedTableView" customModule="Subler" customModuleProvider="target">
+                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" tableStyle="plain" alternatingRowBackgroundColors="YES" autosaveColumns="NO" rowSizeStyle="automatic" headerView="sBU-9S-4dG" viewBased="YES" id="DND-ed-VBj" customClass="ExpandedTableView" customModule="M3" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="641" height="164"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="3" height="2"/>
@@ -72,7 +72,7 @@
                                         </customCell>
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
-                                            <tableCellView identifier="check" id="Mbd-sx-btg" customClass="CheckBoxCellView" customModule="Subler" customModuleProvider="target">
+                                            <tableCellView identifier="check" id="Mbd-sx-btg" customClass="CheckBoxCellView" customModule="M3" customModuleProvider="target">
                                                 <rect key="frame" x="1" y="1" width="20" height="17"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
@@ -264,7 +264,7 @@
                                         </customCell>
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
-                                            <tableCellView id="cfe-VB-dzz" customClass="PopUpCellView" customModule="Subler" customModuleProvider="target">
+                                            <tableCellView id="cfe-VB-dzz" customClass="PopUpCellView" customModule="M3" customModuleProvider="target">
                                                 <rect key="frame" x="513" y="1" width="126" height="17"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>

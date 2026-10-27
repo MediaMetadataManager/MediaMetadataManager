@@ -33,7 +33,7 @@ The [Getting Started guide](Documentation/Getting-Started.md) takes you from you
 
 ## Support the project
 
-M3 is free. If it saves you time, you can sponsor its development through [GitHub Sponsors](https://github.com/sponsors/MediaMetadataManager). The app's **Support** menu item and **Preferences > Support** tab link to the same page. The app also links to the original Subler project so you can support it too.
+M3 is free. If it saves you time, you can sponsor its development through [GitHub Sponsors](https://github.com/sponsors/MediaMetadataManager). The app's **Support** menu item and **Settings > Support** tab link to the same page. The app also links to the original Subler project so you can support it too.
 
 ## Build from source
 

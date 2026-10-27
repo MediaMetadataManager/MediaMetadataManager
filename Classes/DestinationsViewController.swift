@@ -5,7 +5,7 @@
 //                       M3
 //  Created by: Hans Hoffmeister on 10/10/2026.
 //
-//  The "Media Locations" tab (in Preferences > Sources): where a finished
+//  The "Media Locations" tab (in Settings > Sources): where a finished
 //  file is delivered. The default destination is the Automatically Add to
 //  iTunes/TV folder(s); Movies and TV Shows each have their own ordered
 //  list of delivery rules, built like the
@@ -74,10 +74,14 @@ private final class FolderPathRow: NSStackView, NSTextFieldDelegate {
 
 // MARK: - A single delivery rule row
 
-private final class DeliveryRuleRowView: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
+final class DeliveryRuleRowView: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
 
     private(set) var rule: DeliveryRule
     let mediaKind: MediaKind
+    /// When set, the row picks a Metadata Set from this list (Set Rules, see
+    /// SetRules.swift) instead of a folder; the chosen name is kept in
+    /// `rule.folderPath`.
+    private let setNames: [String]?
 
     /// A value changed that doesn't add or remove rows -- just persist.
     var onChange: ((DeliveryRule) -> Void)?
@@ -95,9 +99,10 @@ private final class DeliveryRuleRowView: NSView, NSTextFieldDelegate, NSComboBox
     }
     private var conditionControls: [ConditionControls] = []
 
-    init(rule: DeliveryRule, mediaKind: MediaKind, showsDivider: Bool) {
+    init(rule: DeliveryRule, mediaKind: MediaKind, showsDivider: Bool, setNames: [String]? = nil) {
         self.rule = rule
         self.mediaKind = mediaKind
+        self.setNames = setNames
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
         buildUI(showsDivider: showsDivider)
@@ -110,7 +115,7 @@ private final class DeliveryRuleRowView: NSView, NSTextFieldDelegate, NSComboBox
     private func buildUI(showsDivider: Bool) {
         conditionControls = []
 
-        var rows: [NSView] = [folderRow()]
+        var rows: [NSView] = [setNames == nil ? folderRow() : setRow()]
         for index in rule.conditions.indices {
             rows.append(conditionRow(at: index))
         }
@@ -142,6 +147,48 @@ private final class DeliveryRuleRowView: NSView, NSTextFieldDelegate, NSComboBox
         } else {
             stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8).isActive = true
         }
+    }
+
+    private func setRow() -> NSView {
+        let checkbox = NSButton(checkboxWithTitle: "", target: self, action: #selector(checkboxToggled(_:)))
+        checkbox.state = rule.isEnabled ? .on : .off
+        checkbox.toolTip = NSLocalizedString("When off, this rule is skipped as if it weren't in the list.", comment: "Set rule checkbox tooltip")
+
+        let label = NSTextField(labelWithString: NSLocalizedString("Apply Set:", comment: "Set rule label"))
+        label.translatesAutoresizingMaskIntoConstraints = false
+
+        let popup = NSPopUpButton(frame: .zero, pullsDown: false)
+        popup.translatesAutoresizingMaskIntoConstraints = false
+        var names = setNames ?? []
+        // A Set that was deleted after the rule was made stays visible.
+        if rule.folderPath.isEmpty == false, names.contains(rule.folderPath) == false { names.append(rule.folderPath) }
+        popup.addItems(withTitles: names)
+        if names.isEmpty {
+            popup.addItem(withTitle: NSLocalizedString("No Sets yet", comment: "Set rule popup when no Sets exist"))
+            popup.isEnabled = false
+        } else if let index = names.firstIndex(of: rule.folderPath) {
+            popup.selectItem(at: index)
+        }
+        popup.target = self
+        popup.action = #selector(setChosen(_:))
+
+        let removeButton = NSButton(title: NSLocalizedString("Remove Rule", comment: "Delivery rule remove button"),
+                                    target: self, action: #selector(removeRuleTapped(_:)))
+        removeButton.bezelStyle = .rounded
+        removeButton.translatesAutoresizingMaskIntoConstraints = false
+
+        let stack = NSStackView(views: [checkbox, label, popup, removeButton])
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.orientation = .horizontal
+        stack.alignment = .centerY
+        stack.spacing = 6
+        return stack
+    }
+
+    @objc private func setChosen(_ sender: NSPopUpButton) {
+        guard let title = sender.titleOfSelectedItem else { return }
+        rule.folderPath = title
+        onChange?(rule)
     }
 
     private func folderRow() -> NSView {

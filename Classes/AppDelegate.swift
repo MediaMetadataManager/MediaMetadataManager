@@ -469,6 +469,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         QueueController.shared.open(sender)
     }
 
+    @IBAction func showWelcomeWindow(_ sender: Any?) {
+        welcomeWindowController.showWindow(self)
+    }
+
+    /// Clicking the Dock icon with no window open brings the Welcome window
+    /// back, so there is always a way in.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if flag == false {
+            welcomeWindowController.showWindow(self)
+            return false
+        }
+        return true
+    }
+
     @IBAction func showQueueWindow(_ sender: Any) {
         QueueController.shared.showWindow(self)
     }
@@ -495,12 +509,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
                                      action: #selector(showTVShowQueueWindow(_:)), keyEquivalent: "")
         tvQueueItem.target = self
 
+        // A way back to the Welcome window once it has been closed.
+        let welcomeItem = NSMenuItem(title: NSLocalizedString("Welcome to M3", comment: "Main Menu -> Window -> Welcome window"),
+                                     action: #selector(showWelcomeWindow(_:)), keyEquivalent: "")
+        welcomeItem.target = self
+
         for topLevel in mainMenu.items {
             guard let submenu = topLevel.submenu else { continue }
             if let index = submenu.items.firstIndex(where: { $0.action == #selector(showQueueWindow(_:)) }) {
                 submenu.items[index].title = NSLocalizedString("Show Movies Queue", comment: "Main Menu -> Show Movies Queue")
                 submenu.insertItem(tvQueueItem, at: index + 1)
                 submenu.insertItem(item, at: index + 2)
+                submenu.insertItem(welcomeItem, at: index)
                 return
             }
         }

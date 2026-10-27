@@ -57,7 +57,7 @@ class PresetPrefsViewController: NSViewController, SectionsTableViewDataSource, 
     }
 
     /// A heading and short description above the list, laid out like the
-    /// other Preferences tabs. The list itself comes from the nib; its top
+    /// other Settings tabs. The list itself comes from the nib; its top
     /// edge is moved from the top of the view to below this text.
     private func addIntroduction() {
         guard let scrollView = tableView.enclosingScrollView else { return }
@@ -72,8 +72,14 @@ class PresetPrefsViewController: NSViewController, SectionsTableViewDataSource, 
         descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
         descriptionLabel.preferredMaxLayoutWidth = 520
 
+        let rulesButton = NSButton(title: NSLocalizedString("Set Rules\u{2026}", comment: "Sets prefs button"), target: self, action: #selector(showSetRules(_:)))
+        rulesButton.bezelStyle = .rounded
+        rulesButton.translatesAutoresizingMaskIntoConstraints = false
+        rulesButton.toolTip = NSLocalizedString("Choose which Set is applied automatically when a file\u{2019}s tags match a rule, for example an Adult Set for explicit content.", comment: "Sets prefs button tooltip")
+
         view.addSubview(headerLabel)
         view.addSubview(descriptionLabel)
+        view.addSubview(rulesButton)
 
         for constraint in view.constraints where constraint.firstItem === scrollView && constraint.firstAttribute == .top {
             constraint.isActive = false
@@ -82,11 +88,17 @@ class PresetPrefsViewController: NSViewController, SectionsTableViewDataSource, 
         NSLayoutConstraint.activate([
             headerLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
             headerLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            rulesButton.centerYAnchor.constraint(equalTo: headerLabel.centerYAnchor),
+            rulesButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             descriptionLabel.topAnchor.constraint(equalTo: headerLabel.bottomAnchor, constant: 4),
             descriptionLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             descriptionLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             scrollView.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: 12)
         ])
+    }
+
+    @objc private func showSetRules(_ sender: Any?) {
+        presentAsSheet(SetRulesViewController())
     }
 
     // MARK: Table View with sections

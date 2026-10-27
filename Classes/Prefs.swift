@@ -811,6 +811,17 @@ enum MediaIntakePrefs {
     @Stored(key: "SBMediaIntakeAutoCleanProcessedFiles", defaultValue: false)
     static var autoCleanProcessedFiles: Bool
 
+    /// When true, saving a file from its Edit window first puts a copy of the
+    /// file as it was into the Trash, so a mistaken save can be undone (M-1).
+    /// The copy is logged. Off by default.
+    @Stored(key: "SBMediaIntakeBackupBeforeEditSave", defaultValue: false)
+    static var backupBeforeEditSave: Bool
+
+    /// Before Start, check that the disks the files will be written to have
+    /// room for them, and offer to change the target (L-13). On by default.
+    @Stored(key: "SBMediaIntakeCheckFreeSpace", defaultValue: true)
+    static var checkFreeSpace: Bool
+
     /// When true, the Queue drops its finished rows (the ones showing a
     /// checkmark) by itself as soon as a run completes, instead of leaving
     /// them until "Remove completed items" or the next launch. Only

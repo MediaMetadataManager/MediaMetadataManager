@@ -6,7 +6,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="AdvancedPrefsViewController" customModule="Subler" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="AdvancedPrefsViewController" customModule="M3" customModuleProvider="target">
             <connections>
                 <outlet property="view" destination="94" id="7fP-dB-JCb"/>
             </connections>

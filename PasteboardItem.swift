@@ -4,11 +4,15 @@
 //
 //  Created by Damiano Galassi on 22/09/2026.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Pasteboard types renamed from Subler to M3.
+//
 
 import Cocoa
 
 extension NSPasteboard.PasteboardType {
-    static let tableViewIndex = NSPasteboard.PasteboardType("org.subler.tableViewIndex")
+    static let tableViewIndex = NSPasteboard.PasteboardType("com.mediametadatamanager.tableViewIndex")
 }
 
 class PasteboardItem: NSObject, NSPasteboardWriting {

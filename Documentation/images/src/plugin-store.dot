@@ -1,0 +1,39 @@
+digraph G {
+  graph [rankdir=TB, fontname="Inter", bgcolor="white", nodesep=0.35, ranksep=0.42, pad=0.3, dpi=130, newrank=true, compound=true];
+  node  [fontname="Inter", style="rounded,filled", penwidth=1.3, margin="0.16,0.09"];
+  edge  [fontname="Inter", fontsize=10, color="#4a5b6c", fontcolor="#33414f", arrowsize=0.8];
+  subgraph cluster_pub {
+    label="You publish a plugin"; fontname="Inter"; fontsize=13; fontcolor="#33414f"; style="rounded"; color="#c4ccd4"; labeljust=l; margin=14;
+    P1 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Build the plugin bundle</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">signed with the Developer ID, notarized</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    P2 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Zip it and note its SHA-256</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">upload the zip to a GitHub Release</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    P3 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Add it to the catalog file</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">name, version, price, Paddle product, download address,<BR/>SHA-256, lowest M3 version; the file is signed (EdDSA)</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    P4 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Paddle product and price</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">created once in the Paddle dashboard; Paddle is the seller of record</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+  }
+  subgraph cluster_cus {
+    label="In M3"; fontname="Inter"; fontsize=13; fontcolor="#33414f"; style="rounded"; color="#c4ccd4"; labeljust=l; margin=14;
+    C1 [label=<<FONT COLOR="white" POINT-SIZE="12"><B>Settings &gt; Sources &gt; Plugins &gt; Get Plugins…</B></FONT><BR/><FONT COLOR="white" POINT-SIZE="10">M3 fetches the catalog and checks its signature</FONT>>, shape=box, style="rounded,filled", fillcolor="#2b5d8a", color="#2b5d8a"];
+    C2 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Plugin list</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">Free or price, Installed, Update available</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    C3 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Free?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+    C4 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Buy</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">opens the Paddle checkout in the browser;<BR/>Paddle takes payment and handles sales tax and VAT</FONT>>, shape=box, style="rounded,filled", fillcolor="#fff4d6", color="#c79a1c"];
+    C5 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Licence key arrives by email</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">paste it into M3, or open the link in the email<BR/>(key delivery service: to be decided, see notes)</FONT>>, shape=box, style="rounded,filled", fillcolor="#fff4d6", color="#c79a1c"];
+    C6 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>M3 checks the key</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">key invalid or refunded: stop with a plain message</FONT>>, shape=box, style="rounded,filled", fillcolor="#fff4d6", color="#c79a1c"];
+    C7 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Download the zip</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">progress bar; Cancel available</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    C8 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>SHA-256 and code signature match?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
+    C9 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Stop: nothing is installed</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">message says the download could not be verified</FONT>>, shape=box, style="rounded,filled", fillcolor="#f9dede", color="#b04a4a"];
+    C10 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Copy into the plugins folder</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">replace an older version if it is an update</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    C11 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Restart offer</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">the restart offer after a plugin install already exists</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
+    C12 [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Plugin shows as Installed</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">Update and Remove buttons in the same list</FONT>>, shape=box, style="rounded,filled", fillcolor="#e2f3e4", color="#3d8a4a"];
+  }
+  P1 -> P2 -> P3;
+  P4 -> P3 [style=dashed, label="product id"];
+  P3 -> C1 [label="catalog file on GitHub", constraint=false];
+  C1 -> C2 -> C3;
+  C3 -> C7 [label="yes"];
+  C3 -> C4 [label="no, not owned yet"];
+  C4 -> C5 -> C6;
+  C6 -> C7 [label="valid"];
+  C7 -> C8;
+  C8 -> C9 [label="no"];
+  C8 -> C10 [label="yes"];
+  C10 -> C11 -> C12;
+}

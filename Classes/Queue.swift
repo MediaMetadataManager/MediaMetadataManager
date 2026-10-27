@@ -67,8 +67,8 @@ final class Queue {
         statusInternal = .unknown
         cancelled = false
 
-        workQueue = DispatchQueue(label: "org.subler.WorkQueue")
-        arrayQueue = DispatchQueue(label: "org.subler.SaveQueue")
+        workQueue = DispatchQueue(label: "com.mediametadatamanager.WorkQueue")
+        arrayQueue = DispatchQueue(label: "com.mediametadatamanager.SaveQueue")
 
         do {
             let data = try Data(contentsOf: url)
@@ -83,6 +83,12 @@ final class Queue {
         for row in items where row.addedNumber == 0 {
             lastNumber += 1
             row.addedNumber = lastNumber
+        }
+
+        // An editor opened from a waiting row does not survive a quit; the
+        // row goes back to waiting.
+        for item in items.compactMap({ $0.effectiveItem }) where item.status == .editing {
+            item.status = .ready
         }
 
         for item in items.compactMap({ $0.effectiveItem }) where item.status == .working {

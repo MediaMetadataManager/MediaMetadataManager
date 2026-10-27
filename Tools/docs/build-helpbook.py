@@ -169,7 +169,7 @@ def build():
         for h1, intro, subs in split_guide(os.path.join(DOC, md_file)):
             a1 = unique(used_anchors, prefix + slug(h1))
             f1 = unique(used_files, f'{key}-{slug(h1)}')
-            if prefix == '' and slug(h1) == 'preferences':
+            if prefix == '' and slug(h1) in ('preferences', 'settings'):
                 sub_prefix = 'preferences-'
             else:
                 sub_prefix = prefix

@@ -6,7 +6,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="SaveOptions" customModule="Subler" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="SaveOptions" customModule="M3" customModuleProvider="target">
             <connections>
                 <outlet property="_64bit_data" destination="emp-1S-F7H" id="b8h-TJ-Hf7"/>
                 <outlet property="_64bit_time" destination="3CX-Vp-T0h" id="8cp-ub-tQL"/>

@@ -17,7 +17,7 @@ import Foundation
 ///
 /// This intentionally does not special-case any particular source by name.
 /// Adding a new one is a matter of filling in the mapping form in
-/// Preferences > Sources, not writing code.
+/// Settings > Sources, not writing code.
 public struct CustomSourceService: MetadataService {
 
     private let source: CustomMetadataSource

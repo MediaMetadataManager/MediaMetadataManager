@@ -4,6 +4,10 @@
 //
 //  Created by Michael Mock on 6/9/25.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Renamed Subler references to M3.
+//
 
 import Foundation
 import AppKit
@@ -104,14 +108,14 @@ class SBFetchMetadataScriptCommand: NSScriptCommand, ScriptCommandDocumentTarget
     
     override func performDefaultImplementation() -> Any? {
         let logger = Logger.shared
-        guard let sublerDoc = targetedDocument() else {
+        guard let targetedDoc = targetedDocument() else {
             logger.write(toLog: "No document available for fetching metadata")
             return nil
         }
 
         // Access the MP42File through the custom Document subclass
-        let mp4File = sublerDoc.mp4
-        let searchTerms = mp4File.extractSearchTerms(fallbackURL: sublerDoc.fileURL)
+        let mp4File = targetedDoc.mp4
+        let searchTerms = mp4File.extractSearchTerms(fallbackURL: targetedDoc.fileURL)
         
         // Perform headless metadata search with completion handling
         searchMetadata(terms: searchTerms) { metadata in
@@ -121,7 +125,7 @@ class SBFetchMetadataScriptCommand: NSScriptCommand, ScriptCommandDocumentTarget
                     mp4File.metadata.merge(metadata, overwrite: true)
 
                     // Trigger UI refresh by calling reloadData on the window controller
-                    if let windowController = sublerDoc.windowControllers.first as? DocumentWindowController {
+                    if let windowController = targetedDoc.windowControllers.first as? DocumentWindowController {
                         windowController.reloadData()
                     }
                     
@@ -248,13 +252,13 @@ class SBOrganizeAlternateGroupsScriptCommand: NSScriptCommand, ScriptCommandDocu
     
     override func performDefaultImplementation() -> Any? {
         let logger = Logger.shared
-        guard let sublerDoc = targetedDocument() else {
+        guard let targetedDoc = targetedDocument() else {
             logger.write(toLog: "No document available for organizing alternate groups")
             return nil
         }
         
         // Use the existing IBAction instead of duplicating logic
-        if let windowController = sublerDoc.windowControllers.first as? DocumentWindowController {
+        if let windowController = targetedDoc.windowControllers.first as? DocumentWindowController {
             windowController.iTunesFriendlyTrackGroups(self)
             logger.write(toLog: "Script successfully organized alternate groups")
         } else {
@@ -270,13 +274,13 @@ class SBClearTrackNamesScriptCommand: NSScriptCommand, ScriptCommandDocumentTarg
     
     override func performDefaultImplementation() -> Any? {
         let logger = Logger.shared
-        guard let sublerDoc = targetedDocument() else {
+        guard let targetedDoc = targetedDocument() else {
             logger.write(toLog: "No document available for clearing track names")
             return nil
         }
         
         // Use the existing IBAction instead of duplicating logic
-        if let windowController = sublerDoc.windowControllers.first as? DocumentWindowController {
+        if let windowController = targetedDoc.windowControllers.first as? DocumentWindowController {
             windowController.clearTrackNames(self)
             logger.write(toLog: "Script successfully cleared all track names")
         } else {
@@ -292,13 +296,13 @@ class SBPrettifyAudioTrackNamesScriptCommand: NSScriptCommand, ScriptCommandDocu
     
     override func performDefaultImplementation() -> Any? {
         let logger = Logger.shared
-        guard let sublerDoc = targetedDocument() else {
+        guard let targetedDoc = targetedDocument() else {
             logger.write(toLog: "No document available for prettifying audio track names")
             return nil
         }
         
         // Use the existing IBAction instead of duplicating logic
-        if let windowController = sublerDoc.windowControllers.first as? DocumentWindowController {
+        if let windowController = targetedDoc.windowControllers.first as? DocumentWindowController {
             windowController.prettifyAudioTrackNames(self)
             logger.write(toLog: "Script successfully prettified audio track names")
         } else {
@@ -314,13 +318,13 @@ class SBFixAudioFallbacksScriptCommand: NSScriptCommand, ScriptCommandDocumentTa
     
     override func performDefaultImplementation() -> Any? {
         let logger = Logger.shared
-        guard let sublerDoc = targetedDocument() else {
+        guard let targetedDoc = targetedDocument() else {
             logger.write(toLog: "No document available for fixing audio fallbacks")
             return nil
         }
         
         // Use the existing IBAction instead of duplicating logic
-        if let windowController = sublerDoc.windowControllers.first as? DocumentWindowController {
+        if let windowController = targetedDoc.windowControllers.first as? DocumentWindowController {
             windowController.fixAudioFallbacks(self)
             logger.write(toLog: "Script successfully fixed audio fallbacks")
         } else {
@@ -338,7 +342,7 @@ class SBSaveAsScriptCommand: NSScriptCommand, ScriptCommandDocumentTargeting {
         let logger = Logger.shared
         
         // Get the target document (frontmost or specified)
-        guard let sublerDoc = targetedDocument() else {
+        guard let targetedDoc = targetedDocument() else {
             logger.write(toLog: "No document available for save as operation")
             return nil
         }
@@ -357,7 +361,7 @@ class SBSaveAsScriptCommand: NSScriptCommand, ScriptCommandDocumentTargeting {
         options[MP4264BitTime] = Prefs.mp464bitTimes
         
         // Get the window controller for progress reporting
-        guard let windowController = sublerDoc.windowControllers.first as? DocumentWindowController else {
+        guard let windowController = targetedDoc.windowControllers.first as? DocumentWindowController else {
             logger.write(toLog: "No window controller found for progress reporting")
             return nil
         }
@@ -369,7 +373,7 @@ class SBSaveAsScriptCommand: NSScriptCommand, ScriptCommandDocumentTargeting {
         // Perform the save operation asynchronously to keep UI responsive
         DispatchQueue.global(qos: .userInitiated).async {
             do {
-                try sublerDoc.mp4.write(to: destinationURL, options: options)
+                try targetedDoc.mp4.write(to: destinationURL, options: options)
                 
                 DispatchQueue.main.async {
                     
@@ -379,12 +383,12 @@ class SBSaveAsScriptCommand: NSScriptCommand, ScriptCommandDocumentTargeting {
                         
                         // Run optimization on background queue
                         DispatchQueue.global(qos: .userInitiated).async {
-                            _ = sublerDoc.mp4.optimize()
+                            _ = targetedDoc.mp4.optimize()
                             
                             DispatchQueue.main.async {
                                 
                                 // Update the document's file URL and mark as saved
-                                sublerDoc.fileURL = destinationURL
+                                targetedDoc.fileURL = destinationURL
 
                                 // End progress reporting and refresh the UI
                                 windowController.endProgressReporting()
@@ -393,7 +397,7 @@ class SBSaveAsScriptCommand: NSScriptCommand, ScriptCommandDocumentTargeting {
                         }
                     } else {
                         // Update the document's file URL and mark as saved
-                        sublerDoc.fileURL = destinationURL
+                        targetedDoc.fileURL = destinationURL
 
                         // End progress reporting and refresh the UI
                         windowController.endProgressReporting()
@@ -421,7 +425,7 @@ class SBSendToQueueScriptCommand: NSScriptCommand, ScriptCommandDocumentTargetin
         let logger = Logger.shared
         
         // Get the target document (frontmost or specified)
-        guard let sublerDoc = targetedDocument() else {
+        guard let targetedDoc = targetedDocument() else {
             logger.write(toLog: "No document available for send to queue operation")
             return nil
         }
@@ -440,7 +444,7 @@ class SBSendToQueueScriptCommand: NSScriptCommand, ScriptCommandDocumentTargetin
         options[MP4264BitTime] = Prefs.mp464bitTimes
         
         // Create queue item and add to queue
-        let item = QueueItem(mp4: sublerDoc.mp4, destURL: destinationURL, attributes: options, optimize: Prefs.mp4SaveAsOptimize)
+        let item = QueueItem(mp4: targetedDoc.mp4, destURL: destinationURL, attributes: options, optimize: Prefs.mp4SaveAsOptimize)
         
         // Add the queue item
         QueueController.shared.add(item)
@@ -448,7 +452,7 @@ class SBSendToQueueScriptCommand: NSScriptCommand, ScriptCommandDocumentTargetin
         
         // Close the document window since it's now in the queue
         DispatchQueue.main.async {
-            sublerDoc.close()
+            targetedDoc.close()
         }
         
         return path
@@ -462,14 +466,14 @@ class SBCloseFileScriptCommand: NSScriptCommand, ScriptCommandDocumentTargeting 
         let logger = Logger.shared
         
         // Get the target document (frontmost or specified)
-        guard let sublerDoc = targetedDocument() else {
+        guard let targetedDoc = targetedDocument() else {
             logger.write(toLog: "No document available for close operation")
             return nil
         }
         
         // Close the document without prompting for unsaved changes
         DispatchQueue.main.async {
-            sublerDoc.close()
+            targetedDoc.close()
         }
         
         logger.write(toLog: "Script successfully closed document")
@@ -502,14 +506,14 @@ class SBFetchMetadataResultsScriptCommand: NSScriptCommand, ScriptCommandDocumen
     
     override func performDefaultImplementation() -> Any? {
         let logger = Logger.shared
-        guard let sublerDoc = targetedDocument() else {
+        guard let targetedDoc = targetedDocument() else {
             logger.write(toLog: "No document available for fetching metadata results")
             return []
         }
 
         // Access the MP42File through the custom Document subclass
-        let mp4File = sublerDoc.mp4
-        let searchTerms = mp4File.extractSearchTerms(fallbackURL: sublerDoc.fileURL)
+        let mp4File = targetedDoc.mp4
+        let searchTerms = mp4File.extractSearchTerms(fallbackURL: targetedDoc.fileURL)
         
         logger.write(toLog: "Starting metadata search for terms: \(searchTerms)")
         
@@ -693,21 +697,21 @@ class SBFetchAndSetMetadataResultScriptCommand: NSScriptCommand, ScriptCommandDo
         let provider = self.evaluatedArguments?["provider"] as? String
         let language = self.evaluatedArguments?["language"] as? String
         
-        guard let sublerDoc = targetedDocument() else {
+        guard let targetedDoc = targetedDocument() else {
             logger.write(toLog: "No document available for metadata operation")
             return nil
         }
         
         // Access the MP42File through the custom Document subclass
-        let mp4File = sublerDoc.mp4
-        let searchTerms = mp4File.extractSearchTerms(fallbackURL: sublerDoc.fileURL)
+        let mp4File = targetedDoc.mp4
+        let searchTerms = mp4File.extractSearchTerms(fallbackURL: targetedDoc.fileURL)
         
         // Perform search and apply the nth result
         searchMetadataAndSetResult(terms: searchTerms, resultIndex: resultIndex - 1, provider: provider, language: language) { success in
             DispatchQueue.main.async {
                 if success {
                     // Trigger UI refresh
-                    if let windowController = sublerDoc.windowControllers.first as? DocumentWindowController {
+                    if let windowController = targetedDoc.windowControllers.first as? DocumentWindowController {
                         windowController.reloadData()
                     }
                     logger.write(toLog: "Successfully set metadata result \(resultIndex)")
@@ -802,8 +806,8 @@ class SBFetchAndSetMetadataResultScriptCommand: NSScriptCommand, ScriptCommandDo
                         
                         // Apply the metadata
                         DispatchQueue.main.async {
-                            if let sublerDoc = self.targetedDocument() {
-                                sublerDoc.mp4.metadata.merge(mappedMetadata, overwrite: true)
+                            if let targetedDoc = self.targetedDocument() {
+                                targetedDoc.mp4.metadata.merge(mappedMetadata, overwrite: true)
                                 completion(true)
                             } else {
                                 completion(false)
@@ -851,8 +855,8 @@ class SBFetchAndSetMetadataResultScriptCommand: NSScriptCommand, ScriptCommandDo
                         
                         // Apply the metadata
                         DispatchQueue.main.async {
-                            if let sublerDoc = self.targetedDocument() {
-                                sublerDoc.mp4.metadata.merge(mappedMetadata, overwrite: true)
+                            if let targetedDoc = self.targetedDocument() {
+                                targetedDoc.mp4.metadata.merge(mappedMetadata, overwrite: true)
                                 completion(true)
                             } else {
                                 completion(false)

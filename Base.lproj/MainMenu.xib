@@ -38,7 +38,7 @@
                             <menuItem isSeparatorItem="YES" id="236">
                                 <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                             </menuItem>
-                            <menuItem title="Preferences…" keyEquivalent="," id="129" userLabel="121">
+                            <menuItem title="Settings…" keyEquivalent="," id="129" userLabel="121">
                                 <connections>
                                     <action selector="showPrefsWindow:" target="-1" id="558"/>
                                 </connections>
@@ -82,11 +82,6 @@
                 <menuItem title="File" id="83">
                     <menu key="submenu" title="File" id="81">
                         <items>
-                            <menuItem title="New" keyEquivalent="n" id="555">
-                                <connections>
-                                    <action selector="newDocument:" target="-1" id="556"/>
-                                </connections>
-                            </menuItem>
                             <menuItem title="Open…" keyEquivalent="o" id="72">
                                 <connections>
                                     <action selector="openDocument:" target="-1" id="372"/>

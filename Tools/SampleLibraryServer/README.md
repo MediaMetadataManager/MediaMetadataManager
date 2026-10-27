@@ -12,10 +12,10 @@ It exists for three reasons:
 
 1. Open `SampleLibraryServer.xcodeproj` in Xcode and build. The build copies `SampleLibraryServer.bundle` into `~/Library/Application Support/M3/Plugins/`.
 2. Quit and restart M3 (plugins load once, at launch).
-3. Preferences → Sources → Providers: **Sample Library** is listed under **Library Servers**. Tick it.
+3. Settings → Sources → Providers: **Sample Library** is listed under **Library Servers**. Tick it.
 4. Optional: **Configure…** sets the folder to list. Empty means `/Users/Shared/M3-Media2`.
 
-To remove it, delete the bundle from the Plugins folder (or select it in Preferences → Sources → Custom Sources and click −) and restart M3.
+To remove it, delete the bundle from the Plugins folder (or select it in Settings → Sources → Custom Sources and click −) and restart M3.
 
 ## Use
 

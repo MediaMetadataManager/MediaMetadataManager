@@ -29,7 +29,7 @@ final class Logger : NSObject, MP42Logging {
 
     init(fileURL: URL) {
         self.fileURL = fileURL
-        self.queue = DispatchQueue(label: "org.subler.LogQueue")
+        self.queue = DispatchQueue(label: "com.mediametadatamanager.LogQueue")
     }
 
     private func currentTime() -> String {

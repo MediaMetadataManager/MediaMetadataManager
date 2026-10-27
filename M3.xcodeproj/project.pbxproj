@@ -7,10 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1C3E5071D2B4F6A8C9E0B14 /* PluginLicence.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C3E5071D2B4F6A8C9E0B13 /* PluginLicence.swift */; };
 		02026BDE3659E9E627DB7037 /* ReleaseFilenameParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F695DD5A03A57793AC404052 /* ReleaseFilenameParser.swift */; };
 		09A37CF68361D710E6F82A20 /* MetadataPluginLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0C5F7D7ADC08B85CCE23553 /* MetadataPluginLoader.swift */; };
 		0DE02614BE874D87567EDE95 /* IntakeFolderWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 727F27AADF6B03AB0885DAFB /* IntakeFolderWatcher.swift */; };
 		1AA25149E9104C77A83E7401 /* DeliveryRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACB701BD1EF043748B8C66EE /* DeliveryRules.swift */; };
+		804EDC82F2BF30E9969C8BD3 /* LibraryPathMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 361D360CCC230337294AE082 /* LibraryPathMapping.swift */; };
+		F3A08BE598FDD699FC3E4E8C /* SetRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4D43D5CAD207F6E7F3AE49C /* SetRules.swift */; };
 		1B83FB87163F1540FF966B09 /* MediaIntakeManagerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444F630FA30E5E2DCD797FA6 /* MediaIntakeManagerViewController.swift */; };
 		1DDD582D0DA1D0D100B32029 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 1DDD582A0DA1D0D100B32029 /* MainMenu.xib */; };
 		24F3D49F72E5174E1F96EF31 /* NamingReviewWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F99E1E8A24AF26DBF97E546 /* NamingReviewWindowController.swift */; };
@@ -238,6 +241,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A1C3E5071D2B4F6A8C9E0B13 /* PluginLicence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PluginLicence.swift; path = Classes/Plugins/PluginLicence.swift; sourceTree = "<group>"; };
 		0F99E1E8A24AF26DBF97E546 /* NamingReviewWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NamingReviewWindowController.swift; path = Classes/NamingReviewWindowController.swift; sourceTree = "<group>"; };
 		1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		27E67E10BCF816B7B22431FF /* SourcesPrefsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SourcesPrefsViewController.swift; path = Classes/SourcesPrefsViewController.swift; sourceTree = "<group>"; };
@@ -512,6 +516,8 @@
 		A9F680A61FD06E0200018371 /* OutputPrefsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OutputPrefsViewController.swift; path = Classes/OutputPrefsViewController.swift; sourceTree = "<group>"; };
 		A9FC6FF51EF2E3280034CCED /* TheTVDBService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TheTVDBService.swift; path = Classes/MetadataImporters/TheTVDBService.swift; sourceTree = "<group>"; };
 		ACB701BD1EF043748B8C66EE /* DeliveryRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeliveryRules.swift; path = Classes/DeliveryRules.swift; sourceTree = "<group>"; };
+		361D360CCC230337294AE082 /* LibraryPathMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LibraryPathMapping.swift; path = Classes/LibraryPathMapping.swift; sourceTree = "<group>"; };
+		D4D43D5CAD207F6E7F3AE49C /* SetRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SetRules.swift; path = Classes/SetRules.swift; sourceTree = "<group>"; };
 		C0C5F7D7ADC08B85CCE23553 /* MetadataPluginLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MetadataPluginLoader.swift; path = Classes/Plugins/MetadataPluginLoader.swift; sourceTree = "<group>"; };
 		C0F853AD853DAA80C329FBAF /* LibraryScanWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LibraryScanWindowController.swift; path = Classes/LibraryScanWindowController.swift; sourceTree = "<group>"; };
 		CDE8E451174CBBD4009410B5 /* iTunesStores.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = iTunesStores.json; sourceTree = "<group>"; };
@@ -854,10 +860,13 @@
 				FAC5C90B445A6903EB6FFB45 /* NamingRules.swift */,
 				E2192B775CE1476DA1DF2E00 /* DestinationsViewController.swift */,
 				ACB701BD1EF043748B8C66EE /* DeliveryRules.swift */,
+				361D360CCC230337294AE082 /* LibraryPathMapping.swift */,
+				D4D43D5CAD207F6E7F3AE49C /* SetRules.swift */,
 				F6F55F5D9B12EA18BC668E3E /* QueueWindowController.swift */,
 				A9E27B5C1D40F38865C2B7E1 /* QueueHeaderCell.swift */,
 				DBD55AD3849868ABFC557687 /* AppRestarter.swift */,
 				C0C5F7D7ADC08B85CCE23553 /* MetadataPluginLoader.swift */,
+				A1C3E5071D2B4F6A8C9E0B13 /* PluginLicence.swift */,
 				2BF00667E410ED649678F87D /* PluginMetadataService.swift */,
 				78F1234573B59467680FB4F5 /* PluginBridge.swift */,
 				A900CE3D1F3ACF9700CCA08E /* MetadataResultMap.swift */,
@@ -1121,10 +1130,13 @@
 				C239A027CD1B8044A21A5C30 /* NamingRules.swift in Sources */,
 				D4EFD689A1F24C259984C5C3 /* DestinationsViewController.swift in Sources */,
 				1AA25149E9104C77A83E7401 /* DeliveryRules.swift in Sources */,
+				804EDC82F2BF30E9969C8BD3 /* LibraryPathMapping.swift in Sources */,
+				F3A08BE598FDD699FC3E4E8C /* SetRules.swift in Sources */,
 				438EAFD11DAD80F652EF9ACD /* QueueWindowController.swift in Sources */,
 				3C1D9A4E7B2F58A06E4D1C93 /* QueueHeaderCell.swift in Sources */,
 				4D078DC5E215F62771A45FAD /* AppRestarter.swift in Sources */,
 				09A37CF68361D710E6F82A20 /* MetadataPluginLoader.swift in Sources */,
+				A1C3E5071D2B4F6A8C9E0B14 /* PluginLicence.swift in Sources */,
 				6B34409BB9F7180708169C19 /* PluginMetadataService.swift in Sources */,
 				2BA508D03CD1BE6BC015FD9F /* PluginBridge.swift in Sources */,
 				A267AF12619EFCBB28735A80 /* MergeCompatibility.swift in Sources */,
@@ -1642,7 +1654,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1.3.1;
+				CURRENT_PROJECT_VERSION = 1.4.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
@@ -1662,7 +1674,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "-Wl,-rpath,@loader_path/../Frameworks";
 				OTHER_SWIFT_FLAGS = "";
@@ -1690,7 +1702,7 @@
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.3.1;
+				CURRENT_PROJECT_VERSION = 1.4.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
@@ -1709,7 +1721,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "-Wl,-rpath,@loader_path/../Frameworks";
 				OTHER_SWIFT_FLAGS = "";
@@ -1913,7 +1925,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.3.1;
+				CURRENT_PROJECT_VERSION = 1.4.0;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -1925,7 +1937,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mediametadatamanager.M3Tests;
@@ -1960,7 +1972,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1.3.1;
+				CURRENT_PROJECT_VERSION = 1.4.0;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -1969,7 +1981,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mediametadatamanager.M3Tests;

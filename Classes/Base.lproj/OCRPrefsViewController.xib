@@ -6,7 +6,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="OCRPrefsViewController" customModule="Subler" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="OCRPrefsViewController" customModule="M3" customModuleProvider="target">
             <connections>
                 <outlet property="tableView" destination="eSu-XV-7Vu" id="ywm-As-kfw"/>
                 <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
@@ -43,7 +43,7 @@
                                         </textFieldCell>
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
-                                            <tableCellView identifier="languageItem" id="lSD-av-rXp" customClass="OCRTableCellView" customModule="Subler" customModuleProvider="target">
+                                            <tableCellView identifier="languageItem" id="lSD-av-rXp" customClass="OCRTableCellView" customModule="M3" customModuleProvider="target">
                                                 <rect key="frame" x="1" y="1" width="755" height="19"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>

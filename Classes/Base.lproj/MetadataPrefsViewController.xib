@@ -6,7 +6,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="MetadataPrefsViewController" customModule="Subler" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="MetadataPrefsViewController" customModule="M3" customModuleProvider="target">
             <connections>
                 <outlet property="addMetadataPopUpButton" destination="Jdh-Cj-6ef" id="Ph0-fz-ZY3"/>
                 <outlet property="appendButton" destination="aTe-nD-x01" id="aTe-nD-o01"/>
@@ -88,13 +88,13 @@
                                         </textFieldCell>
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
-                                            <tableCellView identifier="value" id="5Ey-Te-51o" customClass="TokenCellView" customModule="Subler" customModuleProvider="target">
+                                            <tableCellView identifier="value" id="5Ey-Te-51o" customClass="TokenCellView" customModule="M3" customModuleProvider="target">
                                                 <rect key="frame" x="149" y="1" width="303" height="17"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <tokenField focusRingType="none" verticalHuggingPriority="750" setsMaxLayoutWidthAtFirstLayout="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3sj-gY-zSo">
                                                         <rect key="frame" x="1" y="1" width="301" height="15"/>
-                                                        <tokenFieldCell key="cell" selectable="YES" editable="YES" alignment="left" allowsEditingTextAttributes="YES" id="BaM-xn-Wzr" customClass="TokenFieldCell" customModule="Subler" customModuleProvider="target">
+                                                        <tokenFieldCell key="cell" selectable="YES" editable="YES" alignment="left" allowsEditingTextAttributes="YES" id="BaM-xn-Wzr" customClass="TokenFieldCell" customModule="M3" customModuleProvider="target">
                                                             <font key="font" metaFont="cellTitle"/>
                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>

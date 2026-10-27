@@ -85,4 +85,34 @@ final class ReleaseFilenameParserTests: XCTestCase {
         XCTAssertNil(ParsedMediaName.firstFourDigitYear(in: nil))
         XCTAssertNil(ParsedMediaName.firstFourDigitYear(in: "n/a"))
     }
+
+    // MARK: collision suffix (L-8)
+
+    func testCollisionSuffixIsRemoved() {
+        XCTAssertEqual(ReleaseFilenameParser.withoutCollisionSuffix("720p 2"), "720p")
+        XCTAssertEqual(ReleaseFilenameParser.withoutCollisionSuffix("720p 12"), "720p")
+        XCTAssertEqual(ReleaseFilenameParser.withoutCollisionSuffix("720p"), "720p")
+        XCTAssertEqual(ReleaseFilenameParser.withoutCollisionSuffix("Sample Title 2024"), "Sample Title 2024")
+    }
+
+    func testStampedNameWithCollisionSuffixParsesLikeTheOriginal() {
+        let plain = ReleaseFilenameParser.parse("03.10.2026_Uploader_Sample Title_Example Studio_720p")
+        let numbered = ReleaseFilenameParser.parse("03.10.2026_Uploader_Sample Title_Example Studio_720p 2")
+        XCTAssertEqual(plain?.title, "Sample Title")
+        XCTAssertEqual(plain?.studio, "Example Studio")
+        XCTAssertEqual(numbered?.title, plain?.title)
+        XCTAssertEqual(numbered?.studio, plain?.studio)
+    }
+
+    // MARK: provider order for naming (L-6)
+
+    func testNamingSearchesTheQueueProviderFirst() {
+        let order = NamingReviewWindowController.providerSearchOrder(preferred: "B", enabled: ["A", "B", "C"])
+        XCTAssertEqual(order, ["B", "A", "C"])
+    }
+
+    func testNamingOrderKeepsEnabledOrderWhenThePreferredOneIsOff() {
+        let order = NamingReviewWindowController.providerSearchOrder(preferred: "Z", enabled: ["A", "B"])
+        XCTAssertEqual(order, ["A", "B"])
+    }
 }

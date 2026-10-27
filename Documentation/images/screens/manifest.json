@@ -188,18 +188,18 @@
   },
   {
    "file": "prefs-media-intake.png",
-   "show": "Preferences > Sources > Media Intake showing the Incoming Folders list, the option checkboxes, Scan Now and Reset Scan.",
+   "show": "Settings > Sources > Media Intake showing the Incoming Folders list, the option checkboxes, Scan Now and Reset Scan.",
    "setup": "Use a neutral demo folder path, not your home folder.",
    "placements": [
     {
      "doc": "Getting-Started",
      "after": "2. Under **Incoming Folders**",
-     "caption": "Preferences > Sources > Media Intake."
+     "caption": "Settings > Sources > Media Intake."
     },
     {
      "doc": "User-Guide",
-     "after": "All of these are in **Preferences \u2192 Sources \u2192 Media Intake**",
-     "caption": "Preferences > Sources > Media Intake."
+     "after": "All of these are in **Settings \u2192 Sources \u2192 Media Intake**",
+     "caption": "Settings > Sources > Media Intake."
     }
    ],
    "sources": [
@@ -208,18 +208,18 @@
   },
   {
    "file": "prefs-media-locations.png",
-   "show": "Preferences > Sources > Media Locations showing the staging folder, Deliver automatically and the rules list.",
+   "show": "Settings > Sources > Media Locations showing the staging folder, Deliver automatically and the rules list.",
    "setup": "Neutral demo folder paths. Add one example rule if you like.",
    "placements": [
     {
      "doc": "Getting-Started",
      "after": "3. Open the **Media Locations** sub-tab",
-     "caption": "Preferences > Sources > Media Locations."
+     "caption": "Settings > Sources > Media Locations."
     },
     {
      "doc": "User-Guide",
-     "after": "**Preferences \u2192 Sources \u2192 Media Locations** decides",
-     "caption": "Preferences > Sources > Media Locations."
+     "after": "**Settings \u2192 Sources \u2192 Media Locations** decides",
+     "caption": "Settings > Sources > Media Locations."
     }
    ],
    "sources": [
@@ -229,18 +229,18 @@
   },
   {
    "file": "prefs-providers.png",
-   "show": "Preferences > Sources > Providers with the built-in providers ticked for Movies and TV Shows.",
+   "show": "Settings > Sources > Providers with the built-in providers ticked for Movies and TV Shows.",
    "setup": "Take it with NO third-party plugins installed (a Plugins section appears when one is), or crop the plugin rows out.",
    "placements": [
     {
      "doc": "Getting-Started",
-     "after": "5. Still in Preferences, open **Sources \u2192 Providers**",
-     "caption": "Preferences > Sources > Providers."
+     "after": "5. Still in Settings, open **Sources \u2192 Providers**",
+     "caption": "Settings > Sources > Providers."
     },
     {
      "doc": "User-Guide",
      "after": "**Built-in providers.**",
-     "caption": "Preferences > Sources > Providers."
+     "caption": "Settings > Sources > Providers."
     }
    ],
    "sources": [
@@ -250,13 +250,13 @@
   },
   {
    "file": "prefs-filename-rules.png",
-   "show": "Preferences > Filename with the rule list for Movies and the rule editor visible.",
+   "show": "Settings > Filename with the rule list for Movies and the rule editor visible.",
    "setup": "Default rules are fine.",
    "placements": [
     {
      "doc": "User-Guide",
      "after": "Naming rules decide the output file name.",
-     "caption": "Preferences > Filename: naming rules."
+     "caption": "Settings > Filename: naming rules."
     }
    ],
    "sources": [
@@ -298,13 +298,13 @@
   },
   {
    "file": "prefs-general.png",
-   "show": "Preferences > General.",
+   "show": "Settings > General.",
    "setup": "Default settings.",
    "placements": [
     {
      "doc": "User-Guide",
      "after": "At-launch behavior, whether the window remembers its size",
-     "caption": "Preferences > General."
+     "caption": "Settings > General."
     }
    ],
    "sources": [
@@ -313,13 +313,13 @@
   },
   {
    "file": "prefs-metadata.png",
-   "show": "Preferences > Metadata with the annotation mapping and the Keep empty, Overwrite and Append checkboxes.",
+   "show": "Settings > Metadata with the annotation mapping and the Keep empty, Overwrite and Append checkboxes.",
    "setup": "Movie type selected.",
    "placements": [
     {
      "doc": "User-Guide",
      "after": "Choose which tags are shown for Movies and TV Shows",
-     "caption": "Preferences > Metadata."
+     "caption": "Settings > Metadata."
     }
    ],
    "sources": [
@@ -376,13 +376,13 @@
   },
   {
    "file": "prefs-providers-library-servers.png",
-   "show": "Preferences > Sources > Providers with a library server plugin installed: the Library Servers column next to Movies and TV Shows.",
+   "show": "Settings > Sources > Providers with a library server plugin installed: the Library Servers column next to Movies and TV Shows.",
    "setup": "Second launch of capture-screenshots.sh, with the stand-in library server (\"Sample Library\") installed.",
    "placements": [
     {
      "doc": "User-Guide",
      "after": "**Online and library servers.**",
-     "caption": "Preferences > Sources > Providers with a library server installed."
+     "caption": "Settings > Sources > Providers with a library server installed."
     }
    ],
    "sources": [
@@ -392,13 +392,13 @@
   },
   {
    "file": "prefs-custom-sources-library-servers.png",
-   "show": "Preferences > Sources > Custom Sources with a library server plugin installed: the list has Online and Library Servers headings.",
+   "show": "Settings > Sources > Custom Sources with a library server plugin installed: the list has Online and Library Servers headings.",
    "setup": "Second launch of capture-screenshots.sh, with the stand-in library server installed.",
    "placements": [
     {
      "doc": "User-Guide",
      "after": "**Plugins.** A plugin is a compiled bundle",
-     "caption": "Preferences > Sources > Custom Sources: the Online and Library Servers lists."
+     "caption": "Settings > Sources > Custom Sources: the Online and Library Servers lists."
     }
    ],
    "sources": [

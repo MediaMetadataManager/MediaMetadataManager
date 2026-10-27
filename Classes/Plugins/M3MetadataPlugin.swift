@@ -105,7 +105,7 @@ import Foundation
 
     /// Optional: called once, right before this plugin's bundle file is
     /// deleted from disk -- the user clicking "-" on it in
-    /// Preferences > Sources > Custom Sources (see
+    /// Settings > Sources > Custom Sources (see
     /// CustomSourcesListViewController.removePlugin(at:)). Its purpose is
     /// to make "-" a genuinely clean uninstall rather than just a file
     /// delete: a plugin that keeps its own configuration somewhere
@@ -130,7 +130,7 @@ import Foundation
 
     /// Optional: the settings this plugin needs the user to enter -- an
     /// API key, a server address, and so on. When a plugin returns a
-    /// non-empty array, Preferences > Sources > Providers shows a
+    /// non-empty array, Settings > Sources > Providers shows a
     /// "Configure..." button next to its checkbox, with one text field
     /// per entry. The app knows nothing else about the plugin: it just
     /// reads and writes the UserDefaults key each entry names, and the

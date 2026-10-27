@@ -99,7 +99,7 @@ import MP42Foundation
         fileURLBookmark = nil
         destURLInternalBookmark = nil
         #endif
-        queue = DispatchQueue(label: "org.subler.itemQueue")
+        queue = DispatchQueue(label: "com.mediametadatamanager.itemQueue")
     }
 
     convenience init(fileURL: URL, destination: URL, sourceFolderURL: URL? = nil) {
@@ -173,6 +173,17 @@ import MP42Foundation
     func addAction(_ action: QueueActionProtocol) {
         willChangeValue(for: \.actions)
         queue.sync { actionsInternal.append(action) }
+        didChangeValue(for: \.actions)
+    }
+
+    /// True when the finished file is also rewritten to optimize it.
+    var willOptimize: Bool { return actions.contains { $0 is QueueOptimizeAction } }
+
+    func replaceAction(at index: Int, with action: QueueActionProtocol) {
+        willChangeValue(for: \.actions)
+        queue.sync {
+            if actionsInternal.indices.contains(index) { actionsInternal[index] = action }
+        }
         didChangeValue(for: \.actions)
     }
 
@@ -567,7 +578,7 @@ import MP42Foundation
 
     required init?(coder aDecoder: NSCoder) {
         cancelled = false
-        queue = DispatchQueue(label: "org.subler.itemQueue")
+        queue = DispatchQueue(label: "com.mediametadatamanager.itemQueue")
 
         statusInternal = QueueItem.Status(rawValue: Int(aDecoder.decodeInt32(forKey: "SBQueueItemStatus"))) ?? .failed
         mp4File = aDecoder.decodeObject(of: [MP42File.classForCoder()], forKey: "SBQueueItemMp4File") as? MP42File
@@ -627,7 +638,8 @@ import MP42Foundation
                                                      QueueOptimizeAction.classForCoder(),
                                                      QueueMoveToLibraryAction.classForCoder(), QueueMoveFileToLibraryAction.classForCoder(),
                                                      QueueRenameInPlaceAction.classForCoder(),
-                                                     QueueChangeAudioLanguageAction.classForCoder(), QueueChangeSubtitleLanguageAction.classForCoder()], forKey: "SBQueueItemActions") as? [QueueActionProtocol] ?? []
+                                                     QueueChangeAudioLanguageAction.classForCoder(), QueueChangeSubtitleLanguageAction.classForCoder(),
+                                                     QueueSetRulesAction.classForCoder()], forKey: "SBQueueItemActions") as? [QueueActionProtocol] ?? []
     }
 }
 
@@ -656,5 +668,28 @@ extension QueueItem.ProcessError: LocalizedError {
         case .optimizationFailure:
             return NSLocalizedString("An error occurred while optimizing the file.", comment: "QueueItem Error")
         }
+    }
+}
+
+extension QueueItem {
+    /// True when the file the item was added for is no longer where it was
+    /// (moved, renamed or deleted since). Shown as "File missing" in the
+    /// Status column of a waiting item (L-11).
+    var isFileMissing: Bool {
+        return FileManager.default.fileExists(atPath: fileURL.path) == false
+    }
+}
+
+/// What happens to a Queue row when the editor opened from it closes.
+enum QueueEditOutcome: Equatable {
+    case keepRow
+    case removeRow
+
+    /// - A finished file keeps its row while the file is still there.
+    /// - A waiting file keeps its row when the editor was closed or cancelled
+    ///   without saving; once saved it is done with, so the row goes.
+    static func afterClose(wasCompleted: Bool, saved: Bool, fileExists: Bool) -> QueueEditOutcome {
+        if wasCompleted { return fileExists ? .keepRow : .removeRow }
+        return saved ? .removeRow : .keepRow
     }
 }

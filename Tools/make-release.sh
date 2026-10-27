@@ -17,7 +17,7 @@
 # so versions must always go UP: 1.0.0 -> 1.0.1 -> 1.1.0.
 #
 # Steps: set version -> Release build (ad hoc signed, or Developer ID if you
-# set M3_SIGN_IDENTITY) -> verify no plugin bundles or config inside the app ->
+# set M3_SIGN_IDENTITY) -> add the shipped plugins (Plex, Jellyfin), verify nothing else or personal config is inside the app ->
 # zip -> release notes -> appcast in <clone>/docs/appcast.xml.
 # It does NOT push or publish; it prints the commands for that.
 #
@@ -68,9 +68,44 @@ xcodebuild -project M3.xcodeproj -scheme M3 -configuration Release \
 APP="$OUT/derived/Build/Products/Release/M3.app"
 [ -d "$APP" ] || { echo "error: build did not produce M3.app"; exit 1; }
 
-# 3. the shipped app must carry no plugins and no personal config
-if find "$APP" -name '*.bundle' | grep -qi plugin; then
-    echo "error: a plugin bundle is inside the app. Not releasing."; exit 1
+# 2b. the paid library-server plugins ship inside the app (Contents/PlugIns),
+# locked until a licence key is entered. ONLY the names listed here may ship;
+# anything else (a private plugin) must never end up in a release. The plugin
+# projects live next to this one (override with M3_PLUGIN_PROJECTS).
+SHIPPED_PLUGINS="JellyfinPlugin PlexPlugin"
+PLUGIN_PROJECTS="${M3_PLUGIN_PROJECTS:-$(dirname "$DEV")}"
+mkdir -p "$APP/Contents/PlugIns"
+for P in $SHIPPED_PLUGINS; do
+    PROJ="$PLUGIN_PROJECTS/$P/$P.xcodeproj"
+    [ -d "$PROJ" ] || { echo "error: $PROJ not found (set M3_PLUGIN_PROJECTS to the folder that holds the plugin projects)."; exit 1; }
+    echo "Building $P..."
+    PLOG="$OUT/build-$P.log"
+    if ! xcodebuild -project "$PROJ" -scheme "$P" -configuration Release \
+        -derivedDataPath "$OUT/derived-$P" \
+        CODE_SIGN_IDENTITY="$IDENT" CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="" \
+        build > "$PLOG" 2>&1; then
+        echo "error: $P failed to build. The compiler said:"
+        grep -E "error:|fatal error|BUILD FAILED" "$PLOG" | awk '!seen[$0]++' | head -30
+        echo "Full log: $PLOG"
+        exit 1
+    fi
+    tail -3 "$PLOG"
+    BUNDLE="$OUT/derived-$P/Build/Products/Release/$P.bundle"
+    [ -d "$BUNDLE" ] || { echo "error: $P did not produce $P.bundle"; exit 1; }
+    ditto "$BUNDLE" "$APP/Contents/PlugIns/$P.bundle"
+    codesign --force --sign "$IDENT" "$APP/Contents/PlugIns/$P.bundle"
+done
+# The app's seal changed, so sign it again (inner code first, then the app).
+codesign --force --sign "$IDENT" --preserve-metadata=identifier,entitlements,flags,runtime "$APP"
+
+# 3. the shipped app carries exactly the plugins listed above and no personal config
+FOUND_PLUGINS="$(ls "$APP/Contents/PlugIns" | sort | tr '\n' ' ')"
+EXPECTED_PLUGINS="$(for P in $SHIPPED_PLUGINS; do echo "$P.bundle"; done | sort | tr '\n' ' ')"
+if [ "$FOUND_PLUGINS" != "$EXPECTED_PLUGINS" ]; then
+    echo "error: Contents/PlugIns holds [$FOUND_PLUGINS], expected [$EXPECTED_PLUGINS]. Not releasing."; exit 1
+fi
+if find "$APP" -name '*.bundle' -not -path "$APP/Contents/PlugIns/*" | grep -qi plugin; then
+    echo "error: a plugin bundle is inside the app outside Contents/PlugIns. Not releasing."; exit 1
 fi
 # (pattern built from pieces so this script does not trip the export scan itself)
 PAT='hot''mov''ies|po''rn|hans''hoff''meister|private''relay'

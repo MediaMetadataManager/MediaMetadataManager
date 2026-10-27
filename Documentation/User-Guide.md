@@ -11,7 +11,7 @@ This guide describes every window, menu and setting of Media Metadata Manager (M
 
 **Conventions.** Menu paths are written *Menu → Item*. Buttons and settings are shown in **bold**. File and folder names are shown in `code style`. Notes marked *Tip* are optional shortcuts; notes marked *Important* describe behavior that can affect your files.
 
-**Help inside the app.** Choose **Help → Media Metadata Manager Help** to open this guide in the Help window, which has a search box. You can also open the Help menu and type in its search box to find a topic or a menu command; M3 points at the command in the menu. The **?** button opens the section about the window you are in: it is the last item in the toolbar of the Queue, Editor and Preferences windows (you can move it with Customize Toolbar in the Queue and Editor), in the title bar of the Welcome window, the Message log and the Queue's review windows, beside the gear in the Library scan window, and in the top right corner of the Queue Options panel. **Help** also opens the Getting Started Guide, this guide as a PDF, What's New, and Report an Issue.
+**Help inside the app.** Choose **Help → Media Metadata Manager Help** to open this guide in the Help window, which has a search box. You can also open the Help menu and type in its search box to find a topic or a menu command; M3 points at the command in the menu. The **?** button opens the section about the window you are in: it is the last item in the toolbar of the Queue, Editor and Settings windows (you can move it with Customize Toolbar in the Queue and Editor), in the title bar of the Welcome window, the Message log and the Queue's review windows, beside the gear in the Library scan window, and in the top right corner of the Queue Options panel. **Help** also opens the Getting Started Guide, this guide as a PDF, What's New, and Report an Issue.
 
 **Scope.** M3 is a personal fork of the open-source Subler app. Everything Subler does — muxing and tagging MP4, M4V and MOV files, importing tracks from MKV and raw formats, chapters, subtitles, OCR of image subtitles — still works. This guide concentrates on what M3 adds: extra metadata sources, the Queue-based Intake workflow, lossless merging, naming rules, library scanning and the cleanup options.
 
@@ -66,7 +66,7 @@ On first launch you will see the **Welcome window** with three actions:
 - **Merge and Tag Files** — combine several files into one in the Queue, then tag the result.
 - **Scan Library for Missing Metadata** — look through a folder for files that still need tagging.
 
-Untick **Show this window at launch** to stop seeing it. You can choose what M3 does at launch under **Preferences → General → At Launch**: show the open panel, show the main window, or show the Queue.
+Untick **Show this window at launch** to stop seeing it. You can choose what M3 does at launch under **Settings → General → At Launch**: show the open panel, show the main window, or show the Queue.
 
 # 3. The windows
 
@@ -88,7 +88,7 @@ Opening a file with **File → Open…**, from the Welcome window, or by double-
 | **Send to Queue** | Add the open document to the Queue instead of saving directly. |
 | **Queue** | Show the Queue window. |
 | **Import / Delete / Action** | Add a track from another file, remove the selected track, and a menu of track tasks (insert chapters at a fixed interval, organize alternate groups, clear or prettify track names, fix audio fallbacks, offset). |
-| **Settings** | Open Preferences. |
+| **Settings** | Open Settings. |
 
 You can change which buttons are shown, and whether they show icons, text or both, with **View → Customize Toolbar…** or by right-clicking the toolbar. *Tip:* if you customized the toolbar before an update, new buttons such as **Save & Close** appear in the Customize Toolbar sheet and can be dragged in.
 
@@ -131,7 +131,9 @@ The toolbar's display mode (icon, icon and text, or text only) also controls the
 
 **Columns.** Each tab lists **Name**, **Status**, **Size** and **Type**. Click a column header to sort by it (A to Z, with numbers in names sorted as numbers) and click again to reverse. Drag the edge of a header to make a column wider or narrower, and drag a header to move the column; **#** stays at the far left and the buttons at the far right. Tag columns from a Library scan sort too, with files that have no value first. Sorting changes the order the files are processed in, can be undone with **Edit → Undo**, and rows can still be dragged. Files added from a folder stay under their folder.
 
-**Folders.** A folder that is still waiting to be named or merged has a disclosure triangle. Click it, or press the Right and Left arrow keys on the selected folder, to list the files inside; Option-click opens or closes every folder at once. The listed files are for looking at only. While a folder is being merged, each of its files shows *Merging* in the Status column with a percentage, and the progress bar and status line at the bottom follow the merge.
+**TV season folders.** On the TV Shows tab, double-click a folder heading (for example "Sample Show – Season 1") to say which show and season it is. Type the show name, optionally the season, and press **Look Up** to see what the TV provider finds. Every episode in the folder is then searched with that show and season; each episode's number is still read from its file name. Folders you do not review are searched file by file, as before.
+
+**Folders.** A folder that is still waiting to be named or merged has a disclosure triangle. Click it, or press the Right and Left arrow keys on the selected folder, to list the files inside; Option-click opens or closes every folder at once. You can click a listed file to pick it (Shift-click or Command-click for more, all from the same folder), drag it up or down to change the order, or sort the Queue by Name, Size or Kind to sort the listed files too. With two or more files picked, **Merge** in the toolbar merges just those; it is available once the folder's name is settled, the same point where double-clicking the folder opens its merge order. While a folder is being merged, each of its files shows *Merging* in the Status column with a percentage, and the progress bar and status line at the bottom follow the merge.
 
 <!-- screen:queue-folder-expanded.png:User-Guide -->
 ![A folder row opened to show the files inside.](images/screens/queue-folder-expanded.png)
@@ -171,7 +173,7 @@ The **Settings** button reveals the options applied to items you add by hand and
 
 - **Global options:** *Auto-Start the queue*; *Show Notification When Done* (macOS asks permission the first time).
 - **Location** and **File Type** (`mp4` or `m4v`) for the output.
-- **Apply Set** (applied after the online search, for hand-added files and Intake releases alike: the tags the Set fills in replace the searched values, and tags it leaves blank keep them), **Fetch Metadata** and the provider language for Movies and TV Shows, **Artwork** shape (Portrait, Landscape, Square or Rectangle), **Existing tags** (what the search does with tags a file already has: *Use Preferences*, which follows Preferences > Metadata, *Fill missing only*, *Append (add artwork)* or *Overwrite*; with the last three, *Keep empty annotations* can be ticked), and **Set output filename**.
+- **Apply Set** (applied after the online search, for hand-added files and Intake releases alike: the tags the Set fills in replace the searched values, and tags it leaves blank keep them), **Fetch Metadata** and the provider language for Movies and TV Shows, **Artwork** shape (Portrait, Landscape, Square or Rectangle), **Existing tags** (what the search does with tags a file already has: *Use Settings*, which follows Settings > Metadata, *Fill missing only*, *Append (add artwork)* or *Overwrite*; with the last three, *Keep empty annotations* can be ticked), and **Set output filename**.
 - **Track tidy-ups:** *Clear existing metadata*, *Rename chapter titles*, *Organize groups*, *Prettify audio track names*, *Fix audio fallbacks*, *Clear track names*, *Load external subtitles*, *Complete tracks language*, *Enable audio / subtitle track with language*.
 - **Optimize** and the **color space** options. Where a finished file goes is decided by the Media Locations tab (see 5.5), not by the Queue options.
 
@@ -226,23 +228,23 @@ To fill the gaps, right-click an orange cell and choose **Accept Server Value** 
 <!-- screen:message-log.png:User-Guide -->
 ![The Message Log.](images/screens/message-log.png)
 
-# 4. Preferences
+# 4. Settings
 
-Open **Media Metadata Manager → Preferences…** (or the **Settings** toolbar button). Tabs:
+Open **Media Metadata Manager → Settings…** (or the **Settings** toolbar button). On macOS 12 and earlier the menu item is called **Preferences…**. Tabs:
 
 ## General
 
 At-launch behavior, whether the window remembers its size, the default artwork position (Portrait or Landscape), chapter preview image position, log format, the ratings region to show (USA ratings are always shown), and privacy actions: *Clear recent searches* and *Delete cached metadata*.
 
 <!-- screen:prefs-general.png:User-Guide -->
-![Preferences > General.](images/screens/prefs-general.png)
+![Settings > General.](images/screens/prefs-general.png)
 
 ## Metadata
 
 Choose which tags are shown for Movies and TV Shows and in what order. Below the list, **Keep empty annotations** keeps tags a search found but left blank, **Overwrite existing metadata** lets a search replace tags a file already has, and **Append to existing metadata** adds new cover art next to the art already there (the last two exclude each other; with neither ticked, only gaps are filled). The Queue follows these unless its own **Existing tags** option (see 3.3) says otherwise. **Fill Series Description for sequels/parts** copies the series description when a title ends in a number or in "Part…".
 
 <!-- screen:prefs-metadata.png:User-Guide -->
-![Preferences > Metadata.](images/screens/prefs-metadata.png)
+![Settings > Metadata.](images/screens/prefs-metadata.png)
 
 ## Sets
 
@@ -253,7 +255,7 @@ Create and edit Sets: saved groups of settings you can reuse. Metadata sets hold
 Naming rules decide the output file name. There is a rule list for **Movies** and one for **TV Shows**. Each rule is a template built from tokens (title, studio, year and so on) with optional conditions (**If / And / Or** a field has a value). The first matching rule wins; the **Default** rule is used when none matches. A rule can be switched off with its checkbox. Two extra options live here:
 
 <!-- screen:prefs-filename-rules.png:User-Guide -->
-![Preferences > Filename: naming rules.](images/screens/prefs-filename-rules.png)
+![Settings > Filename: naming rules.](images/screens/prefs-filename-rules.png)
 
 - **Keep the containing folder named to match** — after saving, rename a folder that holds only this one movie to the same name as the file.
 - **Organize into Show/Season folders (Apple TV style)** — create `Show/Season NN` folders for TV episodes.
@@ -287,10 +289,10 @@ Links to sponsor Media Metadata Manager through GitHub Sponsors and to the origi
 
 ## 5.1 Settings reference
 
-All of these are in **Preferences → Sources → Media Intake**. Hover over any option to see its tooltip.
+All of these are in **Settings → Sources → Media Intake**. Hover over any option to see its tooltip.
 
 <!-- screen:prefs-media-intake.png:User-Guide -->
-![Preferences > Sources > Media Intake.](images/screens/prefs-media-intake.png)
+![Settings > Sources > Media Intake.](images/screens/prefs-media-intake.png)
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -303,6 +305,8 @@ All of these are in **Preferences → Sources → Media Intake**. Hover over any
 | **Automatically merge multi-file releases with a clear sequence** | off | When every part carries a sequence number and the parts are compatible, merges after about a second instead of stopping at Merge Review. Opening the row in that second cancels it. |
 | **Remove empty folders automatically** | off | After each Queue run and each editor save, moves empty folders inside the Incoming and Ready folders to the Trash and logs them. Folders touched in the last two minutes are left alone. The same cleanup can be run by hand with **Window → Clean Up Empty Folders…**. |
 | **Clean up processed files** | off | After a release is moved into Ready for Media Library, moves the original files it was made from (the parts that were merged, or the unconverted source when the Queue converted a file) to the Trash and logs them. The finished file is never touched. This applies to Queue runs only; it does not apply to a file you tag with Edit and Save (see 5.4). |
+| **Keep a copy in the Trash when saving an edit** | off | Before a file is saved from its Edit window, puts a copy of it as it was into the Trash (named "<name> (before edit)"), so a mistaken save can be undone. Needs room for a second copy on the same disk. |
+| **Check free disk space before a run** | on | When you press Start, estimates the room the waiting files will take on the disks they are written to. If a disk is short, you can **Change Target…**, **Skip These Files**, **Run Anyway** or **Cancel**. A merge checks the same before it starts. It also counts the extra copy of files edited where they sit and deliveries to a library folder on another disk. Save and Save As stop with a message if the disk is too full, and a run started by Auto-Start does not begin when a disk is short. |
 | **Remove finished items from the Queue automatically** | off | When a Queue run finishes, the rows with a checkmark are taken off the list. Only the rows are removed, never files. Failed rows and rows still waiting for you stay. |
 | **Run the Movies and TV Shows queues at the same time** | off | Off: the two queues take turns, one file at a time, which is kinder to a single disk. On: each queue works by itself, so two files can be processed at once. Turn it on only if your files are on fast drives such as SSDs. |
 | **Ready for Media Library** | none | Now set on the **Media Locations** tab (see 5.5), where it is the **staging folder**: finished files wait there for you to check them. |
@@ -338,10 +342,10 @@ You can also merge by hand: select two or more items in the Queue and click **Me
 
 ## 5.5 Media Locations: where finished files go
 
-**Preferences → Sources → Media Locations** decides where a finished file ends up. It has three parts.
+**Settings → Sources → Media Locations** decides where a finished file ends up. It has three parts.
 
 <!-- screen:prefs-media-locations.png:User-Guide -->
-![Preferences > Sources > Media Locations.](images/screens/prefs-media-locations.png)
+![Settings > Sources > Media Locations.](images/screens/prefs-media-locations.png)
 
 **Default destination: Apple TV Automatically Add Folders.** The folder the Apple TV app watches and organizes itself. Leave the first row blank and M3 follows the **Media folder location** in the Apple TV app's own settings (Settings → Files), read each time it is needed, so a library you move later is picked up without any change here; the folder it currently resolves to is shown greyed out in the first row. Type or choose a folder in the first row to override it, or add more rows with **+** if you keep several libraries (the first row is the default). If the Apple TV app is not set up, M3 falls back to the Music app's setting and the usual locations. A file delivered straight into one of these folders is left alone instead of being wrapped in a folder of its own, because the app files it from there.
 
@@ -352,7 +356,7 @@ Which list a file is checked against is decided by its **Media Kind** tag: a TV 
 - A **rule** has a checkbox (to turn it on or off), a **Folder**, and one or more conditions in the form *If Genre is Documentary*. Conditions use the same fields and wording as the Filename rules: conditions on different fields must all match (And), conditions on the same field match if any one does (Or).
 - Rules are checked from the top. The **first enabled rule that matches** the file's tagged metadata decides the folder. If none matches, the default destination is used.
 - **Add Rule** adds a rule at the end of the list; **Remove Rule** deletes it. A rule with no folder is ignored.
-- For the **Rating** field the value list follows **Preferences → General → Show ratings for** (the chosen country plus the USA, or every country when set to All countries), limited to ratings that apply to movies or TV as appropriate; pick a value from the list so it matches exactly. Rules look at the metadata the file has when it is delivered, so a file with no genre tagged will not match a genre rule.
+- For the **Rating** field the value list follows **Settings → General → Show ratings for** (the chosen country plus the USA, or every country when set to All countries), limited to ratings that apply to movies or TV as appropriate; pick a value from the list so it matches exactly. Rules look at the metadata the file has when it is delivered, so a file with no genre tagged will not match a genre rule.
 
 **Staging folder (Ready for Media Library).** Where finished files wait for you to look them over before they reach your library, and the setting that decides whether the rules are used at all.
 
@@ -372,7 +376,7 @@ The same choice applies everywhere a finished file is moved: Queue items, whole 
 
 **Merge parts by hand.** Add the parts to the Movies Queue, select them, click **Merge**, drag them into order, confirm, and choose where to save.
 
-**Handle TV episodes.** Episodes found by Intake go to the TV Shows Queue. Turn on **Organize into Show/Season folders** under Preferences → Filename to have them filed as `Show/Season 01/…`. Files you add by hand are sorted the same way: a file whose name has a season and episode marker (such as `S02E05` or `2x05`), or that sits in a Season folder, goes to the TV Shows tab, and any other file goes to the Movies tab, whichever tab you dropped it on. The status line says when files were moved to the other tab. A folder that holds both movies and episodes is split file by file, and a show folder with Season folders is added as one group per season. If M3 gets one wrong (a file named badly, say), open it with **Edit…** and change its media type there.
+**Handle TV episodes.** Episodes found by Intake go to the TV Shows Queue. Turn on **Organize into Show/Season folders** under Settings → Filename to have them filed as `Show/Season 01/…`. Files you add by hand are sorted the same way: a file whose name has a season and episode marker (such as `S02E05` or `2x05`), or that sits in a Season folder, goes to the TV Shows tab, and any other file goes to the Movies tab, whichever tab you dropped it on. The status line says when files were moved to the other tab. A folder that holds both movies and episodes is split file by file, and a show folder with Season folders is added as one group per season. If M3 gets one wrong (a file named badly, say), open it with **Edit…** and change its media type there.
 
 <!-- screen:queue-tv-tab.png:User-Guide -->
 ![TV episodes added on the Movies tab are moved to the TV Shows tab, and the status line says so.](images/screens/queue-tv-tab.png)
@@ -385,22 +389,22 @@ The same choice applies everywhere a finished file is moved: Queue items, whole 
 
 # 7. Metadata sources
 
-**Built-in providers.** TheMovieDB, TheTVDB, Apple TV and the iTunes Store. Each can be switched on or off separately for movies and TV in Preferences → Sources → Providers. The Queue's automatic lookup searches every enabled provider and merges the results of those that found the same title: the provider chosen in Queue Options is the primary one (its title, date, studio and rating are kept), blanks are filled in from the others, cast, genre and crew lists are combined, the longest description is kept, and artwork from all of them is pooled so the **Artwork** choice in General can be met. A provider that found a different title is ignored. The naming window consults every enabled provider in turn. When you edit a single file you choose the provider yourself.
+**Built-in providers.** TheMovieDB, TheTVDB, Apple TV and the iTunes Store. Each can be switched on or off separately for movies and TV in Settings → Sources → Providers. The Queue's automatic lookup searches every enabled provider and merges the results of those that found the same title: the provider chosen in Queue Options is the primary one (its title, date, studio and rating are kept), blanks are filled in from the others, cast, genre and crew lists are combined, the longest description is kept, and artwork from all of them is pooled so the **Artwork** choice in General can be met. A provider that found a different title is ignored. The naming window consults every enabled provider in turn. When you edit a single file you choose the provider yourself.
 
 <!-- screen:prefs-providers.png:User-Guide -->
-![Preferences > Sources > Providers.](images/screens/prefs-providers.png)
+![Settings > Sources > Providers.](images/screens/prefs-providers.png)
 
-**Custom Sources.** In Preferences → Sources → Custom Sources, click **+** to define a source from a web API: a base address, a search address, a detail address, and a table that maps the API's fields to M3's tags. Each source opens in its own window. Requests time out rather than hang, and request and response bodies are written to the message log to help you debug a mapping. A new source that you close without entering anything is discarded, so clicking **+** several times never leaves empty "New Source" rows behind.
+**Custom Sources.** In Settings → Sources → Custom Sources, click **+** to define a source from a web API: a base address, a search address, a detail address, and a table that maps the API's fields to M3's tags. Each source opens in its own window. Requests time out rather than hang, and request and response bodies are written to the message log to help you debug a mapping. A new source that you close without entering anything is discarded, so clicking **+** several times never leaves empty "New Source" rows behind.
 
-**Plugins.** A plugin is a compiled bundle placed in `~/Library/Application Support/M3/Plugins/` and loaded at launch. Plugins are never part of the app itself. To add one, drag its `.bundle` onto the Custom Sources list (or place it in that folder). M3 then asks whether to **Restart Now** or **Later**; plugins are loaded once, at launch, so a plugin is available after the restart. If the Queue is processing, a merge is running or a scan is in progress, M3 lists what is still running and offers **Restart When Finished**: it never interrupts that work, and restarts by itself as soon as the last of it is done. Removing a plugin works the same way. After the restart the plugin appears in Preferences → Sources → Providers with its own checkbox, switched on by default, and an enabled plugin is used in searches like any built-in provider. A plugin that needs settings (a server address, a key) declares them itself, and the **Configure…** button next to it opens a form built from that declaration. A plugin can also declare itself a library server, which makes it a Source in the Library scan (section 3.5). M3 contains no built-in knowledge of any particular plugin. Your plugin settings are stored in your own preferences, not in the app, so updating M3 never removes them.
+**Plugins.** A plugin is a compiled bundle placed in `~/Library/Application Support/M3/Plugins/` and loaded at launch. Plugins are never part of the app itself. To add one, drag its `.bundle` onto the Custom Sources list (or place it in that folder). M3 then asks whether to **Restart Now** or **Later**; plugins are loaded once, at launch, so a plugin is available after the restart. If the Queue is processing, a merge is running or a scan is in progress, M3 lists what is still running and offers **Restart When Finished**: it never interrupts that work, and restarts by itself as soon as the last of it is done. Removing a plugin works the same way. After the restart the plugin appears in Settings → Sources → Providers with its own checkbox, switched on by default, and an enabled plugin is used in searches like any built-in provider. A plugin that needs settings (a server address, a key) declares them itself, and the **Configure…** button next to it opens a form built from that declaration. A plugin can also declare itself a library server, which makes it a Source in the Library scan (section 3.5). M3 contains no built-in knowledge of any particular plugin. Your plugin settings are stored in your own preferences, not in the app, so updating M3 never removes them.
 
 <!-- screen:prefs-custom-sources-library-servers.png:User-Guide -->
-![Preferences > Sources > Custom Sources: the Online and Library Servers lists.](images/screens/prefs-custom-sources-library-servers.png)
+![Settings > Sources > Custom Sources: the Online and Library Servers lists.](images/screens/prefs-custom-sources-library-servers.png)
 
-**Online and library servers.** Plugins come in two kinds, and Preferences → Sources keeps them apart. A plugin that searches the web by title is an *online* source: it is listed in the **Movies** column of Providers, next to the built-in providers. A plugin for your own media server is a *library server*: it is listed in its own **Library Servers** column, and ticking it there also makes it a Source in the Library scan. In Custom Sources the list has an **Online** heading (your custom sources and the online plugins) and a **Library Servers** heading. Both the column and the headings appear only when a library server plugin is installed; without one, the Providers tab and the list look as they always have.
+**Online and library servers.** Plugins come in two kinds, and Settings → Sources keeps them apart. A plugin that searches the web by title is an *online* source: it is listed in the **Movies** column of Providers, next to the built-in providers. A plugin for your own media server is a *library server*: it is listed in its own **Library Servers** column, and ticking it there also makes it a Source in the Library scan. In Custom Sources the list has an **Online** heading (your custom sources and the online plugins) and a **Library Servers** heading. Both the column and the headings appear only when a library server plugin is installed; without one, the Providers tab and the list look as they always have.
 
 <!-- screen:prefs-providers-library-servers.png:User-Guide -->
-![Preferences > Sources > Providers with a library server installed.](images/screens/prefs-providers-library-servers.png)
+![Settings > Sources > Providers with a library server installed.](images/screens/prefs-providers-library-servers.png)
 
 **A library server's address and key.** A plugin for your own media server needs two things from that server: its address and a key (also called an API key or token) that lets M3 read the library without your password. The address is the computer's name or IP address followed by the server's port, for example `http://192.168.1.20:8096`; use `127.0.0.1` when the server runs on this Mac. The server's own dashboard or network settings show its address, and a browser pointed at it should show the server's sign-in page. Create the key in the server's administration pages (look for *API keys* or *tokens*), paste it into the plugin's **Configure…** form (the field is hidden as you type), and keep it private: never put it in chat, e-mail or screenshots, and delete it on the server if it leaks. The plugin's own documentation lists the exact steps for its server. If the library is on another computer or a NAS, mount it on this Mac so each file appears at the path the server reports; otherwise the Library scan shows *File not found*.
 
@@ -408,7 +412,7 @@ The same choice applies everywhere a finished file is moved: Queue items, whole 
 
 | What | Where |
 |---|---|
-| Preferences | the app's standard macOS preferences |
+| Settings | the app's standard macOS settings (`~/Library/Preferences/`, with the app's identifier as the file name; macOS 12 and earlier call the window Preferences) |
 | Queue state | `~/Library/Application Support/M3/` (movie queue and TV queue are separate files) |
 | Sets, Queue presets, custom-source definitions | `~/Library/Application Support/M3/` |
 | Plugins | `~/Library/Application Support/M3/Plugins/` |

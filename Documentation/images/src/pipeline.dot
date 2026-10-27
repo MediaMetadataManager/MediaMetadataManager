@@ -32,7 +32,7 @@ digraph G {
     ACT [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Actions, then write the file</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">clear old tags, search metadata and artwork (a release<BR/>searches by its approved name), set filename,<BR/>subtitles (a file beside the video is embedded),<BR/>track tidy-ups, optimize</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
   }
   subgraph cluster_deliver {
-    label="Delivery (Preferences > Sources > Media Locations)"; fontname="Inter"; fontsize=13; fontcolor="#33414f"; style="rounded"; color="#c4ccd4"; labeljust=l; margin=14;
+    label="Delivery (Settings > Sources > Media Locations)"; fontname="Inter"; fontsize=13; fontcolor="#33414f"; style="rounded"; color="#c4ccd4"; labeljust=l; margin=14;
     DEL [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Deliver automatically?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];
     STG [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>Staging folder</B></FONT><BR/><FONT COLOR="#1b2733" POINT-SIZE="10">Ready for Media Library: your check before the library.<BR/>Rules are ignored. No staging folder set: file stays put</FONT>>, shape=box, style="rounded,filled", fillcolor="#e6f0fa", color="#2b5d8a"];
     RUL [label=<<FONT COLOR="#1b2733" POINT-SIZE="12"><B>First enabled rule<BR/>that matches?</B></FONT>>, shape=diamond, style="filled", fillcolor="#f4f4f4", color="#777777", margin="0.05,0.05"];

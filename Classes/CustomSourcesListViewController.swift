@@ -125,6 +125,8 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
 
     private var tableView: NSTableView!
     private var removeButton: NSButton!
+    private var licenceButton: NSButton!
+    private var installButton: NSButton!
 
     private static let sourceRowIcon: NSImage? = {
         if #available(macOS 11, *) {
@@ -289,9 +291,30 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
         removeButton.toolTip = NSLocalizedString("Remove the selected metadata source", comment: "")
         self.removeButton = removeButton
 
+        // Takes the licence key for the selected paid plugin; only enabled on
+        // a plugin row that is waiting for one (see updateRemoveButtonState).
+        let licenceButton = NSButton(title: NSLocalizedString("Licence Key\u{2026}", comment: ""),
+                                     target: self, action: #selector(enterLicenceKey(_:)))
+        licenceButton.bezelStyle = .rounded
+        licenceButton.translatesAutoresizingMaskIntoConstraints = false
+        licenceButton.toolTip = NSLocalizedString("Enter the licence key for the selected plugin", comment: "")
+        licenceButton.isEnabled = false
+        self.licenceButton = licenceButton
+
+        // Picks a plugin (a .bundle, or a .zip containing one) and installs it,
+        // the same as dragging it onto the list.
+        let installButton = NSButton(title: NSLocalizedString("Install Plugin\u{2026}", comment: ""),
+                                     target: self, action: #selector(installPluginFromPanel(_:)))
+        installButton.bezelStyle = .rounded
+        installButton.translatesAutoresizingMaskIntoConstraints = false
+        installButton.toolTip = NSLocalizedString("Install a plugin from a file", comment: "")
+        self.installButton = installButton
+
         pane.addSubview(scrollView)
         pane.addSubview(addButton)
         pane.addSubview(removeButton)
+        pane.addSubview(licenceButton)
+        pane.addSubview(installButton)
 
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: pane.topAnchor),
@@ -307,6 +330,12 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
             removeButton.leadingAnchor.constraint(equalTo: addButton.trailingAnchor, constant: 1),
             removeButton.widthAnchor.constraint(equalToConstant: 44),
             removeButton.heightAnchor.constraint(equalToConstant: 32),
+
+            licenceButton.centerYAnchor.constraint(equalTo: addButton.centerYAnchor),
+            licenceButton.leadingAnchor.constraint(equalTo: removeButton.trailingAnchor, constant: 12),
+
+            installButton.centerYAnchor.constraint(equalTo: addButton.centerYAnchor),
+            installButton.leadingAnchor.constraint(equalTo: licenceButton.trailingAnchor, constant: 8),
 
             pane.bottomAnchor.constraint(equalTo: addButton.bottomAnchor)
         ])
@@ -375,10 +404,22 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
             guard sources.indices.contains(index) else { return nil }
             let source = sources[index]
             textField.stringValue = source.name.isEmpty ? NSLocalizedString("Untitled Source", comment: "") : source.name
+            textField.textColor = .labelColor
             imageView.image = CustomSourcesListViewController.sourceRowIcon
         case .plugin(let index):
             guard plugins.indices.contains(index) else { return nil }
-            textField.stringValue = plugins[index].name
+            let status = licenceStatus(forPlugin: index)
+            switch status {
+            case .none:
+                textField.stringValue = plugins[index].name
+                textField.textColor = .labelColor
+            case .needed:
+                textField.stringValue = plugins[index].name + " \u{2014} " + NSLocalizedString("licence key needed", comment: "")
+                textField.textColor = .secondaryLabelColor
+            case .restartNeeded:
+                textField.stringValue = plugins[index].name + " \u{2014} " + NSLocalizedString("restart to finish unlocking", comment: "")
+                textField.textColor = .secondaryLabelColor
+            }
             imageView.image = CustomSourcesListViewController.pluginRowIcon
         }
 
@@ -424,15 +465,45 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
 
     private func draggedBundleURLs(from info: NSDraggingInfo) -> [URL] {
         let urls = info.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] ?? []
-        return urls.filter { $0.pathExtension.lowercased() == "bundle" }
+        return urls.filter { ["bundle", "zip"].contains($0.pathExtension.lowercased()) }
+    }
+
+    /// Opens a file panel for a plugin (.bundle, or a .zip with one inside).
+    @objc private func installPluginFromPanel(_ sender: Any) {
+        let panel = NSOpenPanel()
+        panel.message = NSLocalizedString("Choose a plugin to install (a .bundle file, or a .zip that contains one).", comment: "")
+        panel.prompt = NSLocalizedString("Install", comment: "")
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = true
+        panel.allowedFileTypes = ["bundle", "zip"]
+        guard panel.runModal() == .OK else { return }
+        installPlugins(from: panel.urls)
     }
 
     private func installPlugins(from urls: [URL]) {
         guard let directory = MetadataPluginLoader.pluginsDirectory else { return }
+        let scratch = FileManager.default.temporaryDirectory.appendingPathComponent("M3PluginInstall-" + UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: scratch) }
+
         var installedNames: [String] = []
         do {
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            var bundles: [URL] = []
             for url in urls {
+                if url.pathExtension.lowercased() == "zip" {
+                    let found = try MetadataPluginLoader.extractBundles(fromZip: url, into: scratch.appendingPathComponent(UUID().uuidString, isDirectory: true))
+                    if found.isEmpty { throw MetadataPluginLoader.InstallError.notAPlugin(url.lastPathComponent) }
+                    bundles += found
+                } else {
+                    bundles.append(url)
+                }
+            }
+            for bundle in bundles where MetadataPluginLoader.looksLikePlugin(bundle) == false {
+                throw MetadataPluginLoader.InstallError.notAPlugin(bundle.lastPathComponent)
+            }
+
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            for url in bundles {
                 let destination = directory.appendingPathComponent(url.lastPathComponent)
                 if FileManager.default.fileExists(atPath: destination.path) {
                     // Replacing an existing install of the same bundle name
@@ -440,6 +511,7 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
                     try FileManager.default.removeItem(at: destination)
                 }
                 try FileManager.default.copyItem(at: url, to: destination)
+                MetadataPluginLoader.clearQuarantine(at: destination)
                 installedNames.append(url.deletingPathExtension().lastPathComponent)
             }
         } catch {
@@ -458,6 +530,15 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
     private func removePlugin(at index: Int) {
         guard plugins.indices.contains(index) else { return }
         let plugin = plugins[index]
+
+        if plugin.isBuiltIn {
+            let notice = NSAlert()
+            notice.messageText = String(format: NSLocalizedString("\u{201c}%@\u{201d} is part of the app", comment: ""), plugin.name)
+            notice.informativeText = NSLocalizedString("Built-in plugins can't be removed. Leave it unlocked if you don't use it, or turn it off under Providers.", comment: "")
+            NSApp.activate(ignoringOtherApps: true)
+            notice.runModal()
+            return
+        }
 
         let confirm = NSAlert()
         confirm.alertStyle = .warning
@@ -510,7 +591,17 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
     }
 
     private func updateRemoveButtonState() {
-        removeButton.isEnabled = tableView.selectedRow != -1
+        var removable = tableView.selectedRow != -1
+        if let row = selectedRow, rows.indices.contains(row), case .plugin(let index) = rows[row],
+           plugins.indices.contains(index), plugins[index].isBuiltIn {
+            removable = false
+        }
+        removeButton.isEnabled = removable
+        if let row = selectedRow, rows.indices.contains(row), case .plugin(let index) = rows[row] {
+            licenceButton.isEnabled = licenceStatus(forPlugin: index) == .needed
+        } else {
+            licenceButton.isEnabled = false
+        }
     }
 
     @objc private func addSource(_ sender: Any) {
@@ -595,8 +686,81 @@ final class CustomSourcesListViewController: NSViewController, NSTableViewDataSo
             openDetailWindow(for: index)
         case .plugin(let index):
             guard plugins.indices.contains(index) else { return }
-            NSWorkspace.shared.activateFileViewerSelecting([plugins[index].url])
+            if licenceStatus(forPlugin: index) == .needed {
+                promptForLicenceKey(forPlugin: index)
+            } else {
+                NSWorkspace.shared.activateFileViewerSelecting([plugins[index].url])
+            }
         }
+    }
+
+    // MARK: - Licence keys for paid plugins
+
+    private enum LicenceStatus { case none, needed, restartNeeded }
+
+    /// `.needed` for an installed paid plugin that did not load for want of a
+    /// key, `.restartNeeded` once a genuine key has been entered (the plugin
+    /// loads at the next launch), `.none` for everything else.
+    private func licenceStatus(forPlugin index: Int) -> LicenceStatus {
+        guard plugins.indices.contains(index),
+              let pluginID = MetadataSearch.lockedPluginID(forBundle: plugins[index].name) else { return .none }
+        return PluginLicence.isLicensed(pluginName: pluginID) ? .restartNeeded : .needed
+    }
+
+    @objc private func enterLicenceKey(_ sender: Any) {
+        guard let row = selectedRow, rows.indices.contains(row),
+              case .plugin(let index) = rows[row] else { return }
+        promptForLicenceKey(forPlugin: index)
+    }
+
+    private func promptForLicenceKey(forPlugin index: Int) {
+        guard plugins.indices.contains(index),
+              let pluginID = MetadataSearch.lockedPluginID(forBundle: plugins[index].name) else { return }
+        let name = plugins[index].name
+
+        let alert = NSAlert()
+        alert.messageText = String(format: NSLocalizedString("Unlock \u{201c}%@\u{201d}", comment: ""), name)
+        alert.informativeText = NSLocalizedString("Paste the licence key from your purchase email. The plugin is available for searching after Media Metadata Manager restarts.", comment: "")
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 380, height: 24))
+        field.placeholderString = "M3L1-\u{2026}"
+        alert.accessoryView = field
+        alert.addButton(withTitle: NSLocalizedString("Unlock", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("Buy a Key\u{2026}", comment: ""))
+        alert.window.initialFirstResponder = field
+
+        NSApp.activate(ignoringOtherApps: true)
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            unlockPlugin(at: index, pluginID: pluginID, key: field.stringValue)
+        case .alertThirdButtonReturn:
+            if let url = PluginLicence.storeURL(forPluginID: pluginID) { NSWorkspace.shared.open(url) }
+        default:
+            break
+        }
+    }
+
+    private func unlockPlugin(at index: Int, pluginID: String, key: String) {
+        guard let payload = PluginLicence.save(key: key) else {
+            let alert = NSAlert()
+            alert.alertStyle = .warning
+            alert.messageText = NSLocalizedString("That key isn't valid", comment: "")
+            alert.informativeText = NSLocalizedString("Check that you copied the whole key from your purchase email, including the part at the start.", comment: "")
+            alert.runModal()
+            return
+        }
+        tableView.reloadData()
+        updateRemoveButtonState()
+        if payload.p != pluginID {
+            // A genuine key for a different paid plugin: it is kept for that one.
+            let alert = NSAlert()
+            alert.messageText = NSLocalizedString("That key is for a different plugin", comment: "")
+            alert.informativeText = NSLocalizedString("It has been saved and will unlock that plugin. This plugin still needs its own key.", comment: "")
+            alert.runModal()
+            return
+        }
+        showRestartNotice(messageText: NSLocalizedString("Key accepted", comment: ""),
+                          informativeText: NSLocalizedString("The plugin is available for searching after Media Metadata Manager restarts.", comment: ""))
     }
 
     private func openDetailWindow(for index: Int) {
@@ -1045,7 +1209,7 @@ final class CustomSourceDetailViewController: NSViewController, NSTableViewDataS
 
         NSLayoutConstraint.activate([
             // No inset here -- rebuildDetail's stack pins its own top
-            // edge to container's with the +20 (matching the Preferences
+            // edge to container's with the +20 (matching the Settings
             // toolbar / Providers-Custom-Sources gap elsewhere), so this
             // just hands container the full pane width straight down to
             // the Field Mapping section below it.
@@ -1130,7 +1294,7 @@ final class CustomSourceDetailViewController: NSViewController, NSTableViewDataS
 
         detailContainer.addSubview(stack)
         NSLayoutConstraint.activate([
-            // 20pt to match the gap between the Preferences toolbar and the
+            // 20pt to match the gap between the Settings toolbar and the
             // Providers/Custom Sources segmented control on the Sources
             // list page (SourcesPrefsViewController.loadView's tabSwitcher
             // top constant) -- this window's title bar is this form's
@@ -1928,7 +2092,7 @@ final class CustomSourceDetailViewController: NSViewController, NSTableViewDataS
 
     /// Builds the "+" pulldown's menu: two "add a whole set" shortcuts
     /// (mirroring the main metadata table's All/Movie/TV Show quick-adds),
-    /// then one shortcut per user-defined Set (Preferences > Sets) whose
+    /// then one shortcut per user-defined Set (Settings > Sets) whose
     /// fields the field-mapping system can actually use (see
     /// mappableKeys(for:)) -- lets a source reuse the same fields the
     /// user already bothered to define in a Set, for ease of use, without
@@ -1977,7 +2141,7 @@ final class CustomSourceDetailViewController: NSViewController, NSTableViewDataS
 
     /// Reverse-maps a Set's (MetadataPreset's) MP42 metadata items back to
     /// the MetadataResult.Key values the field-mapping list understands,
-    /// by reading the user's current provider result maps (Preferences >
+    /// by reading the user's current provider result maps (Settings >
     /// Metadata) backwards -- those are what normally turn a search
     /// result's {Genre}-style keys into a file's actual MP42 atoms, so
     /// reading them the other way answers "which field-mapping key, if

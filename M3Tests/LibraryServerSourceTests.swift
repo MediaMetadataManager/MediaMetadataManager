@@ -218,4 +218,65 @@ final class LibraryServerSourceTests: XCTestCase {
         XCTAssertTrue(text.hasPrefix(LibraryScanCell.missingText))
         XCTAssertTrue(text.hasSuffix("A sample story."))
     }
+
+    // MARK: path mapping
+
+    private let nas = [PathMapRule(from: "/volume1/Movies", to: "/Volumes/Movies")]
+
+    func testAMappedPathStartsWithTheMacFolder() {
+        XCTAssertEqual(LibraryPathMapping.map("/volume1/Movies/Sample Title (2019).mp4", rules: nas), "/Volumes/Movies/Sample Title (2019).mp4")
+        XCTAssertEqual(LibraryPathMapping.map("/volume1/Movies/Sub/Sample.mp4", rules: nas), "/Volumes/Movies/Sub/Sample.mp4")
+    }
+
+    func testOnlyWholeFolderNamesMatch() {
+        XCTAssertEqual(LibraryPathMapping.map("/volume1/Movies2/Sample.mp4", rules: nas), "/volume1/Movies2/Sample.mp4")
+        XCTAssertEqual(LibraryPathMapping.map("/other/Sample.mp4", rules: nas), "/other/Sample.mp4")
+    }
+
+    func testTheFirstMatchingRuleWins() {
+        let rules = [PathMapRule(from: "/volume1/Movies/Kids", to: "/Volumes/Kids"),
+                     PathMapRule(from: "/volume1/Movies", to: "/Volumes/Movies")]
+        XCTAssertEqual(LibraryPathMapping.map("/volume1/Movies/Kids/Sample.mp4", rules: rules), "/Volumes/Kids/Sample.mp4")
+        XCTAssertEqual(LibraryPathMapping.map("/volume1/Movies/Sample.mp4", rules: rules), "/Volumes/Movies/Sample.mp4")
+    }
+
+    func testWindowsPathsAreMapped() {
+        let rules = [PathMapRule(from: "D:\\Movies", to: "/Volumes/Movies")]
+        XCTAssertEqual(LibraryPathMapping.map("D:\\Movies\\Sample.mp4", rules: rules), "/Volumes/Movies/Sample.mp4")
+        XCTAssertEqual(LibraryPathMapping.map("d:\\Movies\\Sample.mp4", rules: rules), "/Volumes/Movies/Sample.mp4")
+    }
+
+    func testIncompleteRulesAreIgnored() {
+        let rules = [PathMapRule(from: "/volume1/Movies", to: ""), PathMapRule(from: "", to: "/Volumes/Movies")]
+        XCTAssertEqual(LibraryPathMapping.map("/volume1/Movies/Sample.mp4", rules: rules), "/volume1/Movies/Sample.mp4")
+    }
+
+    func testSuggestedStartIsTheFilesFolder() {
+        XCTAssertEqual(LibraryPathMapping.suggestedFrom(forExamplePath: "/volume1/Movies/Sample.mp4"), "/volume1/Movies")
+        XCTAssertEqual(LibraryPathMapping.suggestedFrom(forExamplePath: "D:\\Movies\\Sample.mp4"), "D:/Movies")
+    }
+
+    // MARK: finding the mapping from the mounted drives
+
+    func testTwoDrivesGiveTwoSuggestions() {
+        let present: Set<String> = ["/Volumes/Share-1/Movies/Sample A.mp4", "/Volumes/Share12-1/Movies/Sample B.mp4"]
+        let result = LibraryPathMapping.suggestions(
+            forServerPaths: ["/Volumes/videos/Movies/Sample A.mp4", "/Volumes/videos12/Movies/Sample B.mp4"],
+            candidateRoots: ["/Volumes/Share-1", "/Volumes/Share12-1", "/Users/sample"],
+            fileExists: { present.contains($0) })
+        XCTAssertEqual(result, [PathMapRule(from: "/Volumes/videos", to: "/Volumes/Share-1"),
+                                PathMapRule(from: "/Volumes/videos12", to: "/Volumes/Share12-1")])
+    }
+
+    func testNothingIsSuggestedWhenTheFilesAreNotThere() {
+        let result = LibraryPathMapping.suggestions(forServerPaths: ["/volume1/Movies/Sample.mp4"], candidateRoots: ["/Volumes/Other"], fileExists: { _ in false })
+        XCTAssertTrue(result.isEmpty)
+    }
+
+    func testTheSameServerSideIsSuggestedOnce() {
+        let present: Set<String> = ["/Volumes/Share/Movies/A.mp4", "/Volumes/Share/Movies/B.mp4"]
+        let result = LibraryPathMapping.suggestions(forServerPaths: ["/volume1/Movies/A.mp4", "/volume1/Movies/B.mp4"],
+                                                    candidateRoots: ["/Volumes/Share"], fileExists: { present.contains($0) })
+        XCTAssertEqual(result, [PathMapRule(from: "/volume1", to: "/Volumes/Share")])
+    }
 }

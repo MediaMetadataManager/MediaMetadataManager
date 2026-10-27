@@ -6,7 +6,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="OffsetViewController" customModule="Subler" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="OffsetViewController" customModule="M3" customModuleProvider="target">
             <connections>
                 <outlet property="offsetField" destination="lhD-11-DBf" id="n8R-Hu-ysl"/>
                 <outlet property="view" destination="gZj-Ij-29U" id="uD0-Uz-ykk"/>

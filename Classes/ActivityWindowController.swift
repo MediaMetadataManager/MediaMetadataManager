@@ -4,6 +4,10 @@
 //
 //  Created by Damiano Galassi on 20/10/2017.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Renamed Subler references to M3.
+//
 
 import Cocoa
 import MP42Foundation

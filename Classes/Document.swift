@@ -48,6 +48,11 @@ final class Document: NSDocument {
     /// and uses this to re-enable it and follow the file.
     var onClose: ((URL?) -> Void)?
 
+    /// True once this document has written its file to disk. The Queue uses
+    /// it when an editor opened from a waiting row closes: saved means the
+    /// file has been dealt with, not saved means the row stays as it was.
+    private(set) var didSaveToDisk = false
+
     override func close() {
         let url = fileURL
         super.close()
@@ -797,6 +802,32 @@ final class Document: NSDocument {
         }
     }
 
+    /// Stops a save that would run the disk out of room, before anything is
+    /// changed. Save writes a Trash copy and rewrites to optimize; Save As
+    /// writes a whole new file on the chosen disk.
+    private func checkRoomToSave(to url: URL, saveOperation: NSDocument.SaveOperationType) throws {
+        guard MediaIntakePrefs.checkFreeSpace else { return }
+        let needed: Int64
+        switch saveOperation {
+        case .saveOperation:
+            let size = ((try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.int64Value) ?? 0
+            needed = DiskSpaceCheck.inPlaceBytes(size: size,
+                                                 supportsCloning: DiskSpaceCheck.supportsCloning(at: url),
+                                                 copiesMade: MediaIntakePrefs.backupBeforeEditSave ? 1 : 0,
+                                                 optimize: optimize)
+        case .saveAsOperation:
+            needed = Int64(mp4.dataSize)
+        default:
+            return
+        }
+        guard needed > 0, let volume = DiskSpaceCheck.volumePath(of: url),
+              let available = DiskSpaceCheck.availableBytes(onVolumeAt: volume),
+              available < needed + DiskSpaceCheck.marginBytes else { return }
+        let text = String(format: NSLocalizedString("Not enough space on \u{201C}%@\u{201D}: saving needs about %@ and the disk has %@ free. Free some space or save to another disk.", comment: "Save: not enough disk space"),
+                          DiskSpaceCheck.volumeName(at: volume), DiskSpaceCheck.describe(needed), DiskSpaceCheck.describe(available))
+        throw NSError(domain: NSCocoaErrorDomain, code: NSFileWriteOutOfSpaceError, userInfo: [NSLocalizedDescriptionKey: text])
+    }
+
     override func writeSafely(to url: URL, ofType typeName: String, for saveOperation: NSDocument.SaveOperationType) throws {
         unblockUserInteraction()
         preventSleep()
@@ -818,8 +849,14 @@ final class Document: NSDocument {
             options = [:]
         }
 
+        try checkRoomToSave(to: url, saveOperation: saveOperation)
+
         switch saveOperation {
         case .saveOperation:
+            // Optional: keep the file as it was in the Trash before it is changed.
+            if MediaIntakePrefs.backupBeforeEditSave {
+                EditSaveBackup.trashCopy(of: url)
+            }
             try mp4.update(options: options)
         case .saveAsOperation:
             try mp4.write(to: url, options: options)
@@ -836,6 +873,7 @@ final class Document: NSDocument {
         }
 
         cancelled = false
+        didSaveToDisk = true
     }
 
     // MARK: Save panel

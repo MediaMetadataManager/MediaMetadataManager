@@ -251,7 +251,10 @@ extension QueueRow {
             case .failed: return (NSLocalizedString("Failed", comment: "Queue status column"), 1)
             case .cancelled: return (NSLocalizedString("Cancelled", comment: "Queue status column"), 1)
             case .editing: return (NSLocalizedString("Editing", comment: "Queue status column"), 2)
-            case .ready: return (NSLocalizedString("Waiting", comment: "Queue status column"), 3)
+            case .ready:
+                // The file was moved, renamed or deleted after it was added (L-11).
+                if item.isFileMissing { return (NSLocalizedString("File missing", comment: "Queue status column"), 1) }
+                return (NSLocalizedString("Waiting", comment: "Queue status column"), 3)
             case .completed: return (NSLocalizedString("Completed", comment: "Queue status column"), 4)
             }
         }
@@ -279,6 +282,9 @@ extension QueueRow {
     /// and which steps the file will go through, so the list itself can stay
     /// uncluttered.
     var statusTooltip: String? {
+        if let item = effectiveItem, item.status == .ready, item.isFileMissing {
+            return NSLocalizedString("This file has been moved, renamed or deleted since it was added. Choose Edit to point the Queue at it, or remove the row and add the file again.", comment: "Queue status tooltip")
+        }
         if let item = effectiveItem, item.status == .ready {
             let steps = item.actions.map { $0.localizedDescription }
             var text = NSLocalizedString("Waiting for its turn in the queue.", comment: "Queue status tooltip")
@@ -540,6 +546,108 @@ struct QueueOutlineLayout: Equatable {
         case .row(let index): return index
         case .file(let parent, _): return parent + 1
         }
+    }
+
+    // MARK: Selecting and moving the file lines (stage 2)
+
+    /// When every row in `rows` is a file line under the same folder: that
+    /// folder's Queue index and the positions of the lines in its file list.
+    /// Nil for an empty set, a folder row, or lines of two different folders.
+    func fileLines(inTableRows rows: IndexSet) -> (parent: Int, positions: IndexSet)? {
+        var found: Int?
+        var positions = IndexSet()
+        for row in rows {
+            guard case .file(let parent, let position)? = entry(atTableRow: row) else { return nil }
+            if let found = found, found != parent { return nil }
+            found = parent
+            positions.insert(position)
+        }
+        guard let parent = found else { return nil }
+        return (parent, positions)
+    }
+
+    /// The selection to allow for a proposed one. Plain rows pass through.
+    /// When the proposal includes file lines, only the lines of the first
+    /// folder in it are kept (folder rows and other folders' lines drop
+    /// out), and lines of a folder that `canSelect` refuses are dropped.
+    func selectionKeepingOneFolder(_ proposed: IndexSet, canSelect: (Int) -> Bool) -> IndexSet {
+        var keep: Int?
+        for row in proposed {
+            if case .file(let parent, _)? = entry(atTableRow: row), canSelect(parent) {
+                keep = parent
+                break
+            }
+        }
+        guard let parent = keep else {
+            return IndexSet(proposed.filter { isFile(atTableRow: $0) == false })
+        }
+        return IndexSet(proposed.filter { row in
+            if case .file(let p, _)? = entry(atTableRow: row) { return p == parent }
+            return false
+        })
+    }
+
+    /// Where a drop above table row `row` lands in the file list of the open
+    /// folder at queue index `parent`: 0 puts it first, the file count puts
+    /// it last. Nil when the drop is outside that folder's lines.
+    func filePosition(forDropAtTableRow row: Int, inFolder parent: Int) -> Int? {
+        guard let parentRow = tableRow(forQueueIndex: parent) else { return nil }
+        var count = 0
+        var next = parentRow + 1
+        while next < entries.count, case .file(let p, _) = entries[next], p == parent {
+            count += 1
+            next += 1
+        }
+        let position = row - (parentRow + 1)
+        return (0...count).contains(position) ? position : nil
+    }
+
+    /// The table rows of the lines at `positions` in the folder at `parent`.
+    func tableRows(forFilePositions positions: IndexSet, inFolder parent: Int) -> IndexSet {
+        guard let parentRow = tableRow(forQueueIndex: parent) else { return IndexSet() }
+        return IndexSet(positions.map { parentRow + 1 + $0 })
+    }
+}
+
+extension NSPasteboard.PasteboardType {
+    /// A file line dragged inside an open folder row.
+    static let queueFileLine = NSPasteboard.PasteboardType("com.mediametadatamanager.queueFileLine")
+}
+
+/// Reordering the files listed under a folder row.
+enum QueueFileOrder {
+
+    /// One drag item holds the folder's Queue index and the line's position.
+    static func encode(parent: Int, position: Int) -> Int { return parent * 1_000_000 + position }
+    static func decode(_ value: Int) -> (parent: Int, position: Int) { return (value / 1_000_000, value % 1_000_000) }
+
+    /// `urls` with the entries at `positions` moved to just before the entry
+    /// that stood at `destination` (0 to count), keeping their order.
+    static func moving(_ urls: [URL], positions: IndexSet, to destination: Int) -> [URL] {
+        let valid = positions.filter { urls.indices.contains($0) }
+        guard valid.isEmpty == false else { return urls }
+        let moved = valid.map { urls[$0] }
+        let remaining = urls.enumerated().filter { valid.contains($0.offset) == false }.map { $0.element }
+        let before = valid.filter { $0 < destination }.count
+        let at = max(0, min(destination - before, remaining.count))
+        return Array(remaining[..<at]) + moved + Array(remaining[at...])
+    }
+
+    /// `urls` sorted the way the Queue sorts rows: by name, size or kind.
+    /// Other columns leave the order alone.
+    static func sorted(_ urls: [URL], by column: QueueSortColumn, ascending: Bool, sizes: [URL: Int64]) -> [URL] {
+        guard column == .name || column == .size || column == .kind else { return urls }
+        let entries = urls.enumerated().map { index, url in
+            QueueSortEntry(name: url.lastPathComponent,
+                           statusText: "",
+                           statusRank: 3,
+                           size: max(sizes[url] ?? 0, 0),
+                           kind: url.pathExtension.uppercased(),
+                           isHeader: false,
+                           added: index,
+                           group: nil)
+        }
+        return QueueSorter.order(of: entries, by: column, ascending: ascending).map { urls[$0] }
     }
 }
 

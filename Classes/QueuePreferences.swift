@@ -13,7 +13,7 @@
 import Foundation
 
 /// What the Queue's metadata search does with tags a file already has.
-/// "Use Preferences" follows Preferences > Metadata (Overwrite / Append);
+/// "Use Settings" follows Settings > Metadata (Overwrite / Append);
 /// the other three choose for the Queue alone, whatever the preferences say.
 enum ExistingTagsMode: Int {
     case usePreferences = 0
@@ -31,8 +31,8 @@ enum ExistingTagsMode: Int {
         }
     }
 
-    /// Whether blank tags a search found are kept: the Preferences setting
-    /// for "Use Preferences", otherwise the Queue's own checkbox.
+    /// Whether blank tags a search found are kept: the Settings setting
+    /// for "Use Settings", otherwise the Queue's own checkbox.
     func keepsEmpty(queueSetting: Bool, preferencesSetting: Bool) -> Bool {
         return self == .usePreferences ? preferencesSetting : queueSetting
     }
@@ -84,7 +84,7 @@ final class QueuePreferences: NSObject {
     /// ExistingTagsMode raw value: how a search treats tags a file already has.
     @objc dynamic var existingTags: Int
     /// Queue's own "Keep empty annotations"; only used when existingTags is
-    /// not "Use Preferences".
+    /// not "Use Settings".
     @objc dynamic var keepEmptyAnnotations: Bool
 
     /// The checkbox is only meaningful when the Queue decides for itself.

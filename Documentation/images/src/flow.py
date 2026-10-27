@@ -41,7 +41,7 @@ LANES = {
     'hand':   'Queue: items you add by hand',
     'intake': 'Media Intake: watched folders',
     'run':    'Queue run',
-    'deliver':'Delivery (Preferences > Sources > Media Locations)',
+    'deliver':'Delivery (Settings > Sources > Media Locations)',
     'after':  'Afterwards',
 }
 

@@ -15,6 +15,8 @@
 # Steps, in order (each is skipped with --from <step> to resume after a failure):
 #   preflight  checks nothing is half-done and the signing key matches Info.plist
 #   backup     saves your own settings (Tools/config-backup.sh)
+#   tests      Tools/run-tests.sh: the header check and every unit test must pass,
+#              or the release stops here (nothing is built or pushed)
 #   build      Tools/make-release.sh: version bump, Release build, zip, appcast
 #   commit     moves "## Unreleased" in RELEASE_NOTES.md under this version,
 #              commits "Version <version>" and pushes the dev repo
@@ -53,7 +55,7 @@ TAG="v$VERSION"
 ZIP="$DEV/release-archive/MediaMetadataManager-$VERSION.zip"
 DATE="$(date +%Y-%m-%d)"
 
-STEPS="preflight backup build commit export release appcast"
+STEPS="preflight backup tests build commit export release appcast"
 index_of() { local i=0 s; for s in $STEPS; do [ "$s" = "$1" ] && { echo $i; return; }; i=$((i+1)); done; echo -1; }
 FROM_I="$(index_of "$FROM")"
 [ "$FROM_I" -ge 0 ] || { echo "unknown step '$FROM' (steps: $STEPS)"; exit 2; }
@@ -96,7 +98,7 @@ if want preflight; then
     KEY_CHAIN="$("$BIN/generate_keys" -p 2>/dev/null | tail -1 | tr -d '[:space:]')"
     [ "$KEY_PLIST" = "$KEY_CHAIN" ] || { echo "error: the Keychain signing key does not match Info.plist. Not releasing."; exit 1; }
     echo "Signing key matches Info.plist."
-    echo "Remember: quit M3 before the build."
+    echo "Remember: quit M3 before the tests and the build."
     ask "Build and release $VERSION?" || { echo "Stopped."; exit 1; }
 fi
 
@@ -104,6 +106,12 @@ fi
 if want backup; then
     say "Backing up your settings"
     bash "$DEV/Tools/config-backup.sh" backup
+fi
+
+# -------------------------------------------------------------------- tests
+if want tests; then
+    say "Running the tests (they must all pass)"
+    bash "$DEV/Tools/run-tests.sh" || { echo "Stopped: the tests did not pass. Fix them, then resume with:  Tools/release.sh $VERSION --from tests"; exit 1; }
 fi
 
 # -------------------------------------------------------------------- build

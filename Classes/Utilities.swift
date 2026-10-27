@@ -619,3 +619,175 @@ enum IntakeScanner {
         return result
     }
 }
+
+
+/// Optional safety copy for a single-file Edit + Save (M-1): before the file is
+/// changed, a copy of it as it was goes to the Trash, named "<name> (before
+/// edit)", so a mistaken save can be recovered from there. Off by default
+/// (MediaIntakePrefs.backupBeforeEditSave). Failure never stops the save; it is
+/// logged.
+enum EditSaveBackup {
+
+    /// "Title.mp4" -> "Title (before edit).mp4"; a number is added when that
+    /// name is taken ("Title (before edit 2).mp4").
+    static func backupName(for url: URL, attempt: Int = 1) -> String {
+        let stem = url.deletingPathExtension().lastPathComponent
+        let ext = url.pathExtension
+        let tag = attempt <= 1 ? "(before edit)" : "(before edit \(attempt))"
+        return ext.isEmpty ? "\(stem) \(tag)" : "\(stem) \(tag).\(ext)"
+    }
+
+    /// Returns true when the copy reached the Trash.
+    @discardableResult
+    static func trashCopy(of url: URL) -> Bool {
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: url.path) else { return false }
+
+        let folder = url.deletingLastPathComponent()
+        var attempt = 1
+        var copy = folder.appendingPathComponent(backupName(for: url, attempt: attempt))
+        while fileManager.fileExists(atPath: copy.path) {
+            attempt += 1
+            copy = folder.appendingPathComponent(backupName(for: url, attempt: attempt))
+        }
+
+        do {
+            try fileManager.copyItem(at: url, to: copy)
+        } catch {
+            try? fileManager.removeItem(at: copy)
+            Logger.shared.write(toLog: "No copy of \(url.lastPathComponent) put in the Trash before the edit was saved: \(error.localizedDescription)")
+            return false
+        }
+
+        do {
+            try fileManager.trashItem(at: copy, resultingItemURL: nil)
+            Logger.shared.write(toLog: "Put a copy of \(url.lastPathComponent) in the Trash before saving the edit")
+            return true
+        } catch {
+            // Could not be trashed (a volume without a Trash): do not leave a stray copy.
+            try? fileManager.removeItem(at: copy)
+            Logger.shared.write(toLog: "Could not put a copy of \(url.lastPathComponent) in the Trash: \(error.localizedDescription)")
+            return false
+        }
+    }
+}
+
+// MARK: - Free space before a run (L-13)
+
+/// One file waiting to be written, as the free-space check sees it.
+struct DiskSpaceItem: Equatable {
+    var id: String
+    var name: String
+    /// Where the new file will be written.
+    var destination: URL
+    /// About how many bytes it will take there.
+    var bytes: Int64
+    /// False for a file edited where it sits and for a delivery to the
+    /// library folder: their disk cannot be changed from the Queue.
+    var canChangeTarget: Bool = true
+    /// The Queue item this need belongs to, when it is not `id` itself (a
+    /// delivery to another disk is listed on its own).
+    var ownerID: String? = nil
+
+    var queueKey: String { return ownerID ?? id }
+}
+
+/// A disk that does not have room for everything waiting to be written on it.
+struct DiskSpaceShortfall: Equatable {
+    var volume: String
+    var needed: Int64
+    var available: Int64
+    var items: [DiskSpaceItem]
+}
+
+enum DiskSpaceCheck {
+
+    /// Kept free on top of what is needed, so a disk is not filled to the byte.
+    static let marginBytes: Int64 = 512 * 1024 * 1024
+
+    /// The disks that are short, in the order they first appear. Files are
+    /// grouped by the disk they will be written to. A disk whose free space
+    /// is unknown is left out (the check never blocks on a guess).
+    static func shortfalls(for items: [DiskSpaceItem],
+                           volumeOf: (URL) -> String?,
+                           available: (String) -> Int64?,
+                           margin: Int64 = DiskSpaceCheck.marginBytes) -> [DiskSpaceShortfall] {
+        var order: [String] = []
+        var groups: [String: [DiskSpaceItem]] = [:]
+        for item in items where item.bytes > 0 {
+            guard let volume = volumeOf(item.destination) else { continue }
+            if groups[volume] == nil { order.append(volume) }
+            groups[volume, default: []].append(item)
+        }
+        var result: [DiskSpaceShortfall] = []
+        for volume in order {
+            guard let list = groups[volume], let free = available(volume) else { continue }
+            let needed = list.reduce(Int64(0)) { $0 + $1.bytes }
+            if free < needed + margin {
+                result.append(DiskSpaceShortfall(volume: volume, needed: needed, available: free, items: list))
+            }
+        }
+        return result
+    }
+
+    /// Room needed to change a file where it sits: a safety copy (or a Trash
+    /// copy) takes a whole second file unless the disk can clone files, and
+    /// optimizing rewrites the file once more.
+    static func inPlaceBytes(size: Int64, supportsCloning: Bool, copiesMade: Int, optimize: Bool) -> Int64 {
+        var needed: Int64 = 0
+        if supportsCloning == false { needed += size * Int64(max(copiesMade, 0)) }
+        if optimize { needed += size }
+        return needed
+    }
+
+    /// True when the disk holding `url` can copy files without using space
+    /// (APFS). Unknown counts as false, the cautious answer.
+    static func supportsCloning(at url: URL) -> Bool {
+        var folder = url.deletingLastPathComponent()
+        while FileManager.default.fileExists(atPath: folder.path) == false, folder.path != "/" {
+            folder = folder.deletingLastPathComponent()
+        }
+        let values = try? folder.resourceValues(forKeys: [.volumeSupportsFileCloningKey])
+        return values?.volumeSupportsFileCloning ?? false
+    }
+
+    /// The size of everything (not hidden) inside a folder.
+    static func folderBytes(_ folder: URL) -> Int64 {
+        guard let walker = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey],
+                                                          options: [.skipsHiddenFiles]) else { return 0 }
+        var total: Int64 = 0
+        for case let url as URL in walker {
+            let values = try? url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
+            if values?.isRegularFile == true { total += Int64(values?.fileSize ?? 0) }
+        }
+        return total
+    }
+
+    /// The disk a file is (or will be) written to: the path of its volume,
+    /// found from the nearest folder above it that exists.
+    static func volumePath(of url: URL) -> String? {
+        var folder = url.deletingLastPathComponent()
+        while FileManager.default.fileExists(atPath: folder.path) == false, folder.path != "/" {
+            folder = folder.deletingLastPathComponent()
+        }
+        let values = try? folder.resourceValues(forKeys: [.volumeURLKey])
+        return values?.volume?.path
+    }
+
+    static func availableBytes(onVolumeAt path: String) -> Int64? {
+        let url = URL(fileURLWithPath: path)
+        let values = try? url.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+        return values?.volumeAvailableCapacityForImportantUsage
+    }
+
+    static func volumeName(at path: String) -> String {
+        let url = URL(fileURLWithPath: path)
+        let values = try? url.resourceValues(forKeys: [.volumeNameKey])
+        return values?.volumeName ?? url.lastPathComponent
+    }
+
+    static func describe(_ bytes: Int64) -> String {
+        return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+    }
+}
+

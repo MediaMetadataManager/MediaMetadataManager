@@ -6,7 +6,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="ChapterSearchController" customModule="Subler" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="ChapterSearchController" customModule="M3" customModuleProvider="target">
             <connections>
                 <outlet property="addButton" destination="3EA-ze-TJM" id="ll3-uj-12X"/>
                 <outlet property="chapterTable" destination="EaL-hZ-8qa" id="1Um-ff-IPj"/>
@@ -168,7 +168,7 @@ Gw
                                                 </levelIndicatorCell>
                                                 <tableColumnResizingMask key="resizingMask" userResizable="YES"/>
                                                 <prototypeCellViews>
-                                                    <tableCellView identifier="confirmationsCell" id="ROR-C8-kNy" customClass="LevelIndicatorTableCellView" customModule="Subler" customModuleProvider="target">
+                                                    <tableCellView identifier="confirmationsCell" id="ROR-C8-kNy" customClass="LevelIndicatorTableCellView" customModule="M3" customModuleProvider="target">
                                                         <rect key="frame" x="375" y="1" width="96" height="15"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <subviews>

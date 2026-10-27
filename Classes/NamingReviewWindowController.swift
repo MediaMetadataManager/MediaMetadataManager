@@ -162,7 +162,7 @@ final class NamingReviewWindowController: NSWindowController {
         // isn't good enough (e.g. a wrong first hit, or none at all).
         searchAllProvidersButton = NSButton(title: NSLocalizedString("Search All Providers\u{2026}", comment: "Naming review window -> button"), target: self, action: #selector(searchAllProviders(_:)))
         searchAllProvidersButton.translatesAutoresizingMaskIntoConstraints = false
-        searchAllProvidersButton.toolTip = NSLocalizedString("Searches every enabled provider (Preferences > Sources > Providers) for this title and lets you pick from all of their results combined, instead of just the first one that happened to answer.", comment: "")
+        searchAllProvidersButton.toolTip = NSLocalizedString("Searches every enabled provider (Settings > Sources > Providers) for this title and lets you pick from all of their results combined, instead of just the first one that happened to answer.", comment: "")
 
         view.addSubview(originalLabel)
         view.addSubview(originalValue)
@@ -265,8 +265,19 @@ final class NamingReviewWindowController: NSWindowController {
         let highConfidence: Bool
     }
 
-    static func bestProviderMatch(title: String, studio localStudio: String?, year localYear: String?) -> ProviderNameMatch? {
-        for providerName in MetadataSearch.movieProviders {
+    /// The provider search order for naming (L-6): the Queue's chosen movie
+    /// provider first, then the other enabled ones. Tagging (QueueMetadataAction)
+    /// uses the same order, so a name approved from one source is tagged from
+    /// that same source rather than from a different one.
+    static func providerSearchOrder(preferred: String, enabled: [String]) -> [String] {
+        var order: [String] = enabled.contains(preferred) ? [preferred] : []
+        order.append(contentsOf: enabled.filter { $0 != preferred })
+        return order
+    }
+
+    static func bestProviderMatch(title: String, studio localStudio: String?, year localYear: String?, preferredProvider: String? = nil) -> ProviderNameMatch? {
+        let preferred = preferredProvider ?? QueuePreferences().movieProvider
+        for providerName in providerSearchOrder(preferred: preferred, enabled: MetadataSearch.movieProviders) {
             let service = MetadataSearch.service(name: providerName)
             let language = MetadataSearch.defaultLanguage(service: service, type: .movie)
             let search = MetadataSearch.movieSeach(service: service, movie: title, language: language)

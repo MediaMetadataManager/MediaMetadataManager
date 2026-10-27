@@ -50,6 +50,8 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
     private var autoMergeOnSequenceCheckbox: NSButton!
     private var autoCleanEmptyFoldersCheckbox: NSButton!
     private var autoCleanProcessedFilesCheckbox: NSButton!
+    private var backupBeforeEditSaveCheckbox: NSButton!
+    private var checkFreeSpaceCheckbox: NSButton!
     private var autoRemoveCompletedCheckbox: NSButton!
     private var runQueuesTogetherCheckbox: NSButton!
 
@@ -147,6 +149,16 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         autoCleanProcessedFilesCheckbox.translatesAutoresizingMaskIntoConstraints = false
         autoCleanProcessedFilesCheckbox.toolTip = NSLocalizedString("Once a release has been merged or converted and moved into Ready for Media Library, move the original files it was made from (the separate parts, or the unconverted source) to the Trash so they can be recovered from there, and add their paths to a log file (Cleaned Up Processed Files.txt in Application Support/M3). The finished file is never touched. Leave this off to keep the originals next to the result as a backup in case a merge turns out badly.", comment: "")
 
+        backupBeforeEditSaveCheckbox = NSButton(checkboxWithTitle: NSLocalizedString("Keep a copy in the Trash when saving an edit", comment: ""),
+                                                 target: self, action: #selector(toggleBackupBeforeEditSave(_:)))
+        backupBeforeEditSaveCheckbox.translatesAutoresizingMaskIntoConstraints = false
+        backupBeforeEditSaveCheckbox.toolTip = NSLocalizedString("Before a file is saved from its Edit window, put a copy of it as it was into the Trash, named \u{201C}<name> (before edit)\u{201D}, so a mistaken save can be undone. Needs room for a second copy of the file on the same disk. Leave this off if you would rather not use that space.", comment: "")
+
+        checkFreeSpaceCheckbox = NSButton(checkboxWithTitle: NSLocalizedString("Check free disk space before a run", comment: ""),
+                                          target: self, action: #selector(toggleCheckFreeSpace(_:)))
+        checkFreeSpaceCheckbox.translatesAutoresizingMaskIntoConstraints = false
+        checkFreeSpaceCheckbox.toolTip = NSLocalizedString("When you press Start, estimate how much room the files waiting in the Queue will take on the disks they are written to. If a disk is short, you can choose another target, skip those files, run anyway or cancel. Files edited where they sit are not counted.", comment: "")
+
         autoRemoveCompletedCheckbox = NSButton(checkboxWithTitle: NSLocalizedString("Remove finished items from the Queue automatically", comment: ""),
                                                 target: self, action: #selector(toggleAutoRemoveCompleted(_:)))
         autoRemoveCompletedCheckbox.translatesAutoresizingMaskIntoConstraints = false
@@ -165,7 +177,7 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
 
         let mainStack = NSStackView(views: [headerLabel, descriptionLabel, intakeSection,
                                              autoWatchCheckbox, autoApproveHighConfidenceCheckbox,
-                                             renameAfterMergeCheckbox, autoMergeOnSequenceCheckbox, autoCleanEmptyFoldersCheckbox, autoCleanProcessedFilesCheckbox, autoRemoveCompletedCheckbox,
+                                             renameAfterMergeCheckbox, autoMergeOnSequenceCheckbox, autoCleanEmptyFoldersCheckbox, autoCleanProcessedFilesCheckbox, backupBeforeEditSaveCheckbox, checkFreeSpaceCheckbox, autoRemoveCompletedCheckbox,
                                              runQueuesTogetherCheckbox, runQueuesTogetherNote])
         mainStack.orientation = .vertical
         mainStack.alignment = .leading
@@ -178,6 +190,8 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         mainStack.setCustomSpacing(8, after: autoMergeOnSequenceCheckbox)
         mainStack.setCustomSpacing(8, after: autoCleanEmptyFoldersCheckbox)
         mainStack.setCustomSpacing(8, after: autoCleanProcessedFilesCheckbox)
+        mainStack.setCustomSpacing(8, after: backupBeforeEditSaveCheckbox)
+        mainStack.setCustomSpacing(8, after: checkFreeSpaceCheckbox)
         mainStack.setCustomSpacing(16, after: autoRemoveCompletedCheckbox)
         mainStack.setCustomSpacing(4, after: runQueuesTogetherCheckbox)
         mainStack.translatesAutoresizingMaskIntoConstraints = false
@@ -202,6 +216,8 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
         autoMergeOnSequenceCheckbox.state = MediaIntakePrefs.autoMergeOnSequence ? .on : .off
         autoCleanEmptyFoldersCheckbox.state = MediaIntakePrefs.autoCleanEmptyFolders ? .on : .off
         autoCleanProcessedFilesCheckbox.state = MediaIntakePrefs.autoCleanProcessedFiles ? .on : .off
+        backupBeforeEditSaveCheckbox.state = MediaIntakePrefs.backupBeforeEditSave ? .on : .off
+        checkFreeSpaceCheckbox.state = MediaIntakePrefs.checkFreeSpace ? .on : .off
         autoRemoveCompletedCheckbox.state = MediaIntakePrefs.autoRemoveCompletedItems ? .on : .off
         runQueuesTogetherCheckbox.state = MediaIntakePrefs.runQueuesTogether ? .on : .off
     }
@@ -414,6 +430,14 @@ final class MediaIntakeManagerViewController: NSViewController, NSTextFieldDeleg
 
     @objc private func toggleAutoCleanProcessedFiles(_ sender: NSButton) {
         MediaIntakePrefs.autoCleanProcessedFiles = sender.state == .on
+    }
+
+    @objc private func toggleBackupBeforeEditSave(_ sender: NSButton) {
+        MediaIntakePrefs.backupBeforeEditSave = sender.state == .on
+    }
+
+    @objc private func toggleCheckFreeSpace(_ sender: NSButton) {
+        MediaIntakePrefs.checkFreeSpace = sender.state == .on
     }
 
     @objc private func toggleAutoRemoveCompleted(_ sender: NSButton) {

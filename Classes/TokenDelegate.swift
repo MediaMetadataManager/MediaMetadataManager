@@ -4,6 +4,10 @@
 //
 //  Created by Damiano Galassi on 07/03/2018.
 //
+//  Modified for M3 (Media Metadata Manager) by
+//  Hans Hoffmeister, 2026:
+//  Pasteboard type renamed from Subler to M3.
+//
 
 import Cocoa
 
@@ -80,7 +84,7 @@ class TokenDelegate: NSObject, NSTokenFieldDelegate {
         return tokens
     }
 
-    private let pasteboardType = NSPasteboard.PasteboardType(rawValue: "SublerTokenDataType")
+    private let pasteboardType = NSPasteboard.PasteboardType(rawValue: "M3TokenDataType")
 
     func tokenField(_ tokenField: NSTokenField, writeRepresentedObjects objects: [Any], to pboard: NSPasteboard) -> Bool {
         if let tokens = objects as? [Token] {

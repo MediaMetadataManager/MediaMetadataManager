@@ -1,5 +1,9 @@
 #!/bin/bash
 #
+#             Media Metadata Manager
+#                       M3
+#  Created by: Hans Hoffmeister on 10/15/2026.
+#
 # make-media2-library.sh -- builds a small scratch library of short CLIPS cut from
 # real titles on the media volume, for the documentation screenshots that need
 # real names (review dialogs, metadata search). Nothing on the volume is changed:

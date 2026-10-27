@@ -6,7 +6,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="MediaTagsController" customModule="Subler" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="MediaTagsController" customModule="M3" customModuleProvider="target">
             <connections>
                 <outlet property="tableView" destination="Ybu-U8-dMa" id="jXp-4M-DYx"/>
                 <outlet property="view" destination="Guf-c1-iLM" id="1W0-HQ-Xjl"/>
@@ -48,7 +48,7 @@
                                                 </textFieldCell>
                                                 <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                 <prototypeCellViews>
-                                                    <tableCellView identifier="SBCheckBoxTableCellView" id="0hG-av-Aiv" customClass="CheckBoxTableCellView" customModule="Subler" customModuleProvider="target">
+                                                    <tableCellView identifier="SBCheckBoxTableCellView" id="0hG-av-Aiv" customClass="CheckBoxTableCellView" customModule="M3" customModuleProvider="target">
                                                         <rect key="frame" x="1" y="1" width="261" height="17"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <subviews>

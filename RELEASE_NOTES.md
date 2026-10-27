@@ -12,30 +12,85 @@ next round of work.
 
 ## Unreleased
 
+- **Free disk space check:** pressing Start now estimates the room the waiting
+  files will take on the disks they are written to. If a disk is short, a dialog
+  offers Change Target…, Skip These Files, Run Anyway or Cancel; a merge checks
+  the same before it starts. It also counts the safety copy and optimize rewrite
+  of files edited where they sit, and a delivery to a library folder on another
+  disk. Edit > Save and Save As stop with a clear message if the disk is too
+  full, and a run started by Auto-Start does not begin if a disk is short (the
+  status line says why; press Start to choose what to do). Turn it off in
+  Settings > Media Intake.
+- **Review Show for TV folders:** double-click a season or show folder heading on
+  the TV Shows tab to say which show and season it is (with a Look Up button that
+  shows what the TV provider finds). Every episode in the folder is then
+  searched with that show and season, and each episode's number is read from its
+  file name.
+- **Edit no longer drops the row:** opening a waiting file for editing from the
+  Queue and then cancelling or closing without saving leaves it in the Queue as
+  it was (it shows *Editing* meanwhile, and is not run). Only a save takes the
+  row out. A row left in *Editing* by a quit comes back as waiting.
+- **Queue names:** a long name is cut in the middle so its ending stays visible,
+  the tooltip shows the full path, and the Name column can be dragged wider.
+- **Welcome window:** *Window > Welcome to M3* brings it back, and clicking the
+  Dock icon with no window open shows it. *File > New* is gone, since nothing
+  in M3 is made from scratch.
+- **Queue folder rows, files you can pick:** the files listed under an open
+  folder row can now be selected (one folder at a time), dragged into a new
+  order, and follow the column you sort by (name, size or kind). With two or
+  more picked, Merge merges just those files, the same way as opening the
+  folder's merge order.
+- **Queue fixes (loose ends):** a stamped name that was numbered on a collision
+  (`..._720p 2`) is read like the original; the finished file's address follows
+  a whole-folder move into the library, so Edit and Save look in the right
+  place; Clean up processed files now also covers a plain Queue item whose
+  finished file is a different file from the one added; naming and tagging
+  search the Queue's chosen movie provider first, so a name approved from one
+  source is tagged from the same one.
+- **Show and season from folder names:** a file with no episode marker in its
+  name, in a season folder (`Show/Season 2/05 - Title.mkv`), now fills the show,
+  season and episode in the metadata search. A waiting Queue item whose file has
+  been moved or deleted shows **File missing** in the Status column.
+- **"Preferences" is now "Settings" in the app's own wording:** messages, tooltips, the menu item
+  and the guides say Settings, as macOS does since version 13 (macOS 12 and earlier call it
+  Preferences).
+- **Sets by rule:** Settings > Sets has a **Set Rules...** button. A rule applies
+  a Metadata Set when a file's tags match its conditions (for example Content
+  Rating is Explicit applies your Adult Set). The first enabled matching rule
+  wins; the Queue applies it after the online search.
+- **Copy in the Trash when saving an edit (optional, off by default):** Settings >
+  Sources > Intake can keep a copy of the file as it was in the Trash before an
+  Edit + Save changes it.
+- **Path mapping for library servers:** the Library scan has a **Path Mapping...**
+  button when a library server is the Source. When the server lists its files by a
+  path that differs from the Mac's (a network drive mounted under another name, a
+  Windows or NAS path), one or more "server path -> folder on this Mac" mappings
+  make the files findable. The sheet shows an example path the server listed.
+
 ## 1.3.1 (2026-10-17)
 
 - New: the Library scan has a Source choice when a plugin for your own media server (a library server) is installed. Scan it and the list shows only the files where the server has something the file lacks, in orange; a movie whose file is not at the server's path shows "File not found".
 - New: **Accept** writes the server's values straight into the files, one tag at a time (right-click an orange cell), for the selected files, or for all of them. A copy of each file is kept until its write works.
 - New: files sent from a library-server scan to the Queue are filled from the server's own item for each file (no search), adding only the tags the file lacks.
 - Improved: **Edit…** on an orange cell starts with the server's value.
-- Changed: **Preferences → Sources** keeps the two kinds of source apart. In Providers, a plugin for your own media server is listed in its own **Library Servers** column (shown only when one is installed) instead of among the movie providers; in Custom Sources, the list has **Online** and **Library Servers** headings (also only when a library server plugin is installed).
+- Changed: **Settings → Sources** keeps the two kinds of source apart. In Providers, a plugin for your own media server is listed in its own **Library Servers** column (shown only when one is installed) instead of among the movie providers; in Custom Sources, the list has **Online** and **Library Servers** headings (also only when a library server plugin is installed).
 
 ## 1.3.0 (2026-10-17)
 
-- Improved: the screenshots in the User Guide, the Getting Started Guide and the Help window were all retaken from the current version, so each window shown matches what you see: Preferences, the Queue with its review windows (naming, metadata, merge order) and Options panel, the Library scan, the editor and its metadata search, and the Message Log.
+- Improved: the screenshots in the User Guide, the Getting Started Guide and the Help window were all retaken from the current version, so each window shown matches what you see: Settings, the Queue with its review windows (naming, metadata, merge order) and Options panel, the Library scan, the editor and its metadata search, and the Message Log.
 - New: the User Guide's "Searching for metadata" section now shows the Search Metadata window with a result selected, and the Queue section shows an opened folder and the Library scan editing files in place.
 - Improved: the Word and PDF copies of both guides were rebuilt with the new pictures.
 
 ## 1.2.3 (2026-10-16)
 
-- Changed: in **Preferences → Metadata**, the **Add** menu greys out an annotation that already has a row, so it cannot be added twice. Remove the row and it is offered again. Values stay available to use in any number of cells. The same goes for the tag menu when you edit a **Set**: a tag the Set already has is greyed out until you remove it.
-- New: **Help** is now a Help window inside the app, built from the guides, with a search box and a list of topics. **Help → Media Metadata Manager Help** opens it. The Help menu's search box finds help topics as well as menu commands (it points at the command in the menu). The Welcome, Editor, Queue, Message log, Library scan and Preferences windows, the Queue's review windows (naming, metadata, choose a match, merge order) and the Queue Options panel have a **?** button that opens the matching section (in the Queue, Editor and Preferences toolbars it is the last item; in the Library scan window it is beside the gear; in Queue Options it is in the top right corner). The Queue and Editor toolbars start from their default layout once, because of the new item. The Help window can be used while a review window is open. The Help menu also opens the Getting Started Guide, the User Guide as a PDF, What's New and Report an Issue. Before, the Help item opened the project's web page.
+- Changed: in **Settings → Metadata**, the **Add** menu greys out an annotation that already has a row, so it cannot be added twice. Remove the row and it is offered again. Values stay available to use in any number of cells. The same goes for the tag menu when you edit a **Set**: a tag the Set already has is greyed out until you remove it.
+- New: **Help** is now a Help window inside the app, built from the guides, with a search box and a list of topics. **Help → Media Metadata Manager Help** opens it. The Help menu's search box finds help topics as well as menu commands (it points at the command in the menu). The Welcome, Editor, Queue, Message log, Library scan and Settings windows, the Queue's review windows (naming, metadata, choose a match, merge order) and the Queue Options panel have a **?** button that opens the matching section (in the Queue, Editor and Settings toolbars it is the last item; in the Library scan window it is beside the gear; in Queue Options it is in the top right corner). The Queue and Editor toolbars start from their default layout once, because of the new item. The Help window can be used while a review window is open. The Help menu also opens the Getting Started Guide, the User Guide as a PDF, What's New and Report an Issue. Before, the Help item opened the project's web page.
 
 ## 1.1.2 (2026-10-16)
 
 - New: the Library scan window has a **Clear** button (bottom left, after Send to Queue) and a right-click **Clear List** that empty the list once files are loaded. The folder stays chosen and the columns stay, so Scan starts again from it, and no file is changed. Both are off while a scan is running (press Stop first) and while a tag is being written.
 - Fixed: the Library scan and the Queue showed Content Rating and Media Kind as their stored numbers (4, 9, 10). They now show the names the Editor uses (Explicit, Movie, TV Show), and a Rating such as "mpaa|R|300|" shows as "R". A code the lists do not know still shows as the number.
-- New: the Queue options have an **Existing tags** choice under Artwork, for what the search does with tags a file already has: **Use Preferences** (follows Preferences > Metadata), **Fill missing only** (a tag that already has a value is never changed), **Append (add artwork)** (also adds new artwork next to the existing artwork) or **Overwrite**. A **Keep empty annotations** checkbox below it applies when the choice is not Use Preferences. Before this the Queue always overwrote, whatever the preferences said; it now follows Preferences > Metadata unless you choose otherwise, so with the default preferences a file's existing tags are kept and only the gaps are filled. A Queue saved by an earlier version opens with Use Preferences.
+- New: the Queue options have an **Existing tags** choice under Artwork, for what the search does with tags a file already has: **Use Settings** (follows Settings > Metadata), **Fill missing only** (a tag that already has a value is never changed), **Append (add artwork)** (also adds new artwork next to the existing artwork) or **Overwrite**. A **Keep empty annotations** checkbox below it applies when the choice is not Use Settings. Before this the Queue always overwrote, whatever the preferences said; it now follows Settings > Metadata unless you choose otherwise, so with the default preferences a file's existing tags are kept and only the gaps are filled. A Queue saved by an earlier version opens with Use Settings.
 - New: **Pause** in the Library scan window. The scan finishes the file it is reading, shows what it has found so far and waits; **Resume** carries on from the same place. The scan buttons now sit in the bottom row (Pause, Scan, Done) and only the options (gear) button stays at the top right. While scanning, Scan reads **Stop** (it was Cancel) because the files found so far stay in the list; Stop or closing the window ends a scan, even a paused one.
 - New: the Queue's columns can be sorted, resized and rearranged. The tag columns from a Library scan sort like the others (click the heading; files with no value come first, numbers sort as numbers; the files that have not been read yet are read first). Drag a heading to move a column anywhere between "#" and Actions; drag its edge to make it wider or narrower. The Library scan table now remembers its column order, widths and sort between scans and launches.
 - New: files sent from the Library scan to the Queue bring the scan's tag columns with them (Title, Release Date and any extra tags), so you can watch the gaps being filled. Each file starts with the values the scan found (a red "Missing" for a gap) and is read again when the Queue has finished it, so the cell shows the tag that was written. The columns sit before Actions and go away when no such file is left in the Queue.
@@ -43,7 +98,7 @@ next round of work.
 - Improved: the Library scan table now has a column for each tag being checked (Title and Release Date, plus any ticked in the gear panel), showing the file's value or a red "Missing". Columns can be made wider or narrower or dragged into a different order, a click on a heading sorts by it (with an arrow showing the direction; missing values come first), and the window opens larger and remembers the size you give it. Ticking a tag in the gear panel adds its column straight away.
 - Changed: the Library scan now checks only Title and Release Date on every scan. Rating and Studio are no longer checked by default; they are in the gear panel's "Also look for" list and can be ticked if you want them.
 - Fixed: the Genre drop-down in the editor (and in Sets) offered only ten TV categories, and could show items left over from another drop-down. It now lists the usual movie and TV genres in name order. You can still type any genre you like, and a genre you type is kept and offered in the list from then on.
-- New: Preferences > Metadata has an **Edit My Genres…** button. It opens a list of the genres you have typed into the Genre box, where you can correct a misspelling (double-click it), add one, or remove one. Files already tagged with the old spelling are not changed.
+- New: Settings > Metadata has an **Edit My Genres…** button. It opens a list of the genres you have typed into the Genre box, where you can correct a misspelling (double-click it), add one, or remove one. Files already tagged with the old spelling are not changed.
 - Fixed: a folder row that was waiting for a merge order kept asking for one after the other files were taken out of the folder in Finder and only one was left. When the folder is read again (when you open the row, or in the background) a folder with a single file is now treated as a single-file release and goes on to metadata, with no merge order.
 - Fixed: the review windows (naming, merge order, metadata search and "already merged") could open behind other windows. They now always open on top of the app's other windows, still centred over the Queue and still movable.
 - Fixed: a movie with its subtitle file beside it (an .mp4 and an .srt, for example) showed as "Needs merge order", as if the subtitle were a second part. A subtitle file (.srt, .ass, .ssa) beside a video is no longer counted as a part: the movie is one file, it is never merged, and the subtitles are embedded in the finished file. This covers folders and loose files in an Incoming Folder, and folders added by hand. With "Clean up processed files" on, the subtitle files that were embedded are moved to the Trash with the other originals. When a folder holds several parts, subtitle files are left alone.
@@ -84,7 +139,7 @@ next round of work.
 - Fixed: a movie title that a source printed with promotion text after it (such as a sale notice, set apart by line breaks or a long run of spaces) is now cut back to the real title, so searches and file names stay clean.
 - New: when a release folder already holds a merged file (one about as big as all the other files together), the Queue no longer merges the parts again. The release is set aside with the status "Already merged: review"; double-click it to use the merged file, or to merge the parts anyway (the existing merged file is kept and renamed with " - OLD" added).
 - New: the Movies and TV Shows queues now share one window with a tab for each, so the Queue is a single place to look. The toolbar (Add, Merge, Start, Settings) acts on whichever tab is showing, and the window remembers its position and the last tab used. A TV Show added by Intake opens its tab automatically.
-- New: the Movies and TV Shows queues now take turns, one file at a time across both, which is kinder to a single disk. Preferences > Media Intake has a new option, "Run the Movies and TV Shows queues at the same time", for people whose files are on fast drives.
+- New: the Movies and TV Shows queues now take turns, one file at a time across both, which is kinder to a single disk. Settings > Media Intake has a new option, "Run the Movies and TV Shows queues at the same time", for people whose files are on fast drives.
 - New: the Queue windows (Movies and TV Shows) now have Name, Status, Size and Type columns. Click a header to sort the Queue by it (A to Z, with numbers in names sorted as numbers) and click again to reverse. Sorting changes the order files are processed in, can be undone with Edit > Undo, and rows can still be dragged. Files added from a folder stay under their folder.
 - New: the Queue has a "#" column on the far left showing the order files were added. Click its header to put the Queue back in that order after sorting by another column. The Info and Edit buttons are now in their own column on the right, and the column headers have a tinted background so they stand out.
 - New: under the Queue list, a line now shows how many files are in the Queue and how many are done, failed, waiting or need you. While the Queue runs it also shows the time elapsed, about how long is left and when it should finish (judged by file size), and afterwards how long the last run took.
@@ -113,14 +168,14 @@ next round of work.
 
 - Improved: the Library scan reads only each file's tags instead of loading the whole file, which is far lighter on a large or external drive. The status line names the file being read, a file that cannot be read within 20 seconds is listed as unreadable and skipped, and the scan stops with a message if three in a row fail. Slow reads go to the message log.
 - Added: a gear button in the Library scan window. It shows the four tags that are always checked (Title, Release Date, Rating, Studio) and lets you tick any other Metadata tag to look for as well; the choice is remembered.
-- Added: **Reset Scan…** next to Scan Now (Preferences > Sources > Media Locations). It forgets which files the Incoming Folder scan has already taken in and scans again, so a file or folder you removed from the Queue (or that was skipped) is picked up again. Items already in a Queue are not duplicated.
+- Added: **Reset Scan…** next to Scan Now (Settings > Sources > Media Locations). It forgets which files the Incoming Folder scan has already taken in and scans again, so a file or folder you removed from the Queue (or that was skipped) is picked up again. Items already in a Queue are not duplicated.
 ## 1.0.3 (2026-10-10)
 
 - Fixed: Queue options (search provider, language, artwork, and the other checkboxes) were not remembered after quitting. The Movies and TV Shows queues each saved their own launch-time copy over the other's changes. Only settings you actually changed are saved now.
 - Fixed: a file named like "Sample Title [Example Studio] ()" (studio in brackets, year missing) searched for a mangled title (the leading "A" dropped and the studio added to the end) and found nothing. The search now uses just the title in front of the brackets ("Sample Title").
 - Fixed: dragging a folder from Finder into the Queue now behaves exactly like the Add button: the folder appears as a group (a folder row followed by its files). Dropping a single file still adds just that file.
 - Fixed: adding files or folders that already sit in the staging folder (Ready for Media Library) to the Queue no longer makes a second copy. They are scanned, tagged and renamed where they are; for a movie, its folder is renamed to match. The same applies to any other delivery destination.
-- Added: a new install gets a staging folder automatically: "Ready for Media Library" in your Movies folder (change it under Preferences > Sources > Media Locations). An existing choice is never replaced.
+- Added: a new install gets a staging folder automatically: "Ready for Media Library" in your Movies folder (change it under Settings > Sources > Media Locations). An existing choice is never replaced.
 ## 1.0.2 (2026-10-10)
 
 - Changed: a new Custom Source that is closed without entering anything is discarded instead of staying in the list as "New Source", and clicking **+** again while an empty one exists reopens it rather than adding another. Empty ones left by earlier versions are cleaned up at launch.
@@ -138,12 +193,12 @@ next round of work.
 - Added: opt-in **Clean up processed files** moves the original parts to the Trash after a successful merge or conversion and logs them in `Cleaned Up Processed Files.txt`.
 - Added: the filename parser understands `<date or year>_<uploader>_<Title>_<Studio>_<quality>` uploads.
 - Added: Queue rows have labelled Edit / Save buttons; **Save & Close**; default toolbar order Add, Merge, Start, Settings.
-- Added: **Support** replaces the dead **Donate…** menu item. A small dialog and a new **Preferences > Support** tab link to GitHub Sponsors for Media Metadata Manager and to the original Subler project, crediting Damiano Galassi. Nothing is shown automatically, and the old subler.org donate page is no longer used. Links live in one place (`SupportLinks` in `PrefsWindowController.swift`). Added `.github/FUNDING.yml`. The new text is English-only for now.
-- Added: plugins declare their own settings (an optional `settingsFields` selector). The app builds the **Configure…** form from that, so it contains no plugin-specific code or keys. Plugins are still loaded at launch; after adding one, restart and it appears in Preferences > Sources > Providers.
+- Added: **Support** replaces the dead **Donate…** menu item. A small dialog and a new **Settings > Support** tab link to GitHub Sponsors for Media Metadata Manager and to the original Subler project, crediting Damiano Galassi. Nothing is shown automatically, and the old subler.org donate page is no longer used. Links live in one place (`SupportLinks` in `PrefsWindowController.swift`). Added `.github/FUNDING.yml`. The new text is English-only for now.
+- Added: plugins declare their own settings (an optional `settingsFields` selector). The app builds the **Configure…** form from that, so it contains no plugin-specific code or keys. Plugins are still loaded at launch; after adding one, restart and it appears in Settings > Sources > Providers.
 - Added: tooling for public releases in `Tools/` (clean public export with a safety scan, Sparkle key setup, release build and appcast, and a backup/restore script for your own settings). The app itself ships without plugins or personal configuration.
 - Fixed: on the Media Intake tab the Incoming Folders minus button is disabled while only one folder row is left; the plus button on the Automatically Add to Apple TV Folders list works on the blank first row (the default folder is then kept as the first entry).
 - Fixed: an automatic merge is written under a hidden temporary name and renamed when complete, so a half-written merged file can no longer be opened or tagged. After a merge, the release goes through the same metadata match as a single file (confident match continues, anything else stops at Metadata Review).
-- Added: **Media Locations** tab (Preferences > Sources). The default destination is the Apple TV Automatically Add folder (followed live from the Apple TV app's own Media folder setting when the first row is blank); below it, separate Movies and TV Shows lists of delivery rules: each rule has an enable checkbox, a folder and conditions on the file's tagged metadata (same fields as the Filename rules), and the first matching rule picks the folder. The Ready for Media Library folder is now the **staging folder**. A new **Deliver automatically** switch (off by default) chooses between staging every finished file for your review and sending it straight to its rule's folder or the default destination. Files delivered to an Automatically Add folder go in alone, without a folder of their own.
+- Added: **Media Locations** tab (Settings > Sources). The default destination is the Apple TV Automatically Add folder (followed live from the Apple TV app's own Media folder setting when the first row is blank); below it, separate Movies and TV Shows lists of delivery rules: each rule has an enable checkbox, a folder and conditions on the file's tagged metadata (same fields as the Filename rules), and the first matching rule picks the folder. The Ready for Media Library folder is now the **staging folder**. A new **Deliver automatically** switch (off by default) chooses between staging every finished file for your review and sending it straight to its rule's folder or the default destination. Files delivered to an Automatically Add folder go in alone, without a folder of their own.
 - Fixed: when the online search finds no match at all, a single-file or merged release now waits at Metadata Review instead of silently continuing with empty tags. Metadata Review now has its own **Search for** box, a Search button and a list of results, so you can search with other words and choose the right title; **Continue Without Metadata** is offered when nothing is found.
 - Fixed: the Rating value list in Filename and Destinations rules now follows the General tab's "Show ratings for" setting (previously only USA or Germany by system region, missing the "Movie & TV" ratings of other countries) and offers the exact rating codes that tagged files carry.
 - Changed (documentation): a complete flow chart of the whole app (`Documentation/images/app-flow.png`, editable `Documentation/diagrams/M3-app-flow.drawio`) replaces the old Intake-only chart; `pipeline.png` and `stages.png` are updated for the metadata-review, merged-file and delivery changes. Both charts are generated by `Documentation/images/src/flow.py`.
@@ -168,10 +223,10 @@ next round of work.
   resized smaller than what it needs to show all of that plus at least
   3 rows of the mapping/discovered-fields tables (which keep their own
   scrollbars for anything beyond that).
-- Fixed: creating a new Set (Preferences > Sets > +) could lock up the
+- Fixed: creating a new Set (Settings > Sets > +) could lock up the
   app if the save failed for any reason other than a duplicate name
   (e.g. a missing/unwritable Application Support folder) -- it retried
   forever instead of surfacing the error.
 - Added: a Settings toolbar button to the main document window, so
-  Preferences can be reached without going through the app menu.
+  Settings can be reached without going through the app menu.
 

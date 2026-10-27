@@ -29,7 +29,7 @@ M3 has four places you will use:
 | **Queue: Movies tab** | The home of your work. Every file or folder waiting for naming, tagging or merging is one row. |
 | **Queue: TV Shows tab** | The same list on its own tab, kept separate so TV episodes do not mix with movies. |
 | **Editor** | Opens one file so you can search for metadata, edit tags, change artwork and save. |
-| **Preferences** | Where you choose metadata sources, naming rules and the Media Intake options. |
+| **Settings** | Where you choose metadata sources, naming rules and the Media Intake options. |
 
 Work flows in one direction: **Incoming Folder → Queue → (review where needed) → Ready for Media Library.** Nothing is moved into your final library without passing through the folder you chose.
 
@@ -37,20 +37,20 @@ Work flows in one direction: **Incoming Folder → Queue → (review where neede
 
 # Set up once (3 minutes)
 
-1. Choose **Media Metadata Manager → Preferences…** and open the **Sources** tab, then the **Media Intake** sub-tab.
+1. Choose **Media Metadata Manager → Settings…** and open the **Sources** tab, then the **Media Intake** sub-tab.
 2. Under **Incoming Folders**, click **+** and choose the folder where your downloads finish. You can add several.
 3. Open the **Media Locations** sub-tab and, under **Staging folder (Ready for Media Library)**, click **Choose…** and pick the folder where finished files should wait for you to check them. Leave **Deliver automatically** off until you trust the results. (Later you can add rules there to send, for example, documentaries or a rating to a different folder, and turn automatic delivery on; movies and TV shows have separate rules, and the default destination is the Apple TV Automatically Add folder, followed from the Apple TV app's own settings.)
 4. Leave the other options at their defaults for now. Every option is off or conservative by default, so nothing happens behind your back.
-5. Still in Preferences, open **Sources → Providers** and make sure the metadata providers you want are ticked for **Movies** and **TV Shows**.
+5. Still in Settings, open **Sources → Providers** and make sure the metadata providers you want are ticked for **Movies** and **TV Shows**.
 
 <!-- screen:prefs-media-intake.png:Getting-Started -->
-![Preferences > Sources > Media Intake.](images/screens/prefs-media-intake.png)
+![Settings > Sources > Media Intake.](images/screens/prefs-media-intake.png)
 
 <!-- screen:prefs-media-locations.png:Getting-Started -->
-![Preferences > Sources > Media Locations.](images/screens/prefs-media-locations.png)
+![Settings > Sources > Media Locations.](images/screens/prefs-media-locations.png)
 
 <!-- screen:prefs-providers.png:Getting-Started -->
-![Preferences > Sources > Providers.](images/screens/prefs-providers.png)
+![Settings > Sources > Providers.](images/screens/prefs-providers.png)
 
 > **Tip:** Hover over any option in the Media Intake tab for a plain-language explanation of what it does.
 
@@ -75,7 +75,7 @@ Use this when you just want to tag one file.
 
 Use this for a folder of downloads.
 
-1. Drop a finished download into your Incoming Folder. (To skip waiting, click **Scan Now** in Preferences → Sources → Media Intake.)
+1. Drop a finished download into your Incoming Folder. (To skip waiting, click **Scan Now** in Settings → Sources → Media Intake.)
 2. Open **Window → Show Movies Queue**. The download appears as a row marked as waiting for naming. TV episodes are sent to the **TV Shows Queue** automatically.
 3. **Double-click the row.** The *Naming Review* sheet shows a suggested name in the form `Title Vol N [Studio] (Year)`. Edit it if needed and click **Approve**.
 4. What happens next depends on the files in the folder:

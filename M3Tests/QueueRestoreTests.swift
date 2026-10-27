@@ -29,6 +29,40 @@ final class QueueRestoreTests: XCTestCase {
         return url
     }
 
+    func testItemBeingEditedComesBackWaiting() throws {
+        let file = try makeFile("movie.mp4", contents: "x")
+        let queueURL = folder.appendingPathComponent("queue.sbqueue")
+
+        let queue = Queue(url: queueURL)
+        let item = QueueItem(fileURL: file, destination: file)
+        item.status = .editing
+        queue.append(QueueRow(item: item))
+        try queue.saveToDisk()
+
+        let restored = Queue(url: queueURL)
+        XCTAssertEqual(restored.row(at: 0).effectiveItem?.status, .ready)
+    }
+
+    // MARK: Closing an editor opened from a row
+
+    func testCancelledEditKeepsAWaitingRow() {
+        XCTAssertEqual(QueueEditOutcome.afterClose(wasCompleted: false, saved: false, fileExists: true), .keepRow)
+    }
+
+    func testCancelledEditKeepsTheRowEvenIfTheFileIsMissing() {
+        XCTAssertEqual(QueueEditOutcome.afterClose(wasCompleted: false, saved: false, fileExists: false), .keepRow)
+    }
+
+    func testSavedEditOfAWaitingFileRemovesItsRow() {
+        XCTAssertEqual(QueueEditOutcome.afterClose(wasCompleted: false, saved: true, fileExists: true), .removeRow)
+    }
+
+    func testCompletedFileKeepsItsRowWhileTheFileExists() {
+        XCTAssertEqual(QueueEditOutcome.afterClose(wasCompleted: true, saved: false, fileExists: true), .keepRow)
+        XCTAssertEqual(QueueEditOutcome.afterClose(wasCompleted: true, saved: true, fileExists: true), .keepRow)
+        XCTAssertEqual(QueueEditOutcome.afterClose(wasCompleted: true, saved: false, fileExists: false), .removeRow)
+    }
+
     func testWorkingItemComesBackFailed() throws {
         let file = try makeFile("movie.mp4", contents: "x")
         let queueURL = folder.appendingPathComponent("queue.sbqueue")

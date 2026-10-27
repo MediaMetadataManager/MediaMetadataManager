@@ -6,7 +6,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="OutputPrefsViewController" customModule="Subler" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="OutputPrefsViewController" customModule="M3" customModuleProvider="target">
             <connections>
                 <outlet property="movieField" destination="i8H-oP-Sif" id="DPb-TH-ZiT"/>
                 <outlet property="tvShowField" destination="rzc-AK-4Vr" id="Hqx-Fn-5zF"/>

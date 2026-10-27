@@ -6,7 +6,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="ArtworkSelectorViewItem" customModule="Subler" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="ArtworkSelectorViewItem" customModule="M3" customModuleProvider="target">
             <connections>
                 <outlet property="subTextField" destination="fGU-Kh-WjD" id="NYJ-6o-hWO"/>
                 <outlet property="textField" destination="Wkh-6c-0tU" id="Wbm-4M-W1L"/>
@@ -15,11 +15,11 @@
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <customView wantsLayer="YES" id="Hz6-mo-xeY" customClass="ArtworkSelectorViewItemView" customModule="Subler" customModuleProvider="target">
+        <customView wantsLayer="YES" id="Hz6-mo-xeY" customClass="ArtworkSelectorViewItemView" customModule="M3" customModuleProvider="target">
             <rect key="frame" x="0.0" y="0.0" width="128" height="171"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
-                <textField wantsLayer="YES" horizontalHuggingPriority="251" verticalHuggingPriority="750" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Wkh-6c-0tU" customClass="ArtworkSelectorViewItemLabel" customModule="Subler" customModuleProvider="target">
+                <textField wantsLayer="YES" horizontalHuggingPriority="251" verticalHuggingPriority="750" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Wkh-6c-0tU" customClass="ArtworkSelectorViewItemLabel" customModule="M3" customModuleProvider="target">
                     <rect key="frame" x="-4" y="17" width="136" height="15"/>
                     <textFieldCell key="cell" lineBreakMode="truncatingTail" allowsUndo="NO" alignment="center" title="Label" usesSingleLineMode="YES" id="TsL-Ak-xnf">
                         <font key="font" metaFont="cellTitle"/>

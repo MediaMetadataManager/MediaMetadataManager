@@ -74,14 +74,14 @@
                         <binding destination="-2" name="enabled" keyPath="self.options.searchMetadata" id="Ex9-Bn-ET9"/>
                     </connections>
                 </textField>
-                <popUpButton toolTip="What the search does with tags a file already has. Use Preferences follows Preferences &gt; Metadata. Fill missing only never changes a tag that already has a value. Append also adds new artwork next to the existing artwork. Overwrite replaces existing tags." verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Ex2-Pp-ET2">
+                <popUpButton toolTip="What the search does with tags a file already has. Use Settings follows Settings &gt; Metadata. Fill missing only never changes a tag that already has a value. Append also adds new artwork next to the existing artwork. Overwrite replaces existing tags." verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Ex2-Pp-ET2">
                     <rect key="frame" x="215" y="448" width="150" height="17"/>
-                    <popUpButtonCell key="cell" type="roundRect" title="Use Preferences" bezelStyle="roundedRect" alignment="left" controlSize="small" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" selectedItem="Ex8-Mi-001" id="Ex5-Pc-ET5">
+                    <popUpButtonCell key="cell" type="roundRect" title="Use Settings" bezelStyle="roundedRect" alignment="left" controlSize="small" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" selectedItem="Ex8-Mi-001" id="Ex5-Pc-ET5">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="label" size="11"/>
                         <menu key="menu" id="Ex7-Mn-ET7">
                             <items>
-                                <menuItem title="Use Preferences" state="on" id="Ex8-Mi-001"/>
+                                <menuItem title="Use Settings" state="on" id="Ex8-Mi-001"/>
                                 <menuItem title="Fill missing only" tag="1" id="Ex8-Mi-002"/>
                                 <menuItem title="Append (add artwork)" tag="2" id="Ex8-Mi-003"/>
                                 <menuItem title="Overwrite" tag="3" id="Ex8-Mi-004"/>
@@ -97,7 +97,7 @@
                         <binding destination="-2" name="enabled" keyPath="self.options.searchMetadata" id="Ex9-Bn-ET3"/>
                     </connections>
                 </popUpButton>
-                <button toolTip="Keep tags the search found but left blank. Only used when Existing tags is not Use Preferences; otherwise Preferences &gt; Metadata decides." verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Ex3-Ck-ET3">
+                <button toolTip="Keep tags the search found but left blank. Only used when Existing tags is not Use Settings; otherwise Settings &gt; Metadata decides." verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Ex3-Ck-ET3">
                     <rect key="frame" x="126" y="428" width="150" height="16"/>
                     <buttonCell key="cell" type="check" title="Keep empty annotations" bezelStyle="regularSquare" imagePosition="left" alignment="left" controlSize="small" state="on" inset="2" id="Ex6-Cc-ET6">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>

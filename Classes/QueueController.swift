@@ -312,7 +312,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         // QueueWindowController; this queue only fills in its own content.
         configureContextMenuIcons()
 
-        table.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL, .tableViewIndex])
+        table.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL, .tableViewIndex, .queueFileLine])
         configureColumns()
         // Same "double-click a row to open/edit it" convention already
         // used by MovieViewController, ChapterViewController,
@@ -493,6 +493,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         case #selector(edit(_:)):
             if let row = clickedQueueIndex {
                 let queueRow = queue.row(at: row)
+                if queueRow.folderHeaderURL != nil { return isTVShowQueue }
                 if let status = queueRow.effectiveItem?.status, status == .completed || status == .ready {
                     return true
                 }
@@ -528,6 +529,9 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         case #selector(open(_:)):
             return true
         case #selector(mergeSelectedItems(_:)):
+            if let lines = selectedFileLines() {
+                return lines.urls.count >= 2 && canMergeFiles(of: lines.release)
+            }
             return mergeCandidateRows(at: selectedQueueIndexes) != nil
         default:
             return false
@@ -627,6 +631,9 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         sizeCache[item.destURL] = nil
 
         let originalStatus = item.status
+        // An item that arrived with its file already loaded keeps it; one the
+        // editor loads itself is read afresh if the edit is cancelled.
+        let editorLoadsFile = item.mp4File == nil
         item.status = .working
 
         updateUI(indexes: IndexSet(integer: queue.index(of: item)))
@@ -662,18 +669,15 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
 
                         self.itemPopover?.close()
 
-                        item.status = originalStatus
-
-                        if originalStatus == .completed {
-                            // Keep the row, with Edit greyed out while the
-                            // editor is open (see keepRow(for:whileEditingIn:)).
-                            self.keepRow(for: item, whileEditingIn: doc)
-                            self.refreshRow(for: item)
-                        } else {
-                            let index = self.queue.index(of: item)
-                            self.remove(at: index)
-                            self.updateState()
-                        }
+                        // Keep the row while the editor is open. A completed
+                        // file goes back to Completed; a waiting file shows
+                        // Editing, so the Queue does not run it meanwhile.
+                        // When the editor closes the row stays unless the
+                        // file was saved (see keepRow(for:whileEditingIn:)).
+                        item.status = originalStatus == .completed ? .completed : .editing
+                        self.keepRow(for: item, whileEditingIn: doc, originalStatus: originalStatus, editorLoadedFile: editorLoadsFile)
+                        self.refreshRow(for: item)
+                        self.updateState()
                     }
                 } catch {
                     item.status = originalStatus
@@ -684,24 +688,36 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         }
     }
 
-    private func keepRow(for item: QueueItem, whileEditingIn document: Document) {
+    private func keepRow(for item: QueueItem, whileEditingIn document: Document, originalStatus: QueueItem.Status, editorLoadedFile: Bool) {
         let key = ObjectIdentifier(item)
         openEditors[key] = document
 
-        document.onClose = { [weak self, weak item] url in
+        document.onClose = { [weak self, weak item, weak document] url in
             guard let self = self else { return }
             self.openEditors[key] = nil
             guard let item = item else { return }
 
-            if let url = url, FileManager.default.fileExists(atPath: url.path) {
-                // The row stays so the file can be reopened; a save may
-                // have renamed or moved it, so follow it.
-                if item.destURL.standardizedFileURL != url.standardizedFileURL {
-                    item.destURL = url
+            let fileThere = url.map { FileManager.default.fileExists(atPath: $0.path) }
+                ?? FileManager.default.fileExists(atPath: item.fileURL.path)
+            let outcome = QueueEditOutcome.afterClose(wasCompleted: originalStatus == .completed,
+                                                      saved: document?.didSaveToDisk ?? false,
+                                                      fileExists: fileThere)
+            switch outcome {
+            case .keepRow:
+                if originalStatus == .completed {
+                    // A save may have renamed or moved the file, so follow it.
+                    if let url = url, item.destURL.standardizedFileURL != url.standardizedFileURL {
+                        item.destURL = url
+                    }
+                } else {
+                    // Cancelled or closed without saving: the row is as it
+                    // was. Anything changed in the editor and not saved is
+                    // dropped; the file is read afresh when the row runs.
+                    if editorLoadedFile { item.mp4File = nil }
+                    item.status = originalStatus
                 }
                 self.refreshRow(for: item)
-            } else {
-                // The file is gone (moved or deleted outside the app).
+            case .removeRow:
                 let index = self.queue.index(of: item)
                 if index >= 0 {
                     self.remove(at: index)
@@ -814,6 +830,10 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         }
 
         guard let textField = cell.textField else { return }
+
+        // A long name is cut in the middle so its ending ("... Part 2.mp4")
+        // stays visible; the tooltip has the whole path.
+        textField.lineBreakMode = .byTruncatingMiddle
 
         if cell.constraints.contains(where: { $0.identifier == QueueController.nameTextID }) == false {
             textField.translatesAutoresizingMaskIntoConstraints = false
@@ -1446,6 +1466,10 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         }
         if let set = prefs.metadataSet {
             item.addAction(QueueSetAction(preset: set, setWins: true))
+        }
+        // Sets that load by rule: the Set whose rule matches the tags found.
+        if SetRules.hasEnabledRules {
+            item.addAction(QueueSetRulesAction())
         }
         if prefs.optimize {
             item.addAction(QueueOptimizeAction())
@@ -2400,6 +2424,8 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         if queue.status == .working {
             return
         }
+        // Auto-Start and other starts with nobody to ask: stop if a disk is short.
+        guard hasFreeSpaceForUnattendedRun() else { return }
         beginTimedRun(timeLimit: nil)
     }
 
@@ -2448,16 +2474,192 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             stop(self)
             return
         }
-        guard let window = window else {
+        guard window != nil else {
             start(self)
             return
         }
-        presentRunDurationPrompt(in: window) { [weak self] choice in
-            guard let self = self, let choice = choice else { return }
-            switch choice {
-            case .untilDone: self.beginTimedRun(timeLimit: nil)
-            case .limited(let seconds): self.beginTimedRun(timeLimit: seconds)
+        confirmFreeSpace { [weak self] in
+            guard let self = self, let window = self.window else { return }
+            self.presentRunDurationPrompt(in: window) { [weak self] choice in
+                guard let self = self, let choice = choice else { return }
+                switch choice {
+                case .untilDone: self.beginTimedRun(timeLimit: nil)
+                case .limited(let seconds): self.beginTimedRun(timeLimit: seconds)
+                }
             }
+        }
+    }
+
+    // MARK: Free space before a run (L-13)
+
+    /// The room the waiting files will take, per disk, and the Queue items they
+    /// belong to by id: new files written beside or away from their source,
+    /// the extra copy and rewrite of a file edited where it sits, and a
+    /// delivery to the library folder when that is another disk.
+    private func freeSpaceItems() -> (items: [DiskSpaceItem], queueItems: [String: QueueItem]) {
+        var items: [DiskSpaceItem] = []
+        var byID: [String: QueueItem] = [:]
+        for row in queue.allRows {
+            guard let item = row.effectiveItem, item.status == .ready else { continue }
+            let source = item.fileURL.standardizedFileURL
+            let destination = item.destURL.standardizedFileURL
+            let size = sizeCache[item.fileURL]
+                ?? ((try? FileManager.default.attributesOfItem(atPath: source.path)[.size] as? NSNumber)?.int64Value)
+                ?? 0
+            guard size > 0 else { continue }
+            let id = String(UInt(bitPattern: ObjectIdentifier(item).hashValue))
+            byID[id] = item
+
+            if source == destination {
+                // Edited where it sits: a safety copy, and a rewrite to optimize.
+                let bytes = DiskSpaceCheck.inPlaceBytes(size: size,
+                                                        supportsCloning: DiskSpaceCheck.supportsCloning(at: destination),
+                                                        copiesMade: 1,
+                                                        optimize: item.willOptimize)
+                items.append(DiskSpaceItem(id: id, name: item.fileURL.lastPathComponent, destination: destination, bytes: bytes, canChangeTarget: false))
+            } else {
+                items.append(DiskSpaceItem(id: id, name: item.fileURL.lastPathComponent, destination: destination, bytes: size))
+            }
+
+            // Delivery to the library folder: only a move to another disk needs room there.
+            var root: URL?
+            var movedBytes = size
+            var movedFrom = destination
+            for action in item.actions {
+                if let move = action as? QueueMoveToLibraryAction {
+                    root = move.plannedRoot
+                    if let release = queue.allRows.compactMap({ $0.release }).first(where: { $0.id == move.plannedReleaseID }) {
+                        movedBytes = max(DiskSpaceCheck.folderBytes(release.folderURL), size)
+                        movedFrom = release.folderURL
+                    }
+                } else if let move = action as? QueueMoveFileToLibraryAction {
+                    root = move.plannedRoot
+                }
+            }
+            if let root = root {
+                let target = root.appendingPathComponent(item.destURL.lastPathComponent)
+                if DiskSpaceCheck.volumePath(of: target) != DiskSpaceCheck.volumePath(of: movedFrom.appendingPathComponent("x")) {
+                    items.append(DiskSpaceItem(id: id + ":move", name: item.destURL.lastPathComponent, destination: target,
+                                               bytes: movedBytes, canChangeTarget: false, ownerID: id))
+                }
+            }
+        }
+        return (items, byID)
+    }
+
+    /// Start pressed by something other than a click (Auto-Start): nobody is
+    /// there to answer a dialog, so a short disk stops the run and says why
+    /// in the status line and the log. Pressing Start asks what to do.
+    private func hasFreeSpaceForUnattendedRun() -> Bool {
+        guard MediaIntakePrefs.checkFreeSpace else { return true }
+        let planned = freeSpaceItems()
+        guard let first = DiskSpaceCheck.shortfalls(for: planned.items,
+                                                    volumeOf: DiskSpaceCheck.volumePath(of:),
+                                                    available: DiskSpaceCheck.availableBytes(onVolumeAt:)).first else { return true }
+        let message = String(format: NSLocalizedString("Not started: \u{201C}%@\u{201D} needs about %@ and has %@ free. Press Start to choose what to do.", comment: "Free space, unattended start"),
+                             DiskSpaceCheck.volumeName(at: first.volume), DiskSpaceCheck.describe(first.needed), DiskSpaceCheck.describe(first.available))
+        statusLabel.stringValue = message
+        Logger.shared.write(toLog: message)
+        return false
+    }
+
+    /// Before Start: if a disk the waiting files are written to is short of
+    /// room, say so and offer another target, skipping those files, running
+    /// anyway or cancelling. Carries on with `proceed` when all is well.
+    private func confirmFreeSpace(then proceed: @escaping () -> Void) {
+        guard MediaIntakePrefs.checkFreeSpace, let window = window else { proceed(); return }
+        let planned = freeSpaceItems()
+        let short = DiskSpaceCheck.shortfalls(for: planned.items,
+                                              volumeOf: DiskSpaceCheck.volumePath(of:),
+                                              available: DiskSpaceCheck.availableBytes(onVolumeAt:))
+        guard let first = short.first else { proceed(); return }
+
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = String(format: NSLocalizedString("Not enough space on \u{201C}%@\u{201D}", comment: "Free space alert title"), DiskSpaceCheck.volumeName(at: first.volume))
+        alert.informativeText = String.localizedStringWithFormat(NSLocalizedString("%lu file(s) waiting to run need about %@ on this disk, and it has %@ free.", comment: "Free space alert text"),
+                                                                 first.items.count, DiskSpaceCheck.describe(first.needed), DiskSpaceCheck.describe(first.available))
+        let changeable = first.items.filter { $0.canChangeTarget }.compactMap { planned.queueItems[$0.queueKey] }
+        let skippable = Array(Set(first.items.compactMap { planned.queueItems[$0.queueKey] }.map { ObjectIdentifier($0) }))
+            .compactMap { id in planned.queueItems.values.first { ObjectIdentifier($0) == id } }
+
+        enum Choice { case change, skip, runAnyway, cancel }
+        var choices: [Choice] = []
+        if changeable.isEmpty == false {
+            alert.addButton(withTitle: NSLocalizedString("Change Target\u{2026}", comment: "Free space alert button"))
+            choices.append(.change)
+        }
+        alert.addButton(withTitle: NSLocalizedString("Skip These Files", comment: "Free space alert button"))
+        choices.append(.skip)
+        alert.addButton(withTitle: NSLocalizedString("Run Anyway", comment: "Free space alert button"))
+        choices.append(.runAnyway)
+        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "Alert button"))
+        choices.append(.cancel)
+        alert.addHelpButton(anchor: .queue)
+
+        MovableDialog.present(alert: alert, over: window) { [weak self] response in
+            guard let self = self else { return }
+            let index = response.rawValue - NSApplication.ModalResponse.alertFirstButtonReturn.rawValue
+            guard choices.indices.contains(index) else { return }
+            switch choices[index] {
+            case .change:
+                self.chooseNewTarget(for: changeable) { changed in
+                    if changed { self.confirmFreeSpace(then: proceed) }
+                }
+            case .skip:
+                for item in skippable { item.status = .cancelled }
+                self.table.reloadData()
+                self.updateState()
+                self.confirmFreeSpace(then: proceed)
+            case .runAnyway:
+                proceed()
+            case .cancel:
+                break
+            }
+        }
+    }
+
+    /// Asks for a folder and points `items` at it, keeping each file's name.
+    private func chooseNewTarget(for items: [QueueItem], completion: @escaping (Bool) -> Void) {
+        guard let window = window, items.isEmpty == false else { completion(false); return }
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.prompt = NSLocalizedString("Use This Folder", comment: "Free space target panel")
+        panel.message = NSLocalizedString("Choose a folder on a disk with more room.", comment: "Free space target panel")
+        panel.beginSheetModal(for: window) { [weak self] response in
+            guard response == .OK, let folder = panel.url, let self = self else { completion(false); return }
+            for item in items {
+                item.destURL = folder.appendingPathComponent(item.destURL.lastPathComponent)
+            }
+            try? self.queue.saveToDisk()
+            self.table.reloadData()
+            completion(true)
+        }
+    }
+
+    /// Before a merge: the merged file is written beside its parts and takes
+    /// about as much room as they do together.
+    private func confirmFreeSpaceForMerge(of files: [URL], in folder: URL, then proceed: @escaping () -> Void) {
+        guard MediaIntakePrefs.checkFreeSpace, let window = window else { proceed(); return }
+        let total = files.reduce(Int64(0)) { sum, url in
+            sum + (((try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.int64Value) ?? 0)
+        }
+        let item = DiskSpaceItem(id: "merge", name: folder.lastPathComponent, destination: folder.appendingPathComponent("merged.mp4"), bytes: total)
+        guard let short = DiskSpaceCheck.shortfalls(for: [item],
+                                                    volumeOf: DiskSpaceCheck.volumePath(of:),
+                                                    available: DiskSpaceCheck.availableBytes(onVolumeAt:)).first else { proceed(); return }
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = String(format: NSLocalizedString("Not enough space on \u{201C}%@\u{201D}", comment: "Free space alert title"), DiskSpaceCheck.volumeName(at: short.volume))
+        alert.informativeText = String(format: NSLocalizedString("The merged file needs about %@ next to its parts, and the disk has %@ free.", comment: "Free space merge alert text"),
+                                       DiskSpaceCheck.describe(short.needed), DiskSpaceCheck.describe(short.available))
+        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "Alert button"))
+        alert.addButton(withTitle: NSLocalizedString("Merge Anyway", comment: "Free space alert button"))
+        alert.addHelpButton(anchor: .queue)
+        MovableDialog.present(alert: alert, over: window) { response in
+            if response == .alertSecondButtonReturn { proceed() }
         }
     }
 
@@ -2599,6 +2801,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         // Name takes up whatever room the window has; the others keep their width.
         nameCol.resizingMask = [.autoresizingMask, .userResizingMask]
         nameCol.minWidth = 160
+        nameCol.maxWidth = 10_000
         // With many tag columns the table can be wider than the window.
         table.enclosingScrollView?.hasHorizontalScroller = true
         table.enclosingScrollView?.autohidesScrollers = true
@@ -2862,6 +3065,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
                 }
                 return QueueSorter.order(of: entries, by: column, ascending: ascending).map { current[$0] }
             }
+            self.sortOpenFolderFiles(by: column, ascending: ascending, sizes: sizes)
             self.finishReorder(restoring: before, selected: selected, clearSortIndicator: false, actionName: NSLocalizedString("Sort Queue", comment: "Queue -> sort undo action name"))
         }
 
@@ -2979,6 +3183,9 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             if let folderHeaderURL = queueRow.folderHeaderURL {
                 // The group label for the item rows right after it.
                 cell?.textField?.stringValue = SeasonFolderName.displayName(forFolder: folderHeaderURL)
+                if isTVShowQueue {
+                    cell?.toolTip = NSLocalizedString("Double-click to check the show and season for these episodes.", comment: "Queue TV folder heading tooltip")
+                }
                 cell?.textField?.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
                 cell?.imageView?.image = NSWorkspace.shared.icon(forFile: folderHeaderURL.path)
                 disclosure = collapsedRows.contains(ObjectIdentifier(queueRow)) ? .collapsed : .expanded
@@ -2988,6 +3195,7 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
                 // new indent when the item came from a folder group.
                 let indent = item.sourceFolderURL != nil ? QueueController.folderChildIndent : ""
                 cell?.textField?.stringValue = indent + item.fileURL.lastPathComponent
+                cell?.toolTip = item.fileURL.path
                 cell?.textField?.font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
                 cell?.imageView?.image = image(for: item.status)
             } else if let release = queueRow.release {
@@ -3102,7 +3310,9 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     /// the folder it is in).
     private var selectedQueueIndex: Int? {
         guard let table = table else { return nil }
-        return rebuildLayout().queueIndex(forTableRow: table.selectedRow)
+        let current = rebuildLayout()
+        if current.isFile(atTableRow: table.selectedRow) { return nil }
+        return current.queueIndex(forTableRow: table.selectedRow)
     }
 
     private var clickedQueueIndex: Int? {
@@ -3215,9 +3425,50 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         return false
     }
 
-    /// The files listed under an open folder can be looked at but not picked.
-    func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
-        return layout.isFile(atTableRow: row) == false
+    /// The files listed under an open folder can be picked, but only the
+    /// files of one folder at a time and never together with other rows.
+    func tableView(_ tableView: NSTableView, selectionIndexesForProposedSelection proposedSelectionIndexes: IndexSet) -> IndexSet {
+        return rebuildLayout().selectionKeepingOneFolder(proposedSelectionIndexes) { parent in
+            self.canWorkWithFiles(ofFolderAt: parent)
+        }
+    }
+
+    /// File lines can be picked, dragged and sorted while the folder is not
+    /// in the middle of a merge.
+    private func canWorkWithFiles(ofFolderAt index: Int) -> Bool {
+        guard index < queue.count, let release = queue.row(at: index).release else { return false }
+        return release.resolvedItem == nil && release.stage != .merging && release.stage != .done
+    }
+
+    /// A folder's files can be merged from the Queue once naming is settled:
+    /// the same two stages where double-clicking opens the merge order.
+    private func canMergeFiles(of release: QueueRelease) -> Bool {
+        return release.stage == .pendingMergeSelection || release.stage == .mergeFailed
+    }
+
+    /// The file lines that are selected: their folder's release, the files
+    /// in the order the folder lists them, and their positions in that list.
+    private func selectedFileLines() -> (release: QueueRelease, urls: [URL], positions: IndexSet)? {
+        guard let table = table,
+              let found = rebuildLayout().fileLines(inTableRows: table.selectedRowIndexes),
+              found.parent < queue.count,
+              let release = queue.row(at: found.parent).release
+        else { return nil }
+        let all = release.sourceFileURLs
+        let positions = IndexSet(found.positions.filter { all.indices.contains($0) })
+        guard positions.isEmpty == false else { return nil }
+        return (release, positions.map { all[$0] }, positions)
+    }
+
+    /// Sorts the files listed under every open folder the way the Queue was
+    /// just sorted (by name, size or kind).
+    private func sortOpenFolderFiles(by column: QueueSortColumn, ascending: Bool, sizes: [URL: Int64]) {
+        for row in queue.allRows {
+            guard row.folderHeaderURL == nil, canExpand(row), collapsedRows.contains(ObjectIdentifier(row)) == false,
+                  let release = row.release, release.stage != .merging, release.resolvedItem == nil
+            else { continue }
+            release.sourceFileURLs = QueueFileOrder.sorted(release.sourceFileURLs, by: column, ascending: ascending, sizes: sizes)
+        }
     }
 
     /// Toolbar buttons only revalidate on their own -- window updates,
@@ -3254,6 +3505,12 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
 
         let queueRow = queue.row(at: clickedRow)
 
+        // A folder heading on the TV Shows tab: check the show and season.
+        if queueRow.folderHeaderURL != nil {
+            if isTVShowQueue { reviewShow(forHeaderAt: clickedRow) }
+            return
+        }
+
         // Open with the folder as it is on disk now.
         if let release = queueRow.release {
             rescan(release)
@@ -3282,6 +3539,59 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         // A file that is being worked on right now can't be opened.
         if let item = queueRow.effectiveItem, item.status != .working {
             edit(item: item)
+        }
+    }
+
+    //MARK: Review Show (TV folders)
+
+    /// The Metadata Search action of a queued file, and its position among
+    /// the file's actions.
+    private func metadataAction(of item: QueueItem) -> (index: Int, action: QueueMetadataAction)? {
+        for (index, action) in item.actions.enumerated() {
+            if let found = action as? QueueMetadataAction { return (index, found) }
+        }
+        return nil
+    }
+
+    /// Asks which show and season a folder of episodes is, so every episode
+    /// is searched with them instead of each guessing from its own file name
+    /// (closes L-2: a season is not a release, but it can be reviewed once).
+    private func reviewShow(forHeaderAt index: Int) {
+        guard let window = window, index < queue.count, let folder = queue.row(at: index).folderHeaderURL else { return }
+        let items = QueueFolderGroups.childIndexes(ofHeaderAt: index, in: queue.allRows)
+            .compactMap { queue.row(at: $0).item }
+            .filter { $0.status == .ready }
+        guard items.isEmpty == false else { return }
+
+        let confirmed = items.compactMap { metadataAction(of: $0) }.first { $0.action.tvShowName != nil }?.action
+        let starting = SeasonFolderName.showAndSeason(forFolder: folder)
+        let accessory = ShowReviewAccessory(show: confirmed?.tvShowName ?? starting.show,
+                                            season: confirmed != nil ? confirmed?.tvSeason : starting.season,
+                                            provider: prefs.tvShowProvider,
+                                            language: prefs.tvShowProviderLanguage)
+
+        let alert = NSAlert()
+        alert.messageText = String(format: NSLocalizedString("Which show is \u{201C}%@\u{201D}?", comment: "Review Show title"), SeasonFolderName.displayName(forFolder: folder))
+        alert.informativeText = NSLocalizedString("Every episode in this folder is searched with this show and season. Each episode's number still comes from its file name.", comment: "Review Show text")
+        alert.accessoryView = accessory.view
+        alert.addButton(withTitle: NSLocalizedString("Use This Show", comment: "Review Show button"))
+        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "Alert button"))
+        alert.addHelpButton(anchor: .queue)
+
+        MovableDialog.present(alert: alert, over: window) { [weak self] response in
+            guard response == .alertFirstButtonReturn, let self = self else { return }
+            let show = accessory.showName
+            guard show.isEmpty == false else { return }
+            var changed = 0
+            for item in items {
+                guard let found = self.metadataAction(of: item) else { continue }
+                item.replaceAction(at: found.index, with: found.action.settingShow(show, season: accessory.season))
+                changed += 1
+            }
+            try? self.queue.saveToDisk()
+            self.statusLabel.stringValue = changed > 0
+                ? String.localizedStringWithFormat(NSLocalizedString("%lu episode(s) will be searched as \u{201C}%@\u{201D}.", comment: "Review Show status"), changed, show)
+                : NSLocalizedString("These episodes are not set to search for metadata, so there was nothing to change.", comment: "Review Show status")
         }
     }
 
@@ -3670,6 +3980,9 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         if let set = prefs.metadataSet {
             item.addAction(QueueSetAction(preset: set, setWins: true))
         }
+        if SetRules.hasEnabledRules {
+            item.addAction(QueueSetRulesAction())
+        }
         if let readyForLibraryFolder = MediaIntakePrefs.fallbackDeliveryFolder {
             item.addAction(QueueMoveToLibraryAction(releaseID: release.id, destinationRoot: readyForLibraryFolder))
         }
@@ -3711,7 +4024,10 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         // mergeSelectedItems(_:) above.
         MovableDialog.present(reorderWindow, over: window) { response in
             guard response == .OK else { return }
-            self.runMerge(for: release, order: reorderController.filesToMerge)
+            let order = reorderController.filesToMerge
+            self.confirmFreeSpaceForMerge(of: order, in: release.folderURL) {
+                self.runMerge(for: release, order: order)
+            }
         }
     }
 
@@ -3971,6 +4287,11 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
     /// table order, so accepting it immediately without dragging anything
     /// reproduces the old table-order-only behavior exactly.
     @IBAction func mergeSelectedItems(_ sender: Any?) {
+        // Files picked inside an open folder row: merge just those.
+        if let lines = selectedFileLines() {
+            mergeFileLines(lines.urls, of: lines.release)
+            return
+        }
         guard let window = window,
               let rows = mergeCandidateRows(at: selectedQueueIndexes)
         else { return }
@@ -3992,6 +4313,25 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
             let chosen = reorderController.filesToMerge
             let chosenRows = rows.filter { row in row.effectiveItem.map { chosen.contains($0.fileURL) } ?? false }
             self.presentMergeDestinationPanel(for: chosenRows, files: chosen, in: window)
+        }
+    }
+
+    /// Merges the files picked under an open folder row: the same order sheet
+    /// and the same release merge as double-clicking the folder, but only
+    /// for the picked files (the others stay in the folder untouched).
+    private func mergeFileLines(_ files: [URL], of release: QueueRelease) {
+        guard let window = window, files.count >= 2, canMergeFiles(of: release) else { return }
+        pendingAutoMerges.removeValue(forKey: release.id)?.cancel()
+
+        let reorderController = MergeReorderWindowController(files: files)
+        guard let reorderWindow = reorderController.window else { return }
+        MovableDialog.present(reorderWindow, over: window) { response in
+            guard response == .OK else { return }
+            let chosen = reorderController.filesToMerge
+            guard chosen.count >= 2 else { return }
+            self.confirmFreeSpaceForMerge(of: chosen, in: release.folderURL) {
+                self.runMerge(for: release, order: chosen)
+            }
         }
     }
 
@@ -4149,8 +4489,13 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
 
     func tableView(_ tableView: NSTableView,
                    pasteboardWriterForRow row: Int) -> (any NSPasteboardWriting)? {
-        // The files listed inside an open folder are not draggable.
-        guard let queueIndex = queueIndex(forTableRow: row), layout.isFile(atTableRow: row) == false else { return nil }
+        // A file listed inside an open folder can be dragged to a new place
+        // in that folder's list.
+        if case .file(let parent, let position)? = rebuildLayout().entry(atTableRow: row) {
+            guard canWorkWithFiles(ofFolderAt: parent) else { return nil }
+            return PasteboardItem(index: QueueFileOrder.encode(parent: parent, position: position), type: .queueFileLine)
+        }
+        guard let queueIndex = queueIndex(forTableRow: row) else { return nil }
         let item = PasteboardItem(index: queueIndex, type: .tableViewIndex)
         return item
     }
@@ -4159,6 +4504,15 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
                    validateDrop info: NSDraggingInfo,
                    proposedRow row: Int,
                    proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
+        // File lines only move inside their own folder's list.
+        if info.draggingPasteboard.types?.contains(.queueFileLine) == true {
+            guard dropOperation == .above,
+                  let dragged = draggedFileLines(from: info),
+                  rebuildLayout().filePosition(forDropAtTableRow: row, inFolder: dragged.parent) != nil
+            else { return [] }
+            return .move
+        }
+
         guard dropOperation == .above else { return [] }
 
         // A drop between the files of an open folder means "after that folder".
@@ -4186,6 +4540,10 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         guard let pasteboardItems = info.draggingPasteboard.pasteboardItems
                 else { return false }
 
+        if info.draggingPasteboard.types?.contains(.queueFileLine) == true {
+            return moveFileLines(from: info, toTableRow: row)
+        }
+
         if let source = info.draggingSource as? NSTableView,
            source == tableView
         {
@@ -4201,6 +4559,51 @@ final class QueueController : NSWindowController, NSWindowDelegate, NSPopoverDel
         }
 
         return false
+    }
+}
+
+extension QueueController {
+
+    /// The file lines being dragged: their folder and positions in its list.
+    fileprivate func draggedFileLines(from info: NSDraggingInfo) -> (parent: Int, positions: IndexSet)? {
+        guard let items = info.draggingPasteboard.pasteboardItems else { return nil }
+        var parent: Int?
+        var positions = IndexSet()
+        for item in items {
+            guard let value = item.integer(forType: .queueFileLine) else { continue }
+            let decoded = QueueFileOrder.decode(value)
+            if let parent = parent, parent != decoded.parent { return nil }
+            parent = decoded.parent
+            positions.insert(decoded.position)
+        }
+        guard let found = parent, positions.isEmpty == false else { return nil }
+        return (found, positions)
+    }
+
+    /// Drops dragged file lines at a new place in their folder's list.
+    fileprivate func moveFileLines(from info: NSDraggingInfo, toTableRow row: Int) -> Bool {
+        guard let dragged = draggedFileLines(from: info), dragged.parent < queue.count,
+              let release = queue.row(at: dragged.parent).release,
+              canWorkWithFiles(ofFolderAt: dragged.parent),
+              let destination = rebuildLayout().filePosition(forDropAtTableRow: row, inFolder: dragged.parent)
+        else { return false }
+
+        let before = release.sourceFileURLs
+        let after = QueueFileOrder.moving(before, positions: dragged.positions, to: destination)
+        guard after != before else { return false }
+        release.sourceFileURLs = after
+
+        // A merge order picked earlier follows the new order.
+        if let order = release.mergeOrder {
+            release.mergeOrder = after.filter { order.contains($0) }
+        }
+        try? queue.saveToDisk()
+        table.reloadData()
+
+        let newPositions = IndexSet(after.enumerated().filter { dragged.positions.map { before[$0] }.contains($0.element) }.map { $0.offset })
+        table.selectRowIndexes(rebuildLayout().tableRows(forFilePositions: newPositions, inFolder: dragged.parent), byExtendingSelection: false)
+        updateState()
+        return true
     }
 }
 
@@ -4245,3 +4648,81 @@ extension QueueController {
     }
 }
 #endif
+
+/// The two fields and the Look Up button inside the Review Show alert.
+final class ShowReviewAccessory: NSObject {
+
+    let view: NSView
+    private let showField = NSTextField()
+    private let seasonField = NSTextField()
+    private let resultLabel = NSTextField(wrappingLabelWithString: "")
+    private let provider: String
+    private let language: String
+
+    var showName: String { return showField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines) }
+    /// The season typed, or nil when the field is empty or not a number.
+    var season: Int? { return Int(seasonField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)) }
+
+    init(show: String, season: Int?, provider: String, language: String) {
+        self.provider = provider
+        self.language = language
+
+        func label(_ text: String) -> NSTextField {
+            let field = NSTextField(labelWithString: text)
+            field.alignment = .right
+            field.widthAnchor.constraint(equalToConstant: 60).isActive = true
+            return field
+        }
+        showField.stringValue = show
+        showField.placeholderString = NSLocalizedString("Show name", comment: "Review Show field")
+        seasonField.stringValue = season.map { String($0) } ?? ""
+        seasonField.placeholderString = NSLocalizedString("from each file", comment: "Review Show season field")
+        seasonField.widthAnchor.constraint(equalToConstant: 100).isActive = true
+
+        let lookUp = NSButton(title: NSLocalizedString("Look Up", comment: "Review Show button"), target: nil, action: nil)
+        lookUp.bezelStyle = .rounded
+        resultLabel.textColor = .secondaryLabelColor
+        resultLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        resultLabel.stringValue = String(format: NSLocalizedString("Look Up shows what %@ finds for this name.", comment: "Review Show hint"), provider)
+
+        let showRow = NSStackView(views: [label(NSLocalizedString("Show", comment: "Review Show field")), showField])
+        let seasonRow = NSStackView(views: [label(NSLocalizedString("Season", comment: "Review Show field")), seasonField, lookUp])
+        showRow.spacing = 8
+        seasonRow.spacing = 8
+        let stack = NSStackView(views: [showRow, seasonRow, resultLabel])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 8
+        stack.frame = NSRect(x: 0, y: 0, width: 380, height: 110)
+        stack.translatesAutoresizingMaskIntoConstraints = true
+        resultLabel.preferredMaxLayoutWidth = 380
+        view = stack
+
+        super.init()
+        lookUp.target = self
+        lookUp.action = #selector(lookUp(_:))
+    }
+
+    @objc private func lookUp(_ sender: Any?) {
+        let name = showName
+        guard name.isEmpty == false else { return }
+        resultLabel.stringValue = NSLocalizedString("Looking up\u{2026}", comment: "Review Show status")
+        let provider = self.provider, language = self.language, season = self.season
+        DispatchQueue.global().async {
+            let service = MetadataSearch.service(name: provider)
+            let search = MetadataSearch.tvSearch(service: service, tvShow: name, season: season, episode: nil, language: language)
+            var titles: [String] = []
+            _ = search.search(completionHandler: { results in
+                for result in results.prefix(3) {
+                    let title = (result[.seriesName] as? String) ?? (result[.name] as? String) ?? ""
+                    if title.isEmpty == false, titles.contains(title) == false { titles.append(title) }
+                }
+            }).run()
+            DispatchQueue.main.async {
+                self.resultLabel.stringValue = titles.isEmpty
+                    ? String(format: NSLocalizedString("%@ found nothing for \u{201C}%@\u{201D}.", comment: "Review Show result"), provider, name)
+                    : String(format: NSLocalizedString("%@ finds: %@", comment: "Review Show result"), provider, titles.joined(separator: "; "))
+            }
+        }
+    }
+}

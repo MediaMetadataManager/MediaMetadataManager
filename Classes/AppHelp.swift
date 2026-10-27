@@ -78,7 +78,7 @@ enum AppHelp {
 /// or panel whose topic has its own section in the guide.
 final class HelpAnchorButton: NSButton {
 
-    /// Where the button opens. A window whose content changes (Preferences, tab by tab) updates it.
+    /// Where the button opens. A window whose content changes (Settings, tab by tab) updates it.
     var anchor: HelpAnchor
 
     init(anchor: HelpAnchor) {
